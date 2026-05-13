@@ -40,12 +40,12 @@ enum TripStatus {
   PLANNED
   COMPLETED
   CANCELLED
-  POSTPONED
 }
 
 enum TripLeaderRole {
-  PRIMARY
+  MAIN
   ASSISTANT
+  OTHER
 }
 
 enum ScoreDirection {
@@ -252,7 +252,7 @@ model TripLeader {
   trip                 Trip           @relation(fields: [tripId], references: [id], onDelete: Cascade)
   leaderId             String
   leader               Leader         @relation(fields: [leaderId], references: [id], onDelete: Cascade)
-  role                 TripLeaderRole @default(PRIMARY)
+  role                 TripLeaderRole @default(MAIN)
   actualWorkDays       Float
   isCompleted          Boolean        @default(false)
   baseScoreGeneratedAt DateTime?
@@ -260,7 +260,7 @@ model TripLeader {
   createdAt            DateTime       @default(now())
   updatedAt            DateTime       @updatedAt
 
-  @@unique([tripId, leaderId, role])
+  @@unique([tripId, leaderId])
   @@index([leaderId, isCompleted])
 }
 

@@ -175,7 +175,7 @@ async function main() {
       {
         tripId: tripA.id,
         leaderId: leaderA.id,
-        role: TripLeaderRole.PRIMARY,
+        role: TripLeaderRole.MAIN,
         actualWorkDays: 3,
         isCompleted: true,
       },
@@ -189,7 +189,7 @@ async function main() {
       {
         tripId: tripB.id,
         leaderId: leaderB.id,
-        role: TripLeaderRole.PRIMARY,
+        role: TripLeaderRole.MAIN,
         actualWorkDays: 5,
         isCompleted: true,
       },
@@ -203,7 +203,7 @@ async function main() {
       {
         tripId: tripC.id,
         leaderId: leaderB.id,
-        role: TripLeaderRole.PRIMARY,
+        role: TripLeaderRole.MAIN,
         actualWorkDays: 0,
         isCompleted: false,
       },
