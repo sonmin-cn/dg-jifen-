@@ -1,0 +1,484 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  LEADER_MANAGER
+  PRODUCT_MANAGER
+  FINANCE
+  ADMIN
+  LEADER
+  EXECUTIVE_VIEWER
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum LeaderStatus {
+  INTERN
+  REGULAR
+  LEFT
+  SUSPENDED
+}
+
+enum ScoreYearStatus {
+  NOT_STARTED
+  ACTIVE
+  SEALED
+  SETTLED
+}
+
+enum TripStatus {
+  PLANNED
+  COMPLETED
+  CANCELLED
+  POSTPONED
+}
+
+enum TripLeaderRole {
+  PRIMARY
+  ASSISTANT
+}
+
+enum ScoreDirection {
+  ADD
+  DEDUCT
+}
+
+enum ScoreCategory {
+  BASE_TRIP
+  HOLIDAY
+  SOCIAL
+  REPURCHASE
+  REFERRAL
+  MENTORSHIP
+  MATERIAL
+  VIOLATION
+  MANUAL
+}
+
+enum ScoreRecordStatus {
+  EFFECTIVE
+  VOIDED
+}
+
+enum ScoreSourceType {
+  TRIP_LEADER
+  APPLICATION
+  HOLIDAY_ATTENDANCE
+  VIOLATION_EVENT
+  MANUAL
+}
+
+enum ScoreApplicationType {
+  WECHAT_MOMENTS
+  XIAOHONGSHU
+  REPURCHASE
+  MENTORSHIP
+}
+
+enum ScoreApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  NEEDS_MORE_INFO
+}
+
+enum EvidenceRelatedType {
+  SCORE_APPLICATION
+  SCORE_RECORD
+  SOCIAL_POST
+  REPURCHASE_CLAIM
+  HOLIDAY_ATTENDANCE
+  VIOLATION_EVENT
+}
+
+enum SocialPlatform {
+  WECHAT_MOMENTS
+  XIAOHONGSHU
+}
+
+enum SocialPostStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  VOIDED
+}
+
+enum RepurchaseClaimStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CONFLICTED
+  VOIDED
+}
+
+enum HolidayType {
+  MAY_DAY
+  NATIONAL_DAY
+}
+
+enum BonusSettlementStatus {
+  DRAFT
+  CONFIRMED
+  LOCKED
+}
+
+enum ViolationType {
+  GENERAL
+  COMPLAINT
+  SAFETY
+  REDLINE
+  FAKE_BEHAVIOR
+}
+
+enum ViolationSeverity {
+  MINOR
+  NORMAL
+  SERIOUS
+  CRITICAL
+}
+
+enum ViolationStatus {
+  DRAFT
+  PENDING_REVIEW
+  EFFECTIVE
+  REVOKED
+}
+
+model User {
+  id           String     @id @default(cuid())
+  username     String     @unique
+  name         String
+  phone        String     @unique
+  email        String?
+  passwordHash String
+  role         UserRole
+  status       UserStatus @default(ACTIVE)
+  leader       Leader?
+  auditLogs    AuditLog[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([role, status])
+}
+
+model Leader {
+  id                  String              @id @default(cuid())
+  userId              String?             @unique
+  user                User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  realName            String
+  nickname            String?
+  phone               String              @unique
+  region              String?
+  status              LeaderStatus        @default(REGULAR)
+  level               String?
+  joinDate            DateTime?
+  regularDate         DateTime?
+  recommenderLeaderId String?
+  recommenderLeader   Leader?             @relation("LeaderRecommendations", fields: [recommenderLeaderId], references: [id], onDelete: SetNull)
+  recommendedLeaders  Leader[]            @relation("LeaderRecommendations")
+  tags                String?
+  remark              String?
+  tripLeaders         TripLeader[]
+  scoreApplications   ScoreApplication[]
+  scoreRecords        ScoreRecord[]
+  socialPosts         SocialPost[]
+  repurchaseClaims    RepurchaseClaim[]
+  holidayAttendances  HolidayAttendance[]
+  bonusSettlements    BonusSettlement[]
+  violationEvents     ViolationEvent[]
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  @@index([status, region])
+}
+
+model ScoreYear {
+  id                 String              @id @default(cuid())
+  name               String
+  startDate          DateTime
+  endDate            DateTime
+  sealDate           DateTime?
+  status             ScoreYearStatus
+  remark             String?
+  scoreApplications  ScoreApplication[]
+  scoreRecords       ScoreRecord[]
+  holidayAttendances HolidayAttendance[]
+  violationEvents    ViolationEvent[]
+  bonusPools         BonusPool[]
+  bonusSettlements   BonusSettlement[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  @@index([status, startDate, endDate])
+}
+
+model Trip {
+  id                String             @id @default(cuid())
+  routeName         String
+  region            String?
+  startDate         DateTime
+  endDate           DateTime
+  tripDays          Float
+  status            TripStatus         @default(PLANNED)
+  participantCount  Int?
+  productManagerId  String?
+  isHoliday         Boolean            @default(false)
+  tripLeaders       TripLeader[]
+  scoreApplications ScoreApplication[]
+  scoreRecords      ScoreRecord[]
+  socialPosts       SocialPost[]
+  repurchaseClaims  RepurchaseClaim[]
+  violationEvents   ViolationEvent[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@index([status, startDate])
+  @@index([region])
+}
+
+model TripLeader {
+  id                   String         @id @default(cuid())
+  tripId               String
+  trip                 Trip           @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  leaderId             String
+  leader               Leader         @relation(fields: [leaderId], references: [id], onDelete: Cascade)
+  role                 TripLeaderRole @default(PRIMARY)
+  actualWorkDays       Float
+  isCompleted          Boolean        @default(false)
+  baseScoreGeneratedAt DateTime?
+  baseScoreRecordId    String?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  @@unique([tripId, leaderId, role])
+  @@index([leaderId, isCompleted])
+}
+
+model ScoreApplication {
+  id              String                 @id @default(cuid())
+  scoreYearId     String
+  scoreYear       ScoreYear              @relation(fields: [scoreYearId], references: [id], onDelete: Restrict)
+  leaderId        String
+  leader          Leader                 @relation(fields: [leaderId], references: [id], onDelete: Restrict)
+  tripId          String?
+  trip            Trip?                  @relation(fields: [tripId], references: [id], onDelete: SetNull)
+  type            ScoreApplicationType
+  requestedPoints Float
+  status          ScoreApplicationStatus @default(PENDING)
+  payloadJson     String?
+  submittedAt     DateTime               @default(now())
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  rejectReason    String?
+  remark          String?
+  scoreRecords    ScoreRecord[]
+  socialPost      SocialPost?
+  repurchaseClaim RepurchaseClaim?
+
+  @@index([scoreYearId, status, type])
+  @@index([leaderId, submittedAt])
+}
+
+model ScoreRecord {
+  id               String            @id @default(cuid())
+  scoreYearId      String
+  scoreYear        ScoreYear         @relation(fields: [scoreYearId], references: [id], onDelete: Restrict)
+  leaderId         String
+  leader           Leader            @relation(fields: [leaderId], references: [id], onDelete: Restrict)
+  tripId           String?
+  trip             Trip?             @relation(fields: [tripId], references: [id], onDelete: SetNull)
+  applicationId    String?
+  application      ScoreApplication? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  violationEventId String?
+  violationEvent   ViolationEvent?   @relation(fields: [violationEventId], references: [id], onDelete: SetNull)
+  sourceType       ScoreSourceType
+  sourceId         String
+  category         ScoreCategory
+  item             String
+  direction        ScoreDirection
+  rawPoints        Float
+  effectivePoints  Float
+  status           ScoreRecordStatus @default(EFFECTIVE)
+  occurredAt       DateTime
+  approvedBy       String?
+  approvedAt       DateTime?
+  remark           String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@unique([scoreYearId, sourceType, sourceId, item])
+  @@index([scoreYearId, leaderId])
+  @@index([status, occurredAt])
+  @@index([category, direction])
+}
+
+model Evidence {
+  id          String              @id @default(cuid())
+  relatedType EvidenceRelatedType
+  relatedId   String
+  fileUrl     String
+  fileType    String?
+  description String?
+  uploadedBy  String
+  createdAt   DateTime            @default(now())
+
+  @@index([relatedType, relatedId])
+}
+
+model SocialPost {
+  id                  String           @id @default(cuid())
+  applicationId       String           @unique
+  application         ScoreApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  leaderId            String
+  leader              Leader           @relation(fields: [leaderId], references: [id], onDelete: Restrict)
+  tripId              String
+  trip                Trip             @relation(fields: [tripId], references: [id], onDelete: Restrict)
+  platform            SocialPlatform
+  postUrl             String?
+  screenshotUrl       String?
+  postedAt            DateTime
+  isPublic            Boolean          @default(false)
+  keep7DaysConfirmed  Boolean          @default(false)
+  hasRealContent      Boolean          @default(false)
+  hasBrandOrRouteInfo Boolean          @default(false)
+  hasPortrait         Boolean          @default(false)
+  portraitConfirmed   Boolean          @default(false)
+  status              SocialPostStatus @default(PENDING)
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  @@unique([leaderId, tripId, platform])
+  @@index([status, postedAt])
+}
+
+model RepurchaseClaim {
+  id                     String                @id @default(cuid())
+  applicationId          String                @unique
+  application            ScoreApplication      @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  leaderId               String
+  leader                 Leader                @relation(fields: [leaderId], references: [id], onDelete: Restrict)
+  oldCustomerName        String
+  oldCustomerPhoneSuffix String?
+  orderNo                String
+  tripId                 String?
+  trip                   Trip?                 @relation(fields: [tripId], references: [id], onDelete: SetNull)
+  inviteTime             DateTime
+  paymentTime            DateTime
+  completedTrip          Boolean               @default(false)
+  chatEvidenceUrl        String?
+  status                 RepurchaseClaimStatus @default(PENDING)
+  rejectReason           String?
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+
+  @@unique([orderNo])
+  @@index([leaderId, status])
+}
+
+model HolidayAttendance {
+  id                           String      @id @default(cuid())
+  scoreYearId                  String
+  scoreYear                    ScoreYear   @relation(fields: [scoreYearId], references: [id], onDelete: Restrict)
+  leaderId                     String
+  leader                       Leader      @relation(fields: [leaderId], references: [id], onDelete: Restrict)
+  holidayType                  HolidayType
+  submittedAvailable           Boolean     @default(false)
+  actuallyAssigned             Boolean     @default(false)
+  actuallyCompleted            Boolean     @default(false)
+  companyNotAssignedRecognized Boolean     @default(false)
+  recognitionReason            String?
+  approvedBy                   String?
+  points                       Float       @default(0)
+  countsForDoubleBonus         Boolean     @default(false)
+  createdAt                    DateTime    @default(now())
+  updatedAt                    DateTime    @updatedAt
+
+  @@unique([scoreYearId, leaderId, holidayType])
+  @@index([leaderId, countsForDoubleBonus])
+}
+
+model BonusPool {
+  id          String    @id @default(cuid())
+  scoreYearId String
+  scoreYear   ScoreYear @relation(fields: [scoreYearId], references: [id], onDelete: Restrict)
+  month       String
+  amount      Float
+  createdBy   String
+  remark      String?
+  createdAt   DateTime  @default(now())
+
+  @@unique([scoreYearId, month])
+}
+
+model BonusSettlement {
+  id                      String                @id @default(cuid())
+  scoreYearId             String
+  scoreYear               ScoreYear             @relation(fields: [scoreYearId], references: [id], onDelete: Restrict)
+  leaderId                String
+  leader                  Leader                @relation(fields: [leaderId], references: [id], onDelete: Restrict)
+  rawTotalPoints          Float
+  effectiveTotalPoints    Float
+  convertedTripCount      Float
+  isQualified             Boolean
+  disqualifyReason        String?
+  calculatedBonus         Float
+  cappedBonus             Float
+  secondDistributionBonus Float
+  finalBonus              Float
+  status                  BonusSettlementStatus @default(DRAFT)
+  createdAt               DateTime              @default(now())
+  updatedAt               DateTime              @updatedAt
+
+  @@unique([scoreYearId, leaderId])
+  @@index([status, isQualified])
+}
+
+model ViolationEvent {
+  id              String            @id @default(cuid())
+  scoreYearId     String
+  scoreYear       ScoreYear         @relation(fields: [scoreYearId], references: [id], onDelete: Restrict)
+  leaderId        String
+  leader          Leader            @relation(fields: [leaderId], references: [id], onDelete: Restrict)
+  tripId          String?
+  trip            Trip?             @relation(fields: [tripId], references: [id], onDelete: SetNull)
+  type            ViolationType
+  severity        ViolationSeverity
+  description     String
+  points          Float
+  disqualifyBonus Boolean           @default(false)
+  clearPoints     Boolean           @default(false)
+  status          ViolationStatus   @default(DRAFT)
+  createdBy       String
+  approvedBy      String?
+  createdAt       DateTime          @default(now())
+  approvedAt      DateTime?
+  scoreRecords    ScoreRecord[]
+
+  @@index([scoreYearId, leaderId])
+  @@index([status, type, severity])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     String
+  targetType String
+  targetId   String
+  beforeJson String?
+  afterJson  String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([targetType, targetId])
+}
