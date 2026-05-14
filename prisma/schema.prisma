@@ -78,6 +78,20 @@ enum ScoreSourceType {
   MANUAL
 }
 
+enum ScoreRuleReviewType {
+  AUTO
+  MANUAL_REVIEW
+  MANUAL_RECORD
+}
+
+enum ScoreRuleTriggerType {
+  TRIP_COMPLETED
+  SCORE_APPLICATION_APPROVED
+  HOLIDAY_ATTENDANCE_APPROVED
+  VIOLATION_CONFIRMED
+  MANUAL
+}
+
 enum ScoreApplicationType {
   WECHAT_MOMENTS
   XIAOHONGSHU
@@ -222,6 +236,30 @@ model ScoreYear {
   @@index([status, startDate, endDate])
 }
 
+model ScoreRule {
+  id            String               @id @default(cuid())
+  code          String
+  name          String
+  version       Int                  @default(1)
+  category      ScoreCategory
+  direction     ScoreDirection
+  points        Float
+  reviewType    ScoreRuleReviewType
+  triggerType   ScoreRuleTriggerType
+  isActive      Boolean              @default(true)
+  effectiveFrom DateTime             @default(now())
+  effectiveTo   DateTime?
+  description   String?
+  configJson    String?
+  scoreRecords  ScoreRecord[]
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  @@unique([code, version])
+  @@index([code, isActive, effectiveFrom, effectiveTo])
+  @@index([category, direction])
+}
+
 model Trip {
   id                String             @id @default(cuid())
   routeName         String
@@ -301,6 +339,13 @@ model ScoreRecord {
   application      ScoreApplication? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
   violationEventId String?
   violationEvent   ViolationEvent?   @relation(fields: [violationEventId], references: [id], onDelete: SetNull)
+  ruleId           String?
+  rule             ScoreRule?        @relation(fields: [ruleId], references: [id], onDelete: SetNull)
+  ruleCode         String?
+  ruleName         String?
+  ruleVersion      Int?
+  rulePoints       Float?
+  ruleSnapshotJson String?
   sourceType       ScoreSourceType
   sourceId         String
   category         ScoreCategory
@@ -318,6 +363,7 @@ model ScoreRecord {
 
   @@unique([scoreYearId, sourceType, sourceId, item])
   @@index([scoreYearId, leaderId])
+  @@index([ruleId])
   @@index([status, occurredAt])
   @@index([category, direction])
 }

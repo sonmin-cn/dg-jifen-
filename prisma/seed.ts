@@ -7,6 +7,7 @@ import {
   TripStatus,
   UserRole,
 } from "@prisma/client";
+import { seedDefaultScoreRules } from "../lib/services/score-rules";
 
 const prisma = new PrismaClient();
 
@@ -34,6 +35,8 @@ async function main() {
   await prisma.leader.deleteMany();
   await prisma.scoreYear.deleteMany();
   await prisma.user.deleteMany();
+
+  const defaultRuleCount = await seedDefaultScoreRules();
 
   const [admin, manager, leaderUser, finance] = await Promise.all([
     prisma.user.create({
@@ -230,11 +233,12 @@ async function main() {
         users: ["admin", "manager", "leader", "finance"],
         leaders: [leaderA.realName, leaderB.realName, leaderC.realName],
         trips: [tripA.routeName, tripB.routeName, tripC.routeName],
+        scoreRules: defaultRuleCount,
       }),
     },
   });
 
-  console.log("Seed completed");
+  console.log(`Seed completed, ${defaultRuleCount} default score rules ensured`);
   console.table([
     { username: "admin", password: "123456", role: "SUPER_ADMIN" },
     { username: "manager", password: "123456", role: "LEADER_MANAGER" },
