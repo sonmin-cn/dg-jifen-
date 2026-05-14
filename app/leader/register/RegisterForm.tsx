@@ -2,22 +2,25 @@
 
 import { FormEvent, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export function RegisterForm() {
+  const router = useRouter();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = event.currentTarget;
     setError("");
     setSuccess("");
     setIsSubmitting(true);
-    const formData = new FormData(event.currentTarget);
+    const formData = new FormData(form);
     const payload = Object.fromEntries(formData.entries());
 
     try {
@@ -26,22 +29,33 @@ export function RegisterForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = (await response.json()) as {
+      const data = (await response.json().catch(() => null)) as {
+        success?: boolean;
+        userId?: string;
         message?: string;
+        error?: string;
         errors?: Record<string, string>;
-      };
+      } | null;
 
-      if (!response.ok) {
+      if (response.ok && data?.success === true) {
+        form.reset();
+        setError("");
+        setSuccess("注册成功，正在前往绑定档案页面");
+        router.push("/leader/bind");
+        return;
+      }
+
+      if (!response.ok || data?.success === false) {
         setError(
-          data.errors
-            ? Object.values(data.errors).join("；")
-            : data.message || "注册失败",
+          data?.error ||
+            (data?.errors
+              ? Object.values(data.errors).join("；")
+              : data?.message || "注册失败"),
         );
         return;
       }
 
-      event.currentTarget.reset();
-      setSuccess("注册成功，请登录后申请绑定队长档案。");
+      setError("注册失败，请稍后重试");
     } catch {
       setError("注册请求失败，请稍后重试");
     } finally {

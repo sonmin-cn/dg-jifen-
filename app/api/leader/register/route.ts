@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma, UserRole, UserStatus } from "@prisma/client";
 import { hashPassword } from "@/lib/auth/password";
+import { createLoginSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 
 function normalizeRequiredString(value: unknown) {
@@ -41,7 +42,11 @@ export async function POST(request: NextRequest) {
 
     if (Object.keys(errors).length > 0) {
       return NextResponse.json(
-        { message: "表单校验失败", errors },
+        {
+          success: false,
+          error: Object.values(errors)[0] || "表单校验失败",
+          errors,
+        },
         { status: 400 },
       );
     }
@@ -80,7 +85,19 @@ export async function POST(request: NextRequest) {
       return created;
     });
 
-    return NextResponse.json({ user }, { status: 201 });
+    const response = NextResponse.json(
+      { success: true, userId: user.id, message: "注册成功" },
+      { status: 201 },
+    );
+
+    createLoginSession(response, {
+      userId: user.id,
+      username: user.username,
+      name: user.name,
+      role: user.role,
+    });
+
+    return response;
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -93,7 +110,8 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json(
         {
-          message: field === "username" ? "用户名已存在" : "手机号已存在",
+          success: false,
+          error: field === "username" ? "用户名已存在" : "手机号已存在",
           errors: {
             [field]: field === "username" ? "用户名已存在" : "手机号已存在",
           },
@@ -103,6 +121,9 @@ export async function POST(request: NextRequest) {
     }
 
     console.error(error);
-    return NextResponse.json({ message: "注册失败" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: "注册失败" },
+      { status: 500 },
+    );
   }
 }
