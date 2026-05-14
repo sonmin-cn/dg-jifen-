@@ -23,7 +23,6 @@ type LeaderFormData = {
   status: LeaderStatus;
   level: string | null;
   joinDate: Date | string | null;
-  regularDate: Date | string | null;
   recommenderLeaderId: string | null;
   tags: string | null;
   remark: string | null;
@@ -135,12 +134,6 @@ export function LeaderEditForm({
             defaultValue={formatDateInput(leader.joinDate)}
             label="入职日期"
             name="joinDate"
-            type="date"
-          />
-          <Field
-            defaultValue={formatDateInput(leader.regularDate)}
-            label="转正日期"
-            name="regularDate"
             type="date"
           />
           <div className="space-y-2">

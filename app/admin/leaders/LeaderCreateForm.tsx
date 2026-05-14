@@ -113,7 +113,6 @@ export function LeaderCreateForm({
           </select>
         </div>
         <Field label="入职日期" name="joinDate" type="date" />
-        <Field label="转正日期" name="regularDate" type="date" />
         <div className="space-y-2">
           <Label htmlFor="recommenderLeaderId">推荐人</Label>
           <select

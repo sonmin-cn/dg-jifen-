@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Award, FilePlus, ListChecks } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { requireRole } from "@/lib/auth/permissions";
+import { getLeaderBindingState } from "@/lib/services/leader-binding";
 
 const quickCards = [
   {
@@ -23,7 +26,14 @@ const quickCards = [
   },
 ];
 
-export default function LeaderDashboardPage() {
+export default async function LeaderDashboardPage() {
+  const user = await requireRole(["LEADER"], "/leader/dashboard");
+  const bindingState = await getLeaderBindingState(user.id);
+
+  if (!bindingState.isBound) {
+    redirect("/leader/bind");
+  }
+
   return (
     <section className="mt-8 grid gap-4 md:grid-cols-3">
       {quickCards.map((card) => (

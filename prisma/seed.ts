@@ -32,6 +32,7 @@ async function main() {
   await prisma.scoreApplication.deleteMany();
   await prisma.tripLeader.deleteMany();
   await prisma.trip.deleteMany();
+  await prisma.leaderBindRequest.deleteMany();
   await prisma.leader.deleteMany();
   await prisma.scoreYear.deleteMany();
   await prisma.user.deleteMany();
@@ -95,10 +96,15 @@ async function main() {
       nickname: "小青",
       phone: "13900000001",
       region: "华东",
+      residentLocation: "上海市,上海市,徐汇区",
       status: LeaderStatus.REGULAR,
       level: "流星",
+      rawLeaderIdentity: "正式队长",
+      rawLeaderLevel: "流星队长(一星)",
+      rawJobStatus: "在职",
+      jobStatus: "ACTIVE",
+      sourceSystem: "SEED",
       joinDate: new Date("2024-03-10T00:00:00+08:00"),
-      regularDate: new Date("2024-06-10T00:00:00+08:00"),
       tags: "摄影,亲和力",
       remark: "绑定普通队长测试账号",
     },
@@ -110,10 +116,15 @@ async function main() {
       nickname: "阿然",
       phone: "13900000002",
       region: "华南",
+      residentLocation: "广东省,广州市,天河区",
       status: LeaderStatus.REGULAR,
       level: "恒星",
+      rawLeaderIdentity: "正式队长",
+      rawLeaderLevel: "恒星队长",
+      rawJobStatus: "在职",
+      jobStatus: "ACTIVE",
+      sourceSystem: "SEED",
       joinDate: new Date("2023-04-01T00:00:00+08:00"),
-      regularDate: new Date("2023-07-01T00:00:00+08:00"),
       tags: "徒步,安全",
     },
   });
@@ -124,8 +135,14 @@ async function main() {
       nickname: "星野",
       phone: "13900000003",
       region: "西南",
+      residentLocation: "四川省,成都市,武侯区",
       status: LeaderStatus.INTERN,
       level: "彗星",
+      rawLeaderIdentity: "实习队长",
+      rawLeaderLevel: "彗星队长",
+      rawJobStatus: "在职",
+      jobStatus: "ACTIVE",
+      sourceSystem: "SEED",
       joinDate: new Date("2026-02-15T00:00:00+08:00"),
       recommenderLeaderId: leaderB.id,
       tags: "新人带教中",

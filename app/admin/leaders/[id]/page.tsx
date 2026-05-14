@@ -60,8 +60,12 @@ export default async function AdminLeaderDetailPage({ params }: PageProps) {
         <Info label="等级" value={leader.level} />
         <Info label="推荐人" value={leader.recommenderLeader?.realName} />
         <Info label="入职日期" value={formatDate(leader.joinDate)} />
-        <Info label="转正日期" value={formatDate(leader.regularDate)} />
         <Info label="绑定账号" value={leader.user?.username} />
+        <Info label="外部队长 ID" value={leader.externalLeaderId} />
+        <Info label="常驻地" value={leader.residentLocation} />
+        <Info label="岗位状态" value={leader.jobStatus} />
+        <Info label="导入来源" value={leader.sourceSystem} />
+        <Info label="最近导入时间" value={formatDateTime(leader.lastImportedAt)} />
         <Info label="标签" value={leader.tags} />
         <Info label="备注" value={leader.remark} wide />
       </section>
@@ -97,4 +101,12 @@ function formatDate(value: Date | null) {
   }
 
   return value.toISOString().slice(0, 10);
+}
+
+function formatDateTime(value: Date | null) {
+  if (!value) {
+    return "-";
+  }
+
+  return value.toISOString().slice(0, 19).replace("T", " ");
 }

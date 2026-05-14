@@ -168,19 +168,32 @@ enum ViolationStatus {
   REVOKED
 }
 
+enum LeaderBindRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
 model User {
-  id           String     @id @default(cuid())
-  username     String     @unique
-  name         String
-  phone        String     @unique
-  email        String?
-  passwordHash String
-  role         UserRole
-  status       UserStatus @default(ACTIVE)
-  leader       Leader?
-  auditLogs    AuditLog[]
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  id                 String              @id @default(cuid())
+  username           String              @unique
+  name               String
+  phone              String              @unique
+  email              String?
+  passwordHash       String
+  role               UserRole
+  status             UserStatus          @default(ACTIVE)
+  authProvider       String?
+  miniProgramOpenId  String?
+  miniProgramUnionId String?
+  miniProgramUserId  String?
+  lastLoginSource    String?
+  leader             Leader?
+  leaderBindRequests LeaderBindRequest[]
+  auditLogs          AuditLog[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 
   @@index([role, status])
 }
@@ -189,14 +202,27 @@ model Leader {
   id                  String              @id @default(cuid())
   userId              String?             @unique
   user                User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  externalLeaderId    String?             @unique
+  miniProgramLeaderId String?
+  miniProgramPhone    String?
   realName            String
   nickname            String?
   phone               String              @unique
   region              String?
+  residentLocation    String?
   status              LeaderStatus        @default(REGULAR)
   level               String?
+  rawLeaderIdentity   String?
+  rawLeaderLevel      String?
+  rawJobStatus        String?
+  leadCount           Int?
+  leadDays            Float?
+  auditTime           DateTime?
+  frozenTime          DateTime?
+  jobStatus           String?
+  lastImportedAt      DateTime?
+  sourceSystem        String?
   joinDate            DateTime?
-  regularDate         DateTime?
   recommenderLeaderId String?
   recommenderLeader   Leader?             @relation("LeaderRecommendations", fields: [recommenderLeaderId], references: [id], onDelete: SetNull)
   recommendedLeaders  Leader[]            @relation("LeaderRecommendations")
@@ -210,10 +236,36 @@ model Leader {
   holidayAttendances  HolidayAttendance[]
   bonusSettlements    BonusSettlement[]
   violationEvents     ViolationEvent[]
+  bindRequests        LeaderBindRequest[]
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
 
   @@index([status, region])
+  @@index([jobStatus])
+  @@index([sourceSystem])
+}
+
+model LeaderBindRequest {
+  id            String                  @id @default(cuid())
+  userId        String
+  user          User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  leaderId      String
+  leader        Leader                  @relation(fields: [leaderId], references: [id], onDelete: Cascade)
+  userPhone     String
+  leaderPhone   String
+  realNameInput String
+  status        LeaderBindRequestStatus @default(PENDING)
+  matchScore    Float?
+  matchReason   String?
+  reviewedBy    String?
+  reviewedAt    DateTime?
+  rejectReason  String?
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+
+  @@index([status, createdAt])
+  @@index([userId, status])
+  @@index([leaderId, status])
 }
 
 model ScoreYear {

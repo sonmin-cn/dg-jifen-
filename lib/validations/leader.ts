@@ -13,7 +13,6 @@ export type LeaderFormInput = {
   status?: unknown;
   level?: unknown;
   joinDate?: unknown;
-  regularDate?: unknown;
   recommenderLeaderId?: unknown;
   tags?: unknown;
   remark?: unknown;
@@ -27,7 +26,6 @@ export type ValidatedLeaderInput = {
   status: LeaderStatus;
   level: string | null;
   joinDate: Date | null;
-  regularDate: Date | null;
   recommenderLeaderId: string | null;
   tags: string | null;
   remark: string | null;
@@ -67,7 +65,6 @@ export async function validateLeaderInput(
   const phone = normalizeRequiredString(input.phone);
   const statusText = normalizeRequiredString(input.status);
   const joinDate = parseOptionalDate(input.joinDate);
-  const regularDate = parseOptionalDate(input.regularDate);
   const recommenderLeaderId = normalizeOptionalString(input.recommenderLeaderId);
   const level = normalizeOptionalString(input.level);
 
@@ -85,10 +82,6 @@ export async function validateLeaderInput(
 
   if (level && !LEADER_LEVEL_OPTIONS.includes(level)) {
     errors.level = "请选择有效等级";
-  }
-
-  if (joinDate && regularDate && regularDate < joinDate) {
-    errors.regularDate = "转正日期不能早于入职日期";
   }
 
   if (phone) {
@@ -131,7 +124,6 @@ export async function validateLeaderInput(
       status: statusText as LeaderStatus,
       level,
       joinDate,
-      regularDate,
       recommenderLeaderId,
       tags: normalizeOptionalString(input.tags),
       remark: normalizeOptionalString(input.remark),

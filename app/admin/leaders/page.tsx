@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Prisma } from "@prisma/client";
-import { Search } from "lucide-react";
+import { Search, Upload } from "lucide-react";
 import { prisma } from "@/lib/db/prisma";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -72,11 +72,19 @@ export default async function AdminLeadersPage({ searchParams }: PageProps) {
 
   return (
     <div className="py-8">
-      <div className="mb-6 flex flex-col gap-2">
-        <h2 className="text-2xl font-semibold">队长档案</h2>
-        <p className="text-sm text-muted-foreground">
-          管理队长基础资料、状态、等级、推荐关系和备注。
-        </p>
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold">队长档案</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            管理队长基础资料、状态、等级、推荐关系和备注。
+          </p>
+        </div>
+        <Button variant="outline" asChild>
+          <Link href="/admin/leaders/import">
+            <Upload className="h-4 w-4" />
+            导入队长数据
+          </Link>
+        </Button>
       </div>
 
       <form className="mb-5 rounded-lg border bg-card p-4 shadow-sm">

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db/prisma";
 import { requireRole } from "@/lib/auth/permissions";
 import { LEADER_STATUS_LABELS } from "@/lib/constants/leaders";
 import { leaderDetailSelect } from "@/lib/services/leader-select";
+import { redirect } from "next/navigation";
 
 export default async function LeaderProfilePage() {
   const user = await requireRole(["LEADER"], "/leader/profile");
@@ -12,14 +13,7 @@ export default async function LeaderProfilePage() {
   });
 
   if (!leader) {
-    return (
-      <section className="mt-8 rounded-lg border bg-card p-6 shadow-sm">
-        <h2 className="text-xl font-semibold">我的档案</h2>
-        <p className="mt-3 text-sm text-muted-foreground">
-          当前账号尚未绑定队长档案，请联系管理员。
-        </p>
-      </section>
-    );
+    redirect("/leader/bind");
   }
 
   return (
@@ -38,10 +32,13 @@ export default async function LeaderProfilePage() {
         <Info label="昵称" value={leader.nickname} />
         <Info label="手机号" value={leader.phone} />
         <Info label="区域" value={leader.region} />
+        <Info label="常驻地" value={leader.residentLocation} />
         <Info label="等级" value={leader.level} />
         <Info label="推荐人" value={leader.recommenderLeader?.realName} />
         <Info label="入职日期" value={formatDate(leader.joinDate)} />
-        <Info label="转正日期" value={formatDate(leader.regularDate)} />
+        <Info label="队长身份" value={leader.rawLeaderIdentity} />
+        <Info label="原始等级" value={leader.rawLeaderLevel} />
+        <Info label="岗位状态" value={leader.rawJobStatus} />
         <Info label="标签" value={leader.tags} />
         <Info label="备注" value={leader.remark} wide />
       </div>
