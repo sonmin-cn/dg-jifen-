@@ -20,14 +20,17 @@ export function LeaderCreateForm({
 }) {
   const router = useRouter();
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = event.currentTarget;
     setError("");
+    setSuccess("");
     setIsSubmitting(true);
 
-    const formData = new FormData(event.currentTarget);
+    const formData = new FormData(form);
     const payload = Object.fromEntries(formData.entries());
 
     try {
@@ -51,7 +54,9 @@ export function LeaderCreateForm({
         return;
       }
 
-      event.currentTarget.reset();
+      form.reset();
+      setError("");
+      setSuccess("队长已新增成功");
       router.refresh();
       if (data.leader?.id) {
         router.push(`/admin/leaders/${data.leader.id}`);
@@ -134,6 +139,11 @@ export function LeaderCreateForm({
       {error ? (
         <p className="mt-4 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
+        </p>
+      ) : null}
+      {success ? (
+        <p className="mt-4 rounded-md border border-primary/30 bg-primary/10 px-3 py-2 text-sm text-primary">
+          {success}
         </p>
       ) : null}
       <Button className="mt-4" disabled={isSubmitting} type="submit">

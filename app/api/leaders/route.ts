@@ -3,7 +3,6 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
 import { isAuthError, requireRole } from "@/lib/auth/permissions";
 import { LEADER_MANAGEMENT_ROLES } from "@/lib/auth/roles";
-import { writeAuditLog } from "@/lib/services/audit";
 import { leaderDetailSelect } from "@/lib/services/leader-select";
 import {
   LEADER_LEVEL_OPTIONS,
@@ -100,17 +99,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const leader = await prisma.leader.create({
-      data: result.data,
-      select: leaderDetailSelect,
-    });
+    const leader = await prisma.$transaction(async (tx) => {
+      const created = await tx.leader.create({
+        data: result.data,
+        select: leaderDetailSelect,
+      });
 
-    await writeAuditLog({
-      userId: user.id,
-      action: "LEADER_CREATED",
-      targetType: "Leader",
-      targetId: leader.id,
-      after: leader,
+      await tx.auditLog.create({
+        data: {
+          userId: user.id,
+          action: "LEADER_CREATED",
+          targetType: "Leader",
+          targetId: created.id,
+          afterJson: JSON.stringify(created),
+        },
+      });
+
+      return created;
     });
 
     return NextResponse.json({ leader }, { status: 201 });

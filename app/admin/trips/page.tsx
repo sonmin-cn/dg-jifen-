@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Prisma, TripStatus } from "@prisma/client";
-import { Search } from "lucide-react";
+import { FileSpreadsheet, Search } from "lucide-react";
 import { prisma } from "@/lib/db/prisma";
 import { requireRole } from "@/lib/auth/permissions";
 import { TRIP_MANAGEMENT_ROLES, TRIP_READ_ROLES } from "@/lib/auth/roles";
@@ -58,10 +58,22 @@ export default async function AdminTripsPage({ searchParams }: PageProps) {
   return (
     <div className="py-8">
       <div className="mb-6">
-        <h2 className="text-2xl font-semibold">团期管理</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          维护团期信息和带队记录，基础积分生成将在任务 6 接入。
-        </p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 className="text-2xl font-semibold">团期管理</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              维护团期信息和带队记录，基础积分生成将在任务 6 接入。
+            </p>
+          </div>
+          {canManage ? (
+            <Button variant="outline" asChild>
+              <Link href="/admin/trips/import">
+                <FileSpreadsheet className="h-4 w-4" />
+                导入销转表
+              </Link>
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       <form className="mb-5 rounded-lg border bg-card p-4 shadow-sm">
