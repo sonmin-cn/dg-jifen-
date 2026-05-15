@@ -1,61 +1,142 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Award, FilePlus, ListChecks } from "lucide-react";
+import { Award, FileText, ListChecks, TrendingUp } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { requireRole } from "@/lib/auth/permissions";
-import { getLeaderBindingState } from "@/lib/services/leader-binding";
-
-const quickCards = [
-  {
-    title: "我的积分",
-    value: "0",
-    description: "后续展示当前年度总积分与有效积分。",
-    icon: Award,
-  },
-  {
-    title: "积分申请",
-    value: "待接入",
-    description: "朋友圈、小红书、带教复盘等申请入口。",
-    icon: FilePlus,
-  },
-  {
-    title: "申请记录",
-    value: "0",
-    description: "后续展示待审核、已通过与已驳回记录。",
-    icon: ListChecks,
-  },
-];
+import {
+  SCORE_CATEGORY_LABELS,
+  SCORE_DIRECTION_LABELS,
+} from "@/lib/constants/scores";
+import { getLeaderScoreSummary } from "@/lib/services/leader-scores";
 
 export default async function LeaderDashboardPage() {
   const user = await requireRole(["LEADER"], "/leader/dashboard");
-  const bindingState = await getLeaderBindingState(user.id);
+  const summary = await getLeaderScoreSummary(user.id);
 
-  if (!bindingState.isBound) {
+  if (!summary.leader) {
     redirect("/leader/bind");
   }
 
+  const cards = [
+    {
+      title: "我的积分",
+      value: formatPoints(summary.totalPoints),
+      description: summary.activeScoreYear?.name || "暂无 ACTIVE 积分年度",
+      icon: Award,
+    },
+    {
+      title: "基础带队积分",
+      value: formatPoints(summary.baseTripPoints),
+      description: "已生成的基础带队积分合计",
+      icon: TrendingUp,
+    },
+    {
+      title: "积分记录数",
+      value: String(summary.recordCount),
+      description: `加分 ${formatPoints(summary.addPoints)} / 扣分 ${formatPoints(summary.deductPoints)}`,
+      icon: ListChecks,
+    },
+  ];
+
   return (
-    <section className="mt-8 grid gap-4 md:grid-cols-3">
-      {quickCards.map((card) => (
-        <article
-          className="rounded-lg border bg-card p-5 shadow-sm"
-          key={card.title}
-        >
-          <div className="flex items-center justify-between gap-4">
-            <h2 className="text-base font-medium">{card.title}</h2>
-            <card.icon className="h-5 w-5 text-primary" />
+    <div className="mt-8 space-y-6">
+      <section className="grid gap-4 md:grid-cols-3">
+        {cards.map((card) => (
+          <article
+            className="rounded-lg border bg-card p-5 shadow-sm"
+            key={card.title}
+          >
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="text-base font-medium">{card.title}</h2>
+              <card.icon className="h-5 w-5 text-primary" />
+            </div>
+            <p className="mt-4 text-3xl font-semibold">{card.value}</p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              {card.description}
+            </p>
+          </article>
+        ))}
+      </section>
+
+      <section className="rounded-lg border bg-card p-5 shadow-sm">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="flex items-center gap-2 text-lg font-semibold">
+              <FileText className="h-5 w-5 text-primary" />
+              最近积分记录
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              仅展示当前登录队长在当前积分年度下的有效积分。
+            </p>
           </div>
-          <p className="mt-4 text-2xl font-semibold">{card.value}</p>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            {card.description}
+          <Button variant="outline" asChild>
+            <Link href="/leader/scores">查看积分明细</Link>
+          </Button>
+        </div>
+
+        {summary.recentRecords.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="min-w-[760px] w-full border-collapse text-sm">
+              <thead className="bg-muted/60 text-left">
+                <tr>
+                  <Th>日期</Th>
+                  <Th>积分项目</Th>
+                  <Th>分类</Th>
+                  <Th>加分/扣分</Th>
+                  <Th>分值</Th>
+                  <Th>关联团期</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {summary.recentRecords.map((record) => (
+                  <tr className="border-t" key={record.id}>
+                    <Td>{formatDate(record.occurredAt)}</Td>
+                    <Td className="font-medium">{record.item}</Td>
+                    <Td>{SCORE_CATEGORY_LABELS[record.category]}</Td>
+                    <Td>
+                      <Badge variant={record.direction === "ADD" ? "secondary" : "outline"}>
+                        {SCORE_DIRECTION_LABELS[record.direction]}
+                      </Badge>
+                    </Td>
+                    <Td className="font-semibold">
+                      {record.direction === "ADD" ? "+" : "-"}
+                      {formatPoints(record.effectivePoints)}
+                    </Td>
+                    <Td>{record.trip?.routeName || "-"}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="rounded-md border bg-muted/30 px-4 py-8 text-center text-sm text-muted-foreground">
+            暂无积分记录
           </p>
-          {card.title === "我的积分" ? (
-            <Button className="mt-4" size="sm" variant="outline" asChild>
-              <Link href="/leader/profile">查看档案</Link>
-            </Button>
-          ) : null}
-        </article>
-      ))}
-    </section>
+        )}
+      </section>
+    </div>
   );
+}
+
+function Th({ children }: { children: React.ReactNode }) {
+  return <th className="px-4 py-3 font-medium">{children}</th>;
+}
+
+function Td({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return <td className={`px-4 py-3 ${className || ""}`}>{children}</td>;
+}
+
+function formatDate(value: Date) {
+  return value.toISOString().slice(0, 10);
+}
+
+function formatPoints(value: number) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(2);
 }
