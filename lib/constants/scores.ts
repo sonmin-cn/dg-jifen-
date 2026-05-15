@@ -13,6 +13,9 @@ export const SCORE_CATEGORY_LABELS: Record<ScoreCategory, string> = {
   MENTORSHIP: "带教",
   MATERIAL: "素材",
   VIOLATION: "违规",
+  COMPLAINT: "投诉",
+  SAFETY: "安全",
+  REDLINE: "红线",
   MANUAL: "手工",
 };
 

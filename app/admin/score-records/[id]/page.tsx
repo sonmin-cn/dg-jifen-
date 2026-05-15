@@ -87,7 +87,18 @@ export default async function AdminScoreRecordDetailPage({ params }: PageProps) 
             )}
           </p>
         </div>
-        <Info label="关联事件 violationEventId" value={record.violationEventId} />
+        <div>
+          <p className="text-muted-foreground">关联事件 violationEventId</p>
+          <p className="mt-1 break-words font-medium">
+            {record.violationEventId ? (
+              <Link className="text-primary underline-offset-4 hover:underline" href={`/admin/violations/${record.violationEventId}`}>
+                {record.violationEventId}
+              </Link>
+            ) : (
+              "-"
+            )}
+          </p>
+        </div>
         <Info label="来源类型" value={record.sourceType} />
         <Info label="来源 ID" value={record.sourceId} wide />
       </section>

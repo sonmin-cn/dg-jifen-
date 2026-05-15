@@ -27,6 +27,9 @@ export default async function AdminLayout({
               <Link href="/admin/score-records">积分台账</Link>
             </Button>
             <Button variant="outline" asChild>
+              <Link href="/admin/violations">违规扣分</Link>
+            </Button>
+            <Button variant="outline" asChild>
               <Link href="/admin/score-applications">积分申请</Link>
             </Button>
             <Button variant="outline" asChild>

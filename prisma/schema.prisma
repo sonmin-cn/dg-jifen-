@@ -62,6 +62,9 @@ enum ScoreCategory {
   MENTORSHIP
   MATERIAL
   VIOLATION
+  COMPLAINT
+  SAFETY
+  REDLINE
   MANUAL
 }
 
@@ -308,6 +311,7 @@ model ScoreRule {
   configJson        String?
   scoreRecords      ScoreRecord[]
   scoreApplications ScoreApplication[]
+  violationEvents   ViolationEvent[]
   createdAt         DateTime             @default(now())
   updatedAt         DateTime             @updatedAt
 
@@ -566,21 +570,36 @@ model ViolationEvent {
   leader          Leader            @relation(fields: [leaderId], references: [id], onDelete: Restrict)
   tripId          String?
   trip            Trip?             @relation(fields: [tripId], references: [id], onDelete: SetNull)
+  ruleId          String?
+  rule            ScoreRule?        @relation(fields: [ruleId], references: [id], onDelete: SetNull)
+  ruleCode        String            @default("")
   type            ViolationType
   severity        ViolationSeverity
+  title           String            @default("违规事件")
   description     String
+  evidenceText    String?
+  evidenceUrl     String?
+  remark          String?
   points          Float
+  scoreRecordId   String?
   disqualifyBonus Boolean           @default(false)
   clearPoints     Boolean           @default(false)
   status          ViolationStatus   @default(DRAFT)
   createdBy       String
+  handledBy       String?
   approvedBy      String?
+  occurredAt      DateTime          @default(now())
   createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  handledAt       DateTime?
   approvedAt      DateTime?
   scoreRecords    ScoreRecord[]
 
   @@index([scoreYearId, leaderId])
   @@index([status, type, severity])
+  @@index([ruleId])
+  @@index([ruleCode])
+  @@index([occurredAt])
 }
 
 model AuditLog {

@@ -121,10 +121,7 @@ export default async function LeaderDashboardPage() {
                         {SCORE_DIRECTION_LABELS[record.direction]}
                       </Badge>
                     </Td>
-                    <Td className="font-semibold">
-                      {record.direction === "ADD" ? "+" : "-"}
-                      {formatPoints(record.effectivePoints)}
-                    </Td>
+                    <Td className="font-semibold">{formatSignedPoints(record.effectivePoints)}</Td>
                     <Td>{record.trip?.routeName || "未关联团期"}</Td>
                   </tr>
                 ))}
@@ -141,10 +138,7 @@ export default async function LeaderDashboardPage() {
                       {formatDate(record.occurredAt)}
                     </p>
                   </div>
-                  <p className="text-lg font-semibold">
-                    {record.direction === "ADD" ? "+" : "-"}
-                    {formatPoints(record.effectivePoints)}
-                  </p>
+                  <p className="text-lg font-semibold">{formatSignedPoints(record.effectivePoints)}</p>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2 text-sm">
                   <Badge variant="outline">{SCORE_CATEGORY_LABELS[record.category]}</Badge>
@@ -189,4 +183,12 @@ function formatDate(value: Date) {
 
 function formatPoints(value: number) {
   return Number.isInteger(value) ? String(value) : value.toFixed(2);
+}
+
+function formatSignedPoints(value: number) {
+  if (value === 0) {
+    return "0";
+  }
+
+  return `${value > 0 ? "+" : "-"}${formatPoints(Math.abs(value))}`;
 }

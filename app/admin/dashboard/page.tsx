@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ClipboardCheck, ClipboardList, Database, Users, WalletCards } from "lucide-react";
+import { ClipboardCheck, ClipboardList, Database, ShieldAlert, Users, WalletCards } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const modules = [
@@ -22,6 +22,11 @@ const modules = [
     title: "积分申请审核",
     description: "审核队长提交的朋友圈、小红书和复购加分申请。",
     icon: ClipboardCheck,
+  },
+  {
+    title: "违规扣分",
+    description: "录入违规、投诉和安全问题扣分。",
+    icon: ShieldAlert,
   },
   {
     title: "奖金测算",
@@ -61,6 +66,11 @@ export default function AdminDashboardPage() {
           {module.title === "积分申请审核" ? (
             <Button className="mt-4" size="sm" variant="outline" asChild>
               <Link href="/admin/score-applications">进入审核</Link>
+            </Button>
+          ) : null}
+          {module.title === "违规扣分" ? (
+            <Button className="mt-4" size="sm" variant="outline" asChild>
+              <Link href="/admin/violations">进入扣分</Link>
             </Button>
           ) : null}
         </article>

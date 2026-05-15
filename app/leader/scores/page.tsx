@@ -113,10 +113,7 @@ export default async function LeaderScoresPage({ searchParams }: PageProps) {
                       {SCORE_DIRECTION_LABELS[record.direction]}
                     </Badge>
                   </Td>
-                  <Td className="font-semibold">
-                    {record.direction === "ADD" ? "+" : "-"}
-                    {formatPoints(record.effectivePoints)}
-                  </Td>
+                  <Td className="font-semibold">{formatSignedPoints(record.effectivePoints)}</Td>
                   <Td>{record.trip?.routeName || "未关联团期"}</Td>
                   <Td>{SCORE_RECORD_STATUS_LABELS[record.status]}</Td>
                   <Td className="max-w-[260px] whitespace-normal">
@@ -148,10 +145,7 @@ export default async function LeaderScoresPage({ searchParams }: PageProps) {
                     {formatDate(record.occurredAt)}
                   </p>
                 </div>
-                <p className="text-xl font-semibold">
-                  {record.direction === "ADD" ? "+" : "-"}
-                  {formatPoints(record.effectivePoints)}
-                </p>
+                <p className="text-xl font-semibold">{formatSignedPoints(record.effectivePoints)}</p>
               </div>
               <div className="mt-3 flex flex-wrap gap-2 text-sm">
                 <Badge variant="outline">{SCORE_CATEGORY_LABELS[record.category]}</Badge>
@@ -221,4 +215,12 @@ function formatDate(value: Date) {
 
 function formatPoints(value: number) {
   return Number.isInteger(value) ? String(value) : value.toFixed(2);
+}
+
+function formatSignedPoints(value: number) {
+  if (value === 0) {
+    return "0";
+  }
+
+  return `${value > 0 ? "+" : "-"}${formatPoints(Math.abs(value))}`;
 }
