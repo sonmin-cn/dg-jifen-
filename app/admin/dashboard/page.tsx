@@ -48,6 +48,11 @@ export default function AdminDashboardPage() {
               <Link href="/admin/trips">进入管理</Link>
             </Button>
           ) : null}
+          {module.title === "积分台账" ? (
+            <Button className="mt-4" size="sm" variant="outline" asChild>
+              <Link href="/admin/score-records">进入台账</Link>
+            </Button>
+          ) : null}
         </article>
       ))}
     </section>

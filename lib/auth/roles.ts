@@ -18,3 +18,11 @@ export const TRIP_MANAGEMENT_ROLES: UserRole[] = [
   "LEADER_MANAGER",
   "ADMIN",
 ];
+
+export const SCORE_RECORD_READ_ROLES: UserRole[] = [
+  "SUPER_ADMIN",
+  "LEADER_MANAGER",
+  "ADMIN",
+  "FINANCE",
+  "EXECUTIVE_VIEWER",
+];

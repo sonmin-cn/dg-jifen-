@@ -33,3 +33,7 @@ export const SCORE_CATEGORY_OPTIONS = Object.keys(
 export const SCORE_DIRECTION_OPTIONS = Object.keys(
   SCORE_DIRECTION_LABELS,
 ) as ScoreDirection[];
+
+export const SCORE_RECORD_STATUS_OPTIONS = Object.keys(
+  SCORE_RECORD_STATUS_LABELS,
+) as ScoreRecordStatus[];
