@@ -117,7 +117,7 @@ export default async function LeaderScoresPage({ searchParams }: PageProps) {
                     {record.direction === "ADD" ? "+" : "-"}
                     {formatPoints(record.effectivePoints)}
                   </Td>
-                  <Td>{record.trip?.routeName || "-"}</Td>
+                  <Td>{record.trip?.routeName || "未关联团期"}</Td>
                   <Td>{SCORE_RECORD_STATUS_LABELS[record.status]}</Td>
                   <Td className="max-w-[260px] whitespace-normal">
                     {record.remark || "-"}
@@ -161,7 +161,7 @@ export default async function LeaderScoresPage({ searchParams }: PageProps) {
                 <Badge variant="outline">{SCORE_RECORD_STATUS_LABELS[record.status]}</Badge>
               </div>
               <div className="mt-4 space-y-2 text-sm">
-                <InfoLine label="关联团期" value={record.trip?.routeName} />
+                <InfoLine label="关联团期" value={record.trip?.routeName || "未关联团期"} />
                 <InfoLine label="规则名称" value={record.ruleName} />
                 <InfoLine label="备注" value={record.remark} />
               </div>

@@ -138,7 +138,7 @@ export default async function AdminScoreApplicationsPage({ searchParams }: PageP
                   <Td>{application.leader.phone ? `****${application.leader.phone.slice(-4)}` : "-"}</Td>
                   <Td>{getApplicationTypeLabel(application.type)}</Td>
                   <Td>{application.title || "-"}</Td>
-                  <Td>{application.trip?.routeName || "-"}</Td>
+                  <Td>{application.trip?.routeName || "未关联团期"}</Td>
                   <Td>+{formatPoints(application.requestedPoints)}</Td>
                   <Td>
                     <Badge variant={application.status === "PENDING" ? "secondary" : "outline"}>

@@ -7,11 +7,14 @@ import {
 
 function errorResponse(error: unknown) {
   if (isAuthError(error)) {
-    return NextResponse.json({ message: error.message }, { status: error.status });
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: error.status },
+    );
   }
 
   console.error(error);
-  return NextResponse.json({ message: "服务器错误" }, { status: 500 });
+  return NextResponse.json({ success: false, error: "服务器错误" }, { status: 500 });
 }
 
 export async function GET() {
@@ -22,7 +25,10 @@ export async function GET() {
     const data = await getLeaderApplications(user.id);
 
     if (!data.leader) {
-      return NextResponse.json({ message: "当前账号尚未绑定队长档案" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: "当前账号尚未绑定队长档案" },
+        { status: 400 },
+      );
     }
 
     return NextResponse.json({ applications: data.applications });
@@ -41,12 +47,19 @@ export async function POST(request: NextRequest) {
 
     if (!result.ok) {
       return NextResponse.json(
-        { message: result.message },
+        { success: false, error: result.message },
         { status: result.status },
       );
     }
 
-    return NextResponse.json({ application: result.application }, { status: 201 });
+    return NextResponse.json(
+      {
+        success: true,
+        message: "申请提交成功",
+        application: result.application,
+      },
+      { status: 201 },
+    );
   } catch (error) {
     return errorResponse(error);
   }

@@ -216,7 +216,7 @@ export default async function AdminScoreRecordsPage({ searchParams }: PageProps)
                     )}
                   </Td>
                   <Td>{SCORE_RECORD_STATUS_LABELS[record.status]}</Td>
-                  <Td>{record.trip?.routeName || "-"}</Td>
+                  <Td>{record.trip?.routeName || "未关联团期"}</Td>
                   <Td>{record.ruleName || record.rule?.name || "-"}</Td>
                   <Td>{record.ruleCode || record.rule?.code || "-"}</Td>
                   <Td className="max-w-[280px] whitespace-normal">

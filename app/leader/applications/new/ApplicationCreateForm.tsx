@@ -52,6 +52,7 @@ export function ApplicationCreateForm({
     const config = applicationType && applicationType in SCORE_APPLICATION_CONFIGS
       ? SCORE_APPLICATION_CONFIGS[applicationType as keyof typeof SCORE_APPLICATION_CONFIGS]
       : null;
+    const tripId = String(payload.tripId || "").trim();
     const title = String(payload.title || "").trim();
     const evidenceText = String(payload.evidenceText || "").trim();
     const evidenceUrl = String(payload.evidenceUrl || "").trim();
@@ -62,8 +63,8 @@ export function ApplicationCreateForm({
       return;
     }
 
-    if (config.requireTrip && !String(payload.tripId || "")) {
-      setError("当前申请类型需要选择关联团期");
+    if (config.requireTrip && !tripId) {
+      setError(config.defaultTripRequiredMessage);
       setIsSubmitting(false);
       return;
     }
@@ -84,12 +85,19 @@ export function ApplicationCreateForm({
       const response = await fetch("/api/leader/applications", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          ...payload,
+          tripId: tripId || null,
+        }),
       });
-      const data = (await response.json().catch(() => null)) as { message?: string } | null;
+      const data = (await response.json().catch(() => null)) as {
+        success?: boolean;
+        error?: string;
+        message?: string;
+      } | null;
 
-      if (!response.ok) {
-        setError(data?.message || "提交申请失败");
+      if (!response.ok || data?.success === false) {
+        setError(data?.error || data?.message || "提交申请失败");
         return;
       }
 
@@ -116,7 +124,10 @@ export function ApplicationCreateForm({
             className="h-11 w-full rounded-md border bg-background px-3 text-base md:text-sm"
             id="type"
             name="type"
-            onChange={(event) => setType(event.target.value as ScoreApplicationType)}
+            onChange={(event) => {
+              setType(event.target.value as ScoreApplicationType);
+              setError("");
+            }}
             value={type}
           >
             <option value="">请选择申请类型</option>
@@ -134,7 +145,14 @@ export function ApplicationCreateForm({
           </p>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="tripId">关联团期</Label>
+          <Label className="flex items-center gap-2" htmlFor="tripId">
+            关联团期
+            {selectedConfig ? (
+              <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-normal text-muted-foreground">
+                {selectedConfig.requireTrip ? "必填" : "选填"}
+              </span>
+            ) : null}
+          </Label>
           <select
             className="h-11 w-full rounded-md border bg-background px-3 text-base md:text-sm"
             id="tripId"
@@ -147,8 +165,8 @@ export function ApplicationCreateForm({
               </option>
             ))}
           </select>
-          {selectedConfig?.requireTrip ? (
-            <p className="text-xs text-muted-foreground">当前申请类型需要选择关联团期。</p>
+          {selectedConfig ? (
+            <p className="text-xs text-muted-foreground">{selectedConfig.tripHelpText}</p>
           ) : null}
         </div>
         <Field label="申请标题" name="title" />

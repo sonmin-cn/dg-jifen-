@@ -4,6 +4,8 @@ export type ScoreApplicationConfig = {
   label: string;
   ruleCode: string;
   requireTrip: boolean;
+  defaultTripRequiredMessage: string;
+  tripHelpText: string;
   requireEvidence: boolean;
   evidenceLabel: string;
 };
@@ -16,6 +18,8 @@ export const SCORE_APPLICATION_CONFIGS: Record<
     label: "朋友圈分享",
     ruleCode: "MOMENTS_POST",
     requireTrip: true,
+    defaultTripRequiredMessage: "朋友圈分享必须选择关联团期",
+    tripHelpText: "朋友圈分享需关联具体出团记录，方便后台审核。",
     requireEvidence: true,
     evidenceLabel: "朋友圈截图或说明",
   },
@@ -23,6 +27,8 @@ export const SCORE_APPLICATION_CONFIGS: Record<
     label: "小红书笔记",
     ruleCode: "XHS_POST",
     requireTrip: true,
+    defaultTripRequiredMessage: "小红书笔记必须选择关联团期",
+    tripHelpText: "小红书笔记需关联具体出团记录，方便后台审核。",
     requireEvidence: true,
     evidenceLabel: "小红书链接/截图说明",
   },
@@ -30,6 +36,8 @@ export const SCORE_APPLICATION_CONFIGS: Record<
     label: "老队员复购",
     ruleCode: "REPURCHASE",
     requireTrip: false,
+    defaultTripRequiredMessage: "",
+    tripHelpText: "如复购与某次带队相关，可选择团期；无法确认时可不关联。",
     requireEvidence: true,
     evidenceLabel: "聊天记录、报名订单或复购说明",
   },

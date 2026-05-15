@@ -125,7 +125,7 @@ export default async function LeaderDashboardPage() {
                       {record.direction === "ADD" ? "+" : "-"}
                       {formatPoints(record.effectivePoints)}
                     </Td>
-                    <Td>{record.trip?.routeName || "-"}</Td>
+                    <Td>{record.trip?.routeName || "未关联团期"}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -153,7 +153,7 @@ export default async function LeaderDashboardPage() {
                   </Badge>
                 </div>
                 <p className="mt-3 text-sm text-muted-foreground">
-                  关联团期：{record.trip?.routeName || "-"}
+                  关联团期：{record.trip?.routeName || "未关联团期"}
                 </p>
               </article>
             ))}

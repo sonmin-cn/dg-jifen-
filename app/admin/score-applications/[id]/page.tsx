@@ -68,7 +68,7 @@ export default async function AdminScoreApplicationDetailPage({ params }: PagePr
         <Info label="队长" value={application.leader.realName} />
         <Info label="队长昵称" value={application.leader.nickname} />
         <Info label="手机号" value={application.leader.phone ? `****${application.leader.phone.slice(-4)}` : "-"} />
-        <Info label="关联团期" value={application.trip?.routeName} />
+        <Info label="关联团期" value={application.trip?.routeName || "未关联团期"} />
         <Info label="团期状态" value={application.trip?.status} />
         <Info label="团期日期" value={application.trip ? `${formatDate(application.trip.startDate)} 至 ${formatDate(application.trip.endDate)}` : "-"} />
       </section>

@@ -74,7 +74,7 @@ export default async function AdminScoreRecordDetailPage({ params }: PageProps) 
       </section>
 
       <section className="mb-5 grid gap-4 rounded-lg border bg-card p-5 text-sm shadow-sm md:grid-cols-3">
-        <Info label="关联团期" value={record.trip?.routeName} />
+        <Info label="关联团期" value={record.trip?.routeName || "未关联团期"} />
         <div>
           <p className="text-muted-foreground">关联申请 applicationId</p>
           <p className="mt-1 break-words font-medium">

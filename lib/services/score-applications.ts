@@ -112,7 +112,11 @@ export async function createLeaderScoreApplication(
   const now = new Date();
 
   if (config.requireTrip && !tripId) {
-    return { ok: false as const, status: 400, message: "请选择关联团期" };
+    return {
+      ok: false as const,
+      status: 400,
+      message: config.defaultTripRequiredMessage,
+    };
   }
 
   if (!title) {
@@ -149,7 +153,7 @@ export async function createLeaderScoreApplication(
   }
 
   if (tripId && !trip) {
-    return { ok: false as const, status: 400, message: "关联团期无效" };
+    return { ok: false as const, status: 400, message: "关联团期不存在或你未参与该团期" };
   }
 
   const duplicate = await findDuplicateApplication({

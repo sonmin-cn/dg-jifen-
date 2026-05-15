@@ -52,7 +52,7 @@ export default async function LeaderApplicationsPage() {
                   <Td>{formatDateTime(application.submittedAt)}</Td>
                   <Td>{getApplicationTypeLabel(application.type)}</Td>
                   <Td className="font-medium">{application.title || "-"}</Td>
-                  <Td>{application.trip?.routeName || "-"}</Td>
+                  <Td>{application.trip?.routeName || "未关联团期"}</Td>
                   <Td>+{formatPoints(application.requestedPoints)}</Td>
                   <Td>
                     <Badge variant={application.status === "PENDING" ? "secondary" : "outline"}>
@@ -90,7 +90,7 @@ export default async function LeaderApplicationsPage() {
                 </Badge>
               </div>
               <div className="mt-4 grid gap-2 text-sm">
-                <InfoLine label="关联团期" value={application.trip?.routeName} />
+                <InfoLine label="关联团期" value={application.trip?.routeName || "未关联团期"} />
                 <InfoLine label="申请分值" value={`+${formatPoints(application.requestedPoints)}`} />
                 <InfoLine label="提交时间" value={formatDateTime(application.submittedAt)} />
                 <InfoLine label="审核时间" value={formatDateTime(application.reviewedAt)} />
