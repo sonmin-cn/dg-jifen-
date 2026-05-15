@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { TripLeaderRole, TripStatus } from "@prisma/client";
 import { Save, Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,6 +40,8 @@ type TripLeaderRow = {
   role: TripLeaderRole;
   actualWorkDays: number;
   isCompleted: boolean;
+  baseScoreGeneratedAt: Date | string | null;
+  baseScoreRecordId: string | null;
   leader: {
     id: string;
     realName: string;
@@ -170,20 +173,28 @@ export function TripEditForm({ trip }: { trip: TripFormData }) {
 }
 
 export function TripLeaderManager({
+  baseScoreRecordMap,
   tripId,
+  tripStatus,
   leaders,
   tripLeaders,
 }: {
+  baseScoreRecordMap: Record<string, { effectivePoints: number; rawPoints: number }>;
   tripId: string;
+  tripStatus: TripStatus;
   leaders: LeaderOption[];
   tripLeaders: TripLeaderRow[];
 }) {
   const router = useRouter();
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const generationState = getGenerationState(tripStatus, tripLeaders);
 
   async function addTripLeader(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
+    setSuccess("");
     const form = event.currentTarget;
     const payload = Object.fromEntries(new FormData(form).entries());
     const response = await fetch(`/api/trips/${tripId}/leaders`, {
@@ -208,6 +219,7 @@ export function TripLeaderManager({
   async function updateTripLeader(event: FormEvent<HTMLFormElement>, rowId: string) {
     event.preventDefault();
     setError("");
+    setSuccess("");
     const payload = Object.fromEntries(new FormData(event.currentTarget).entries());
     const response = await fetch(`/api/trips/${tripId}/leaders/${rowId}`, {
       method: "PUT",
@@ -229,6 +241,7 @@ export function TripLeaderManager({
 
   async function removeTripLeader(rowId: string) {
     setError("");
+    setSuccess("");
     const response = await fetch(`/api/trips/${tripId}/leaders/${rowId}`, {
       method: "DELETE",
     });
@@ -242,6 +255,33 @@ export function TripLeaderManager({
     router.refresh();
   }
 
+  async function generateBaseScore() {
+    setError("");
+    setSuccess("");
+    setIsGenerating(true);
+
+    try {
+      const response = await fetch(`/api/trips/${tripId}/generate-base-score`, {
+        method: "POST",
+      });
+      const data = (await response.json().catch(() => null)) as {
+        message?: string;
+      } | null;
+
+      if (!response.ok) {
+        setError(data?.message || "生成基础积分失败");
+        return;
+      }
+
+      setSuccess(data?.message || "基础积分已生成");
+      router.refresh();
+    } catch {
+      setError("生成基础积分请求失败，请稍后重试");
+    } finally {
+      setIsGenerating(false);
+    }
+  }
+
   return (
     <section className="mt-5 rounded-lg border bg-card p-5 shadow-sm">
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -251,10 +291,20 @@ export function TripLeaderManager({
             管理本团期的带队队长、角色和实际带队天数。
           </p>
         </div>
-        <Button disabled variant="outline">
-          生成基础积分（任务 6）
+        <Button
+          disabled={generationState.disabled || isGenerating}
+          onClick={generateBaseScore}
+          type="button"
+          variant="outline"
+        >
+          {isGenerating ? "生成中..." : "生成基础积分"}
         </Button>
       </div>
+      {generationState.reason ? (
+        <p className="mb-4 rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+          {generationState.reason}
+        </p>
+      ) : null}
 
       <form className="mb-5 grid gap-3 md:grid-cols-5" onSubmit={addTripLeader}>
         <LeaderSelect leaders={leaders} name="leaderId" />
@@ -268,12 +318,18 @@ export function TripLeaderManager({
       </form>
 
       {error ? <ErrorText text={error} /> : null}
+      {success ? (
+        <p className="mt-4 rounded-md border border-primary/30 bg-primary/10 px-3 py-2 text-sm text-primary">
+          {success}
+        </p>
+      ) : null}
 
       <div className="overflow-hidden rounded-md border">
         <table className="w-full border-collapse text-sm">
           <thead className="bg-muted/60 text-left">
             <tr>
               <th className="px-4 py-3">队长</th>
+              <th className="px-4 py-3">基础积分</th>
               <th className="px-4 py-3">角色</th>
               <th className="px-4 py-3">实际天数</th>
               <th className="px-4 py-3">完成</th>
@@ -288,6 +344,16 @@ export function TripLeaderManager({
                     {row.leader.realName}
                     {row.leader.nickname ? `（${row.leader.nickname}）` : ""}
                     <p className="text-xs text-muted-foreground">{row.leader.phone}</p>
+                  </td>
+                  <td className="px-4 py-3">
+                    <BaseScoreStatus
+                      generatedAt={row.baseScoreGeneratedAt}
+                      scoreRecord={
+                        row.baseScoreRecordId
+                          ? baseScoreRecordMap[row.baseScoreRecordId]
+                          : undefined
+                      }
+                    />
                   </td>
                   <td className="px-4 py-3" colSpan={4}>
                     <form
@@ -304,6 +370,7 @@ export function TripLeaderManager({
                       <div className="flex gap-2">
                         <Button size="sm" type="submit">保存</Button>
                         <Button
+                          disabled={Boolean(row.baseScoreRecordId)}
                           onClick={() => removeTripLeader(row.id)}
                           size="sm"
                           type="button"
@@ -318,7 +385,7 @@ export function TripLeaderManager({
               ))
             ) : (
               <tr>
-                <td className="px-4 py-8 text-center text-muted-foreground" colSpan={5}>
+                <td className="px-4 py-8 text-center text-muted-foreground" colSpan={6}>
                   暂无带队记录，请添加队长。
                 </td>
               </tr>
@@ -328,6 +395,64 @@ export function TripLeaderManager({
       </div>
     </section>
   );
+}
+
+function BaseScoreStatus({
+  generatedAt,
+  scoreRecord,
+}: {
+  generatedAt: Date | string | null;
+  scoreRecord?: { effectivePoints: number; rawPoints: number };
+}) {
+  if (!generatedAt) {
+    return <Badge variant="outline">未生成</Badge>;
+  }
+
+  return (
+    <div className="space-y-1">
+      <Badge variant="secondary">已生成</Badge>
+      <p className="text-xs text-muted-foreground">
+        {scoreRecord ? `${scoreRecord.effectivePoints} 分` : "积分记录已生成"}
+      </p>
+      <p className="text-xs text-muted-foreground">
+        {formatDateTime(generatedAt)}
+      </p>
+    </div>
+  );
+}
+
+function getGenerationState(status: TripStatus, tripLeaders: TripLeaderRow[]) {
+  if (status === "PLANNED") {
+    return { disabled: true, reason: "仅已完成团期可生成基础积分" };
+  }
+
+  if (status === "CANCELLED") {
+    return { disabled: true, reason: "取消团不可生成基础积分" };
+  }
+
+  const validRows = tripLeaders.filter(
+    (row) => row.isCompleted && row.actualWorkDays > 0,
+  );
+  const invalidRows = tripLeaders.filter(
+    (row) => row.isCompleted && !row.baseScoreRecordId && row.actualWorkDays <= 0,
+  );
+
+  if (invalidRows.length > 0) {
+    return {
+      disabled: true,
+      reason: "存在实际带队天数无效的已完成带队记录，请先修正",
+    };
+  }
+
+  if (validRows.length === 0) {
+    return { disabled: true, reason: "暂无可生成积分的带队记录" };
+  }
+
+  if (validRows.every((row) => row.baseScoreRecordId)) {
+    return { disabled: true, reason: "基础积分已全部生成" };
+  }
+
+  return { disabled: false, reason: "" };
 }
 
 function Field({
@@ -405,4 +530,8 @@ function ErrorText({ text }: { text: string }) {
 
 function formatDateInput(value: Date | string) {
   return new Date(value).toISOString().slice(0, 10);
+}
+
+function formatDateTime(value: Date | string) {
+  return new Date(value).toISOString().slice(0, 19).replace("T", " ");
 }

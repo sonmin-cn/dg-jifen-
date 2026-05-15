@@ -97,6 +97,13 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
       return NextResponse.json({ message: "带队记录不存在" }, { status: 404 });
     }
 
+    if (before.baseScoreRecordId) {
+      return NextResponse.json(
+        { message: "该带队记录已生成基础积分，不能直接删除" },
+        { status: 400 },
+      );
+    }
+
     await prisma.tripLeader.delete({
       where: { id: tripLeaderId },
     });

@@ -18,6 +18,8 @@ export const tripListSelect = {
       role: true,
       actualWorkDays: true,
       isCompleted: true,
+      baseScoreGeneratedAt: true,
+      baseScoreRecordId: true,
       leader: {
         select: {
           id: true,

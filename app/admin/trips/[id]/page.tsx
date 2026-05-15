@@ -42,6 +42,29 @@ export default async function AdminTripDetailPage({ params }: PageProps) {
     notFound();
   }
 
+  const baseScoreRecordIds = trip.tripLeaders
+    .map((row) => row.baseScoreRecordId)
+    .filter((id): id is string => Boolean(id));
+  const baseScoreRecords = baseScoreRecordIds.length
+    ? await prisma.scoreRecord.findMany({
+        where: { id: { in: baseScoreRecordIds } },
+        select: {
+          id: true,
+          effectivePoints: true,
+          rawPoints: true,
+        },
+      })
+    : [];
+  const baseScoreRecordMap = Object.fromEntries(
+    baseScoreRecords.map((record) => [
+      record.id,
+      {
+        effectivePoints: record.effectivePoints,
+        rawPoints: record.rawPoints,
+      },
+    ]),
+  );
+
   return (
     <div className="py-8">
       <Button className="mb-4" size="sm" variant="outline" asChild>
@@ -85,7 +108,9 @@ export default async function AdminTripDetailPage({ params }: PageProps) {
         <>
           <TripEditForm trip={trip} />
           <TripLeaderManager
+            baseScoreRecordMap={baseScoreRecordMap}
             leaders={leaders}
+            tripStatus={trip.status}
             tripId={trip.id}
             tripLeaders={trip.tripLeaders}
           />
