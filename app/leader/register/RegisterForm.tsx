@@ -64,7 +64,7 @@ export function RegisterForm() {
   }
 
   return (
-    <form className="mt-8 max-w-xl rounded-lg border bg-card p-6 shadow-sm" onSubmit={handleSubmit}>
+    <form className="mt-6 max-w-xl rounded-lg border bg-card p-4 shadow-sm md:mt-8 md:p-6" onSubmit={handleSubmit}>
       <div className="grid gap-4">
         <Field label="用户名" name="username" required />
         <Field label="手机号" name="phone" required />
@@ -82,12 +82,12 @@ export function RegisterForm() {
           {success}
         </p>
       ) : null}
-      <div className="mt-5 flex flex-wrap gap-3">
-        <Button disabled={isSubmitting} type="submit">
+      <div className="mt-5 grid gap-3 sm:flex sm:flex-wrap">
+        <Button className="h-11 w-full sm:w-auto" disabled={isSubmitting} type="submit">
           <UserPlus className="h-4 w-4" />
           {isSubmitting ? "注册中..." : "注册队长账号"}
         </Button>
-        <Button variant="outline" asChild>
+        <Button className="h-11 w-full sm:w-auto" variant="outline" asChild>
           <Link href="/login">去登录</Link>
         </Button>
       </div>
@@ -109,7 +109,7 @@ function Field({
   return (
     <div className="space-y-2">
       <Label htmlFor={name}>{label}</Label>
-      <Input id={name} name={name} required={required} type={type} />
+      <Input className="h-11 text-base md:text-sm" id={name} name={name} required={required} type={type} />
     </div>
   );
 }

@@ -61,9 +61,9 @@ export default async function LeaderBindPage() {
   const leader = candidates[0];
 
   return (
-    <section className="mt-8 max-w-3xl rounded-lg border bg-card p-6 shadow-sm">
+    <section className="mt-6 max-w-3xl rounded-lg border bg-card p-4 shadow-sm md:mt-8 md:p-6">
       <div className="mb-6">
-        <h2 className="text-2xl font-semibold">绑定队长档案</h2>
+        <h2 className="text-2xl font-semibold md:text-3xl">绑定队长档案</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           系统根据你的注册手机号匹配到以下未绑定档案，请确认是否本人。
         </p>
@@ -73,7 +73,7 @@ export default async function LeaderBindPage() {
           </p>
         ) : null}
       </div>
-      <div className="mb-6 grid gap-4 text-sm md:grid-cols-2">
+      <div className="mb-6 grid gap-3 text-sm md:grid-cols-2 md:gap-4">
         <Info label="姓名" value={leader.realName} />
         <Info label="昵称" value={leader.nickname} />
         <Info label="手机号" value={maskPhone(leader.phone)} />
@@ -81,7 +81,7 @@ export default async function LeaderBindPage() {
         <Info label="区域" value={leader.region} />
         <Info label="队长身份" value={leader.rawLeaderIdentity || leader.status} />
         <Info label="队长级别" value={leader.rawLeaderLevel || leader.level} />
-        <div>
+        <div className="rounded-md border bg-muted/20 p-3">
           <p className="text-muted-foreground">匹配方式</p>
           <Badge className="mt-1" variant="secondary">
             手机号一致
@@ -103,7 +103,7 @@ function MessageCard({
   rejectReason?: string | null;
 }) {
   return (
-    <section className="mt-8 max-w-3xl rounded-lg border bg-card p-6 shadow-sm">
+    <section className="mt-6 max-w-3xl rounded-lg border bg-card p-4 shadow-sm md:mt-8 md:p-6">
       <h2 className="text-xl font-semibold">{title}</h2>
       <p className="mt-3 text-sm text-muted-foreground">{message}</p>
       {rejectReason ? (
@@ -117,9 +117,9 @@ function MessageCard({
 
 function Info({ label, value }: { label: string; value?: string | null }) {
   return (
-    <div>
+    <div className="rounded-md border bg-muted/20 p-3">
       <p className="text-muted-foreground">{label}</p>
-      <p className="mt-1 font-medium">{value || "-"}</p>
+      <p className="mt-1 break-words font-medium">{value || "-"}</p>
     </div>
   );
 }

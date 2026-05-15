@@ -33,9 +33,9 @@ export default async function LeaderScoresPage({ searchParams }: PageProps) {
   }
 
   return (
-    <div className="mt-8 space-y-5">
+    <div className="mt-6 space-y-5 md:mt-8">
       <div>
-        <h2 className="text-2xl font-semibold">积分明细</h2>
+        <h2 className="text-2xl font-semibold md:text-3xl">积分明细</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           当前页面只展示与你的绑定队长档案关联的积分记录。
         </p>
@@ -43,7 +43,7 @@ export default async function LeaderScoresPage({ searchParams }: PageProps) {
 
       <form className="grid gap-3 rounded-lg border bg-card p-4 shadow-sm md:grid-cols-4">
         <select
-          className="h-10 rounded-md border bg-background px-3 text-sm"
+          className="h-11 w-full rounded-md border bg-background px-3 text-base md:text-sm"
           defaultValue={data.selectedScoreYearId}
           name="scoreYearId"
         >
@@ -59,7 +59,7 @@ export default async function LeaderScoresPage({ searchParams }: PageProps) {
           )}
         </select>
         <select
-          className="h-10 rounded-md border bg-background px-3 text-sm"
+          className="h-11 w-full rounded-md border bg-background px-3 text-base md:text-sm"
           defaultValue={category || ""}
           name="category"
         >
@@ -71,7 +71,7 @@ export default async function LeaderScoresPage({ searchParams }: PageProps) {
           ))}
         </select>
         <select
-          className="h-10 rounded-md border bg-background px-3 text-sm"
+          className="h-11 w-full rounded-md border bg-background px-3 text-base md:text-sm"
           defaultValue={direction || ""}
           name="direction"
         >
@@ -82,10 +82,10 @@ export default async function LeaderScoresPage({ searchParams }: PageProps) {
             </option>
           ))}
         </select>
-        <Button type="submit">筛选</Button>
+        <Button className="h-11 w-full" type="submit">筛选</Button>
       </form>
 
-      <section className="overflow-x-auto rounded-lg border bg-card shadow-sm">
+      <section className="hidden overflow-x-auto rounded-lg border bg-card shadow-sm md:block">
         <table className="min-w-[1180px] w-full border-collapse text-sm">
           <thead className="bg-muted/60 text-left">
             <tr>
@@ -136,6 +136,43 @@ export default async function LeaderScoresPage({ searchParams }: PageProps) {
           </tbody>
         </table>
       </section>
+
+      <section className="grid gap-3 md:hidden">
+        {data.records.length > 0 ? (
+          data.records.map((record) => (
+            <article className="rounded-lg border bg-card p-4 shadow-sm" key={record.id}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="font-medium">{record.item}</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {formatDate(record.occurredAt)}
+                  </p>
+                </div>
+                <p className="text-xl font-semibold">
+                  {record.direction === "ADD" ? "+" : "-"}
+                  {formatPoints(record.effectivePoints)}
+                </p>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2 text-sm">
+                <Badge variant="outline">{SCORE_CATEGORY_LABELS[record.category]}</Badge>
+                <Badge variant={record.direction === "ADD" ? "secondary" : "outline"}>
+                  {SCORE_DIRECTION_LABELS[record.direction]}
+                </Badge>
+                <Badge variant="outline">{SCORE_RECORD_STATUS_LABELS[record.status]}</Badge>
+              </div>
+              <div className="mt-4 space-y-2 text-sm">
+                <InfoLine label="关联团期" value={record.trip?.routeName} />
+                <InfoLine label="规则名称" value={record.ruleName} />
+                <InfoLine label="备注" value={record.remark} />
+              </div>
+            </article>
+          ))
+        ) : (
+          <p className="rounded-lg border bg-card px-4 py-10 text-center text-sm text-muted-foreground">
+            暂无积分记录
+          </p>
+        )}
+      </section>
     </div>
   );
 }
@@ -152,6 +189,14 @@ function Td({
   className?: string;
 }) {
   return <td className={`px-4 py-3 align-top ${className || ""}`}>{children}</td>;
+}
+
+function InfoLine({ label, value }: { label: string; value?: string | null }) {
+  return (
+    <p className="text-muted-foreground">
+      {label}：<span className="break-words text-foreground">{value || "-"}</span>
+    </p>
+  );
 }
 
 function getParam(value: string | string[] | undefined) {

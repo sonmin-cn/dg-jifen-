@@ -48,6 +48,37 @@ export function ApplicationCreateForm({
     setError("");
     setIsSubmitting(true);
     const payload = Object.fromEntries(new FormData(event.currentTarget).entries());
+    const applicationType = String(payload.type || "") as ScoreApplicationType | "";
+    const config = applicationType && applicationType in SCORE_APPLICATION_CONFIGS
+      ? SCORE_APPLICATION_CONFIGS[applicationType as keyof typeof SCORE_APPLICATION_CONFIGS]
+      : null;
+    const title = String(payload.title || "").trim();
+    const evidenceText = String(payload.evidenceText || "").trim();
+    const evidenceUrl = String(payload.evidenceUrl || "").trim();
+
+    if (!applicationType || !config) {
+      setError("请选择申请加分类型");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (config.requireTrip && !String(payload.tripId || "")) {
+      setError("当前申请类型需要选择关联团期");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!title) {
+      setError("请填写申请标题");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!evidenceText && !evidenceUrl) {
+      setError("请填写证明材料或证明链接");
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       const response = await fetch("/api/leader/applications", {
@@ -72,16 +103,20 @@ export function ApplicationCreateForm({
   }
 
   return (
-    <form className="mt-6 rounded-lg border bg-card p-5 shadow-sm" onSubmit={handleSubmit}>
+    <form className="mt-6 rounded-lg border bg-card p-4 shadow-sm md:p-5" onSubmit={handleSubmit}>
+      {error ? (
+        <p className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {error}
+        </p>
+      ) : null}
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="type">申请加分类型</Label>
           <select
-            className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+            className="h-11 w-full rounded-md border bg-background px-3 text-base md:text-sm"
             id="type"
             name="type"
             onChange={(event) => setType(event.target.value as ScoreApplicationType)}
-            required
             value={type}
           >
             <option value="">请选择申请类型</option>
@@ -92,7 +127,7 @@ export function ApplicationCreateForm({
             ))}
           </select>
         </div>
-        <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm">
+        <div className="rounded-md border bg-muted/30 px-3 py-3 text-sm">
           <p className="font-medium">{pointsText}</p>
           <p className="mt-1 text-muted-foreground">
             {selectedConfig?.evidenceLabel || "选择类型后显示证明材料要求"}
@@ -101,10 +136,9 @@ export function ApplicationCreateForm({
         <div className="space-y-2">
           <Label htmlFor="tripId">关联团期</Label>
           <select
-            className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+            className="h-11 w-full rounded-md border bg-background px-3 text-base md:text-sm"
             id="tripId"
             name="tripId"
-            required={Boolean(selectedConfig?.requireTrip)}
           >
             <option value="">不关联或待选择</option>
             {trips.map((trip) => (
@@ -113,24 +147,22 @@ export function ApplicationCreateForm({
               </option>
             ))}
           </select>
+          {selectedConfig?.requireTrip ? (
+            <p className="text-xs text-muted-foreground">当前申请类型需要选择关联团期。</p>
+          ) : null}
         </div>
-        <Field label="申请标题" name="title" required />
+        <Field label="申请标题" name="title" />
         <div className="space-y-2 md:col-span-2">
           <Label htmlFor="description">申请说明</Label>
-          <Textarea id="description" name="description" placeholder="补充发布内容、复购来源或其他背景" />
+          <Textarea className="min-h-28 text-base md:text-sm" id="description" name="description" placeholder="补充发布内容、复购来源或其他背景" />
         </div>
         <div className="space-y-2 md:col-span-2">
           <Label htmlFor="evidenceText">证明材料</Label>
-          <Textarea id="evidenceText" name="evidenceText" placeholder="填写截图说明、订单号、聊天记录说明等" />
+          <Textarea className="min-h-32 text-base md:text-sm" id="evidenceText" name="evidenceText" placeholder="填写截图说明、订单号、聊天记录说明等" />
         </div>
         <Field label="证明链接" name="evidenceUrl" placeholder="小红书链接、网盘链接或截图链接" />
       </div>
-      {error ? (
-        <p className="mt-4 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {error}
-        </p>
-      ) : null}
-      <Button className="mt-4" disabled={isSubmitting} type="submit">
+      <Button className="mt-4 h-11 w-full md:w-auto" disabled={isSubmitting} type="submit">
         <Send className="h-4 w-4" />
         {isSubmitting ? "提交中..." : "提交申请"}
       </Button>
@@ -142,17 +174,15 @@ function Field({
   label,
   name,
   placeholder,
-  required,
 }: {
   label: string;
   name: string;
   placeholder?: string;
-  required?: boolean;
 }) {
   return (
     <div className="space-y-2">
       <Label htmlFor={name}>{label}</Label>
-      <Input id={name} name={name} placeholder={placeholder} required={required} />
+      <Input className="h-11 text-base md:text-sm" id={name} name={name} placeholder={placeholder} />
     </div>
   );
 }

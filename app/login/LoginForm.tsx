@@ -52,6 +52,7 @@ export function LoginForm() {
         <Label htmlFor="username">用户名</Label>
         <Input
           autoComplete="username"
+          className="h-11 text-base md:text-sm"
           id="username"
           name="username"
           onChange={(event) => setUsername(event.target.value)}
@@ -63,6 +64,7 @@ export function LoginForm() {
         <Label htmlFor="password">密码</Label>
         <Input
           autoComplete="current-password"
+          className="h-11 text-base md:text-sm"
           id="password"
           name="password"
           onChange={(event) => setPassword(event.target.value)}
@@ -76,7 +78,7 @@ export function LoginForm() {
           {error}
         </p>
       ) : null}
-      <Button className="w-full" disabled={isSubmitting} type="submit">
+      <Button className="h-11 w-full" disabled={isSubmitting} type="submit">
         <LogIn className="h-4 w-4" />
         {isSubmitting ? "登录中..." : "登录"}
       </Button>

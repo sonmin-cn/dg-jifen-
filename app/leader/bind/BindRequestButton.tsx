@@ -35,7 +35,7 @@ export function BindRequestButton() {
 
   return (
     <div>
-      <Button disabled={isSubmitting} onClick={handleClick} type="button">
+      <Button className="h-11 w-full sm:w-auto" disabled={isSubmitting} onClick={handleClick} type="button">
         <CheckCircle2 className="h-4 w-4" />
         {isSubmitting ? "提交中..." : "确认这是我的队长档案"}
       </Button>
