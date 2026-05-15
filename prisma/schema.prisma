@@ -93,6 +93,8 @@ enum ScoreRuleTriggerType {
 }
 
 enum ScoreApplicationType {
+  MOMENTS_POST
+  XHS_POST
   WECHAT_MOMENTS
   XIAOHONGSHU
   REPURCHASE
@@ -103,6 +105,7 @@ enum ScoreApplicationStatus {
   PENDING
   APPROVED
   REJECTED
+  CANCELLED
   NEEDS_MORE_INFO
 }
 
@@ -289,23 +292,24 @@ model ScoreYear {
 }
 
 model ScoreRule {
-  id            String               @id @default(cuid())
-  code          String
-  name          String
-  version       Int                  @default(1)
-  category      ScoreCategory
-  direction     ScoreDirection
-  points        Float
-  reviewType    ScoreRuleReviewType
-  triggerType   ScoreRuleTriggerType
-  isActive      Boolean              @default(true)
-  effectiveFrom DateTime             @default(now())
-  effectiveTo   DateTime?
-  description   String?
-  configJson    String?
-  scoreRecords  ScoreRecord[]
-  createdAt     DateTime             @default(now())
-  updatedAt     DateTime             @updatedAt
+  id                String               @id @default(cuid())
+  code              String
+  name              String
+  version           Int                  @default(1)
+  category          ScoreCategory
+  direction         ScoreDirection
+  points            Float
+  reviewType        ScoreRuleReviewType
+  triggerType       ScoreRuleTriggerType
+  isActive          Boolean              @default(true)
+  effectiveFrom     DateTime             @default(now())
+  effectiveTo       DateTime?
+  description       String?
+  configJson        String?
+  scoreRecords      ScoreRecord[]
+  scoreApplications ScoreApplication[]
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
 
   @@unique([code, version])
   @@index([code, isActive, effectiveFrom, effectiveTo])
@@ -362,8 +366,17 @@ model ScoreApplication {
   leader          Leader                 @relation(fields: [leaderId], references: [id], onDelete: Restrict)
   tripId          String?
   trip            Trip?                  @relation(fields: [tripId], references: [id], onDelete: SetNull)
+  ruleId          String?
+  rule            ScoreRule?             @relation(fields: [ruleId], references: [id], onDelete: SetNull)
+  ruleCode        String?
   type            ScoreApplicationType
+  title           String                 @default("")
+  description     String?
+  evidenceText    String?
+  evidenceUrl     String?
+  evidenceJson    String?
   requestedPoints Float
+  approvedPoints  Float?
   status          ScoreApplicationStatus @default(PENDING)
   payloadJson     String?
   submittedAt     DateTime               @default(now())
@@ -377,6 +390,8 @@ model ScoreApplication {
 
   @@index([scoreYearId, status, type])
   @@index([leaderId, submittedAt])
+  @@index([ruleId])
+  @@index([ruleCode])
 }
 
 model ScoreRecord {

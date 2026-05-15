@@ -75,7 +75,18 @@ export default async function AdminScoreRecordDetailPage({ params }: PageProps) 
 
       <section className="mb-5 grid gap-4 rounded-lg border bg-card p-5 text-sm shadow-sm md:grid-cols-3">
         <Info label="关联团期" value={record.trip?.routeName} />
-        <Info label="关联申请 applicationId" value={record.applicationId} />
+        <div>
+          <p className="text-muted-foreground">关联申请 applicationId</p>
+          <p className="mt-1 break-words font-medium">
+            {record.applicationId ? (
+              <Link className="text-primary underline-offset-4 hover:underline" href={`/admin/score-applications/${record.applicationId}`}>
+                {record.applicationId}
+              </Link>
+            ) : (
+              "-"
+            )}
+          </p>
+        </div>
         <Info label="关联事件 violationEventId" value={record.violationEventId} />
         <Info label="来源类型" value={record.sourceType} />
         <Info label="来源 ID" value={record.sourceId} wide />

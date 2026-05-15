@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Award, FileText, ListChecks, TrendingUp } from "lucide-react";
+import { Award, FilePlus, FileText, ListChecks, TrendingUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { requireRole } from "@/lib/auth/permissions";
@@ -37,11 +37,17 @@ export default async function LeaderDashboardPage() {
       description: `加分 ${formatPoints(summary.addPoints)} / 扣分 ${formatPoints(summary.deductPoints)}`,
       icon: ListChecks,
     },
+    {
+      title: "积分申请",
+      value: "提交",
+      description: "朋友圈、小红书、老队员复购加分申请",
+      icon: FilePlus,
+    },
   ];
 
   return (
     <div className="mt-8 space-y-6">
-      <section className="grid gap-4 md:grid-cols-3">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {cards.map((card) => (
           <article
             className="rounded-lg border bg-card p-5 shadow-sm"
@@ -55,6 +61,16 @@ export default async function LeaderDashboardPage() {
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
               {card.description}
             </p>
+            {card.title === "积分申请" ? (
+              <div className="mt-4 flex gap-2">
+                <Button size="sm" asChild>
+                  <Link href="/leader/applications/new">提交申请</Link>
+                </Button>
+                <Button size="sm" variant="outline" asChild>
+                  <Link href="/leader/applications">申请记录</Link>
+                </Button>
+              </div>
+            ) : null}
           </article>
         ))}
       </section>
@@ -70,9 +86,14 @@ export default async function LeaderDashboardPage() {
               仅展示当前登录队长在当前积分年度下的有效积分。
             </p>
           </div>
-          <Button variant="outline" asChild>
-            <Link href="/leader/scores">查看积分明细</Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" asChild>
+              <Link href="/leader/applications/new">提交加分申请</Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/leader/scores">查看积分明细</Link>
+            </Button>
+          </div>
         </div>
 
         {summary.recentRecords.length > 0 ? (
