@@ -19,12 +19,17 @@ export type AdminScoreRecordParams = {
   pageSize?: number;
 };
 
+export type VoidScoreRecordInput = {
+  voidReason?: unknown;
+};
+
 export async function getAdminScoreRecords(params: AdminScoreRecordParams) {
   const page = Math.max(params.page || 1, 1);
   const pageSize = Math.min(Math.max(params.pageSize || 20, 1), 100);
   const where = buildScoreRecordWhere(params);
 
-  const [records, total, effectiveRecords, distinctLeaders] = await Promise.all([
+  const shouldCollectEffectiveStats = !params.status || params.status === "EFFECTIVE";
+  const [records, total, effectiveRecords] = await Promise.all([
     prisma.scoreRecord.findMany({
       where,
       include: scoreRecordInclude,
@@ -33,19 +38,16 @@ export async function getAdminScoreRecords(params: AdminScoreRecordParams) {
       take: pageSize,
     }),
     prisma.scoreRecord.count({ where }),
-    prisma.scoreRecord.findMany({
-      where: { ...where, status: "EFFECTIVE" },
-      select: {
-        leaderId: true,
-        direction: true,
-        effectivePoints: true,
-      },
-    }),
-    prisma.scoreRecord.findMany({
-      where,
-      distinct: ["leaderId"],
-      select: { leaderId: true },
-    }),
+    shouldCollectEffectiveStats
+      ? prisma.scoreRecord.findMany({
+          where: { ...where, status: "EFFECTIVE" },
+          select: {
+            leaderId: true,
+            direction: true,
+            effectivePoints: true,
+          },
+        })
+      : Promise.resolve([]),
   ]);
 
   const effectiveTotalPoints = sumPoints(
@@ -74,8 +76,8 @@ export async function getAdminScoreRecords(params: AdminScoreRecordParams) {
       effectiveTotalPoints,
       addPoints,
       deductPoints,
-      recordCount: total,
-      leaderCount: distinctLeaders.length,
+      recordCount: effectiveRecords.length,
+      leaderCount: new Set(effectiveRecords.map((record) => record.leaderId)).size,
     },
   };
 }
@@ -85,6 +87,118 @@ export async function getAdminScoreRecordDetail(id: string) {
     where: { id },
     include: scoreRecordInclude,
   });
+}
+
+export async function voidScoreRecord(
+  id: string,
+  operatorUserId: string,
+  input: VoidScoreRecordInput,
+) {
+  const voidReason = normalizeRequiredString(input.voidReason);
+
+  if (!voidReason) {
+    return { ok: false as const, status: 400, message: "请填写作废原因" };
+  }
+
+  if (voidReason.length < 5) {
+    return { ok: false as const, status: 400, message: "作废原因不能少于 5 个字" };
+  }
+
+  const record = await prisma.scoreRecord.findUnique({
+    where: { id },
+    include: {
+      trip: { select: { id: true } },
+      application: { select: { id: true, remark: true } },
+      violationEvent: { select: { id: true, remark: true, status: true } },
+    },
+  });
+
+  if (!record) {
+    return { ok: false as const, status: 404, message: "积分记录不存在" };
+  }
+
+  if (record.status === "VOIDED") {
+    return { ok: false as const, status: 400, message: "该积分记录已作废，不能重复作废" };
+  }
+
+  const voidedAt = new Date();
+  const result = await prisma.$transaction(async (tx) => {
+    const updated = await tx.scoreRecord.update({
+      where: { id },
+      data: {
+        status: "VOIDED",
+        voidReason,
+        voidedBy: operatorUserId,
+        voidedAt,
+      },
+    });
+
+    const unlockedTripLeaders = await tx.tripLeader.updateMany({
+      where: { baseScoreRecordId: id },
+      data: {
+        baseScoreRecordId: null,
+        baseScoreGeneratedAt: null,
+      },
+    });
+
+    if (record.applicationId && record.application) {
+      await tx.scoreApplication.update({
+        where: { id: record.applicationId },
+        data: {
+          remark: appendRemark(record.application?.remark, `对应积分已作废：${voidReason}`),
+        },
+      });
+    }
+
+    if (record.violationEventId && record.violationEvent) {
+      await tx.violationEvent.update({
+        where: { id: record.violationEventId },
+        data: {
+          status: "REVOKED",
+          remark: appendRemark(record.violationEvent?.remark, `对应积分已作废：${voidReason}`),
+        },
+      });
+    }
+
+    await tx.auditLog.create({
+      data: {
+        userId: operatorUserId,
+        action: "SCORE_RECORD_VOIDED",
+        targetType: "ScoreRecord",
+        targetId: id,
+        beforeJson: JSON.stringify({
+          id: record.id,
+          status: record.status,
+          leaderId: record.leaderId,
+          effectivePoints: record.effectivePoints,
+          ruleCode: record.ruleCode,
+          sourceType: record.sourceType,
+          sourceId: record.sourceId,
+          applicationId: record.applicationId,
+          violationEventId: record.violationEventId,
+          tripId: record.tripId,
+        }),
+        afterJson: JSON.stringify({
+          scoreRecordId: id,
+          leaderId: record.leaderId,
+          originalPoints: record.effectivePoints,
+          ruleCode: record.ruleCode,
+          voidReason,
+          voidedBy: operatorUserId,
+          voidedAt: voidedAt.toISOString(),
+          sourceType: record.sourceType,
+          applicationId: record.applicationId,
+          violationEventId: record.violationEventId,
+          tripId: record.tripId,
+          unlockedTripLeaderCount: unlockedTripLeaders.count,
+        }),
+      },
+    });
+
+    return updated;
+  });
+
+  return { ok: true as const, record: result };
 }
 
 export function formatScorePoints(points: number) {
@@ -194,4 +308,12 @@ function buildScoreRecordWhere(params: AdminScoreRecordParams) {
 
 function sumPoints(values: number[]) {
   return Math.round(values.reduce((total, value) => total + value, 0) * 100) / 100;
+}
+
+function normalizeRequiredString(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function appendRemark(current: string | null | undefined, addition: string) {
+  return current ? `${current}\n${addition}` : addition;
 }

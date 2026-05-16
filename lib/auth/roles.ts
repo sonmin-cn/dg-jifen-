@@ -27,6 +27,12 @@ export const SCORE_RECORD_READ_ROLES: UserRole[] = [
   "EXECUTIVE_VIEWER",
 ];
 
+export const SCORE_RECORD_VOID_ROLES: UserRole[] = [
+  "SUPER_ADMIN",
+  "LEADER_MANAGER",
+  "ADMIN",
+];
+
 export const VIOLATION_READ_ROLES: UserRole[] = [
   "SUPER_ADMIN",
   "LEADER_MANAGER",

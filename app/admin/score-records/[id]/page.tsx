@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { requireRole } from "@/lib/auth/permissions";
-import { SCORE_RECORD_READ_ROLES } from "@/lib/auth/roles";
+import { SCORE_RECORD_READ_ROLES, SCORE_RECORD_VOID_ROLES } from "@/lib/auth/roles";
 import {
   SCORE_CATEGORY_LABELS,
   SCORE_DIRECTION_LABELS,
@@ -14,13 +14,14 @@ import {
   getAdminScoreRecordDetail,
   parseRuleSnapshotJson,
 } from "@/lib/services/score-records";
+import { VoidScoreRecordForm } from "@/app/admin/score-records/[id]/VoidScoreRecordForm";
 
 type PageProps = {
   params: Promise<{ id: string }>;
 };
 
 export default async function AdminScoreRecordDetailPage({ params }: PageProps) {
-  await requireRole(SCORE_RECORD_READ_ROLES, "/admin/score-records/:id");
+  const user = await requireRole(SCORE_RECORD_READ_ROLES, "/admin/score-records/:id");
   const { id } = await params;
   const record = await getAdminScoreRecordDetail(id);
 
@@ -29,6 +30,7 @@ export default async function AdminScoreRecordDetailPage({ params }: PageProps) 
   }
 
   const snapshot = parseRuleSnapshotJson(record.ruleSnapshotJson);
+  const canVoid = SCORE_RECORD_VOID_ROLES.includes(user.role);
 
   return (
     <div className="py-8">
@@ -70,7 +72,10 @@ export default async function AdminScoreRecordDetailPage({ params }: PageProps) 
         <Info label="发生时间" value={formatDateTime(record.occurredAt)} />
         <Info label="审核人 ID" value={record.approvedBy} />
         <Info label="审核时间" value={formatDateTime(record.approvedAt)} />
+        <Info label="作废人 ID" value={record.voidedBy} />
+        <Info label="作废时间" value={formatDateTime(record.voidedAt)} />
         <Info label="备注" value={record.remark} wide />
+        <Info label="作废原因" value={record.voidReason} wide />
       </section>
 
       <section className="mb-5 grid gap-4 rounded-lg border bg-card p-5 text-sm shadow-sm md:grid-cols-3">
@@ -115,6 +120,21 @@ export default async function AdminScoreRecordDetailPage({ params }: PageProps) 
         <pre className="mt-4 max-h-[520px] overflow-auto rounded-md border bg-muted/30 p-4 text-xs leading-6">
           {snapshot || "无规则快照"}
         </pre>
+      </section>
+
+      <section className="mt-5">
+        {record.status === "VOIDED" ? (
+          <div className="rounded-lg border bg-muted/30 p-5 text-sm shadow-sm">
+            <h3 className="text-lg font-semibold">作废信息</h3>
+            <div className="mt-4 grid gap-4 md:grid-cols-3">
+              <Info label="作废原因" value={record.voidReason} wide />
+              <Info label="作废人 ID" value={record.voidedBy} />
+              <Info label="作废时间" value={formatDateTime(record.voidedAt)} />
+            </div>
+          </div>
+        ) : canVoid ? (
+          <VoidScoreRecordForm scoreRecordId={record.id} />
+        ) : null}
       </section>
     </div>
   );

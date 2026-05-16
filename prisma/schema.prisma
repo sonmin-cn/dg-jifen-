@@ -431,10 +431,12 @@ model ScoreRecord {
   approvedBy       String?
   approvedAt       DateTime?
   remark           String?
+  voidReason       String?
+  voidedBy         String?
+  voidedAt         DateTime?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
 
-  @@unique([scoreYearId, sourceType, sourceId, item])
   @@index([scoreYearId, leaderId])
   @@index([ruleId])
   @@index([status, occurredAt])
