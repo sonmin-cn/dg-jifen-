@@ -2,29 +2,22 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { requireRole } from "@/lib/auth/permissions";
-import { getLeaderApplicationTrips, getApplicationTypeRules } from "@/lib/services/score-applications";
+import {
+  getLeaderApplicationRules,
+  getLeaderApplicationTrips,
+} from "@/lib/services/score-applications";
 import { ApplicationCreateForm } from "@/app/leader/applications/new/ApplicationCreateForm";
 
 export default async function NewLeaderApplicationPage() {
   const user = await requireRole(["LEADER"], "/leader/applications/new");
   const [{ leader, trips }, rules] = await Promise.all([
     getLeaderApplicationTrips(user.id),
-    getApplicationTypeRules(),
+    getLeaderApplicationRules(),
   ]);
 
   if (!leader) {
     redirect("/leader/bind");
   }
-
-  const rulePreview = Object.fromEntries(
-    Object.entries(rules).map(([type, rule]) => [
-      type,
-      {
-        points: rule?.points ?? null,
-        name: rule?.name ?? null,
-      },
-    ]),
-  );
 
   return (
     <div className="mt-6 md:mt-8">
@@ -39,7 +32,7 @@ export default async function NewLeaderApplicationPage() {
           <Link href="/leader/applications">申请记录</Link>
         </Button>
       </div>
-      <ApplicationCreateForm rulePreview={rulePreview} trips={trips} />
+      <ApplicationCreateForm rules={rules} trips={trips} />
     </div>
   );
 }

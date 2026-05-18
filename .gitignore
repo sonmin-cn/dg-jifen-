@@ -10,3 +10,8 @@ build
 prisma/*.db*
 uploads/*
 !uploads/.gitkeep
+public/uploads/*
+!public/uploads/.gitkeep
+!public/uploads/score-applications/
+public/uploads/score-applications/*
+!public/uploads/score-applications/.gitkeep

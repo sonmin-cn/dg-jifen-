@@ -1,17 +1,16 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { ScoreApplicationType } from "@prisma/client";
-import { Send } from "lucide-react";
+import { ImagePlus, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  SCORE_APPLICATION_CONFIGS,
-  SCORE_APPLICATION_TYPE_OPTIONS,
-} from "@/lib/constants/score-applications";
+import type {
+  EvidenceImage,
+  LeaderApplicationRuleOption,
+} from "@/lib/services/score-applications";
 
 type TripOption = {
   id: string;
@@ -21,62 +20,52 @@ type TripOption = {
   status: string;
 };
 
-type RulePreview = Record<string, { points: number | null; name: string | null }>;
-
 export function ApplicationCreateForm({
   trips,
-  rulePreview,
+  rules,
 }: {
   trips: TripOption[];
-  rulePreview: RulePreview;
+  rules: LeaderApplicationRuleOption[];
 }) {
   const router = useRouter();
-  const [type, setType] = useState<ScoreApplicationType | "">("");
+  const [ruleId, setRuleId] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const selectedConfig = type && type in SCORE_APPLICATION_CONFIGS
-    ? SCORE_APPLICATION_CONFIGS[type as keyof typeof SCORE_APPLICATION_CONFIGS]
-    : null;
-  const pointsText = useMemo(() => {
-    if (!type) return "请选择申请类型";
-    const points = rulePreview[type]?.points;
-    return typeof points === "number" ? `预计 +${formatPoints(points)} 分` : "未找到有效规则";
-  }, [rulePreview, type]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [evidenceImages, setEvidenceImages] = useState<EvidenceImage[]>([]);
+  const selectedRule = useMemo(
+    () => rules.find((rule) => rule.id === ruleId) || null,
+    [ruleId, rules],
+  );
+  const pointsText = selectedRule
+    ? `预计 +${formatPoints(selectedRule.points)} 分`
+    : "请选择积分规则";
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
     setIsSubmitting(true);
     const payload = Object.fromEntries(new FormData(event.currentTarget).entries());
-    const applicationType = String(payload.type || "") as ScoreApplicationType | "";
-    const config = applicationType && applicationType in SCORE_APPLICATION_CONFIGS
-      ? SCORE_APPLICATION_CONFIGS[applicationType as keyof typeof SCORE_APPLICATION_CONFIGS]
-      : null;
+    const selectedRuleId = String(payload.ruleId || "").trim();
+    const rule = rules.find((entry) => entry.id === selectedRuleId) || null;
     const tripId = String(payload.tripId || "").trim();
-    const title = String(payload.title || "").trim();
     const evidenceText = String(payload.evidenceText || "").trim();
     const evidenceUrl = String(payload.evidenceUrl || "").trim();
 
-    if (!applicationType || !config) {
-      setError("请选择申请加分类型");
+    if (!selectedRuleId || !rule) {
+      setError("请选择积分规则");
       setIsSubmitting(false);
       return;
     }
 
-    if (config.requireTrip && !tripId) {
-      setError(config.defaultTripRequiredMessage);
+    if (rule.requireTrip && !tripId) {
+      setError("该积分申请需要选择关联团期");
       setIsSubmitting(false);
       return;
     }
 
-    if (!title) {
-      setError("请填写申请标题");
-      setIsSubmitting(false);
-      return;
-    }
-
-    if (!evidenceText && !evidenceUrl) {
-      setError("请填写证明材料或证明链接");
+    if (!evidenceText && !evidenceUrl && evidenceImages.length === 0) {
+      setError("请填写证明材料、证明链接或上传证明图片");
       setIsSubmitting(false);
       return;
     }
@@ -87,7 +76,9 @@ export function ApplicationCreateForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...payload,
+          ruleId: selectedRuleId,
           tripId: tripId || null,
+          evidenceImages,
         }),
       });
       const data = (await response.json().catch(() => null)) as {
@@ -101,6 +92,7 @@ export function ApplicationCreateForm({
         return;
       }
 
+      setError("");
       router.push("/leader/applications");
       router.refresh();
     } catch {
@@ -110,30 +102,87 @@ export function ApplicationCreateForm({
     }
   }
 
+  async function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files || []);
+    event.target.value = "";
+    setError("");
+
+    if (files.length === 0) {
+      return;
+    }
+
+    if (evidenceImages.length + files.length > 3) {
+      setError("最多上传 3 张证明图片");
+      return;
+    }
+
+    for (const file of files) {
+      const lowerName = file.name.toLowerCase();
+
+      if (file.type === "image/heic" || file.type === "image/heif" || lowerName.endsWith(".heic") || lowerName.endsWith(".heif")) {
+        setError("暂不支持 HEIC 图片，请在相册中转换为 JPG/PNG 后上传，或截图后上传。");
+        return;
+      }
+
+      if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+        setError("仅支持 JPG、PNG、WEBP 图片");
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        setError("单张证明图片不能超过 5MB");
+        return;
+      }
+    }
+
+    const formData = new FormData();
+    files.forEach((file) => formData.append("images", file));
+    setIsUploading(true);
+
+    try {
+      const response = await fetch("/api/leader/applications/upload-evidence", {
+        method: "POST",
+        body: formData,
+      });
+      const data = (await response.json().catch(() => null)) as {
+        success?: boolean;
+        images?: EvidenceImage[];
+        error?: string;
+      } | null;
+
+      if (!response.ok || data?.success === false || !data?.images) {
+        setError(data?.error || "图片上传失败");
+        return;
+      }
+
+      const uploadedImages = data.images;
+      setEvidenceImages((current) => [...current, ...uploadedImages].slice(0, 3));
+    } catch {
+      setError("图片上传失败，请稍后重试");
+    } finally {
+      setIsUploading(false);
+    }
+  }
+
   return (
     <form className="mt-6 rounded-lg border bg-card p-4 shadow-sm md:p-5" onSubmit={handleSubmit}>
-      {error ? (
-        <p className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {error}
-        </p>
-      ) : null}
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="type">申请加分类型</Label>
+          <Label htmlFor="ruleId">申请积分规则</Label>
           <select
             className="h-11 w-full rounded-md border bg-background px-3 text-base md:text-sm"
-            id="type"
-            name="type"
+            id="ruleId"
+            name="ruleId"
             onChange={(event) => {
-              setType(event.target.value as ScoreApplicationType);
+              setRuleId(event.target.value);
               setError("");
             }}
-            value={type}
+            value={ruleId}
           >
-            <option value="">请选择申请类型</option>
-            {SCORE_APPLICATION_TYPE_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {SCORE_APPLICATION_CONFIGS[option].label}
+            <option value="">请选择积分规则</option>
+            {rules.map((rule) => (
+              <option key={rule.id} value={rule.id}>
+                {rule.name}（+{formatPoints(rule.points)}）
               </option>
             ))}
           </select>
@@ -141,15 +190,22 @@ export function ApplicationCreateForm({
         <div className="rounded-md border bg-muted/30 px-3 py-3 text-sm">
           <p className="font-medium">{pointsText}</p>
           <p className="mt-1 text-muted-foreground">
-            {selectedConfig?.evidenceLabel || "选择类型后显示证明材料要求"}
+            {selectedRule
+              ? selectedRule.requireTrip
+                ? "需关联团期"
+                : "可不关联团期"
+              : "选择规则后显示申请要求"}
           </p>
+          {selectedRule?.description ? (
+            <p className="mt-1 text-muted-foreground">{selectedRule.description}</p>
+          ) : null}
         </div>
         <div className="space-y-2">
           <Label className="flex items-center gap-2" htmlFor="tripId">
             关联团期
-            {selectedConfig ? (
+            {selectedRule ? (
               <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-normal text-muted-foreground">
-                {selectedConfig.requireTrip ? "必填" : "选填"}
+                {selectedRule.requireTrip ? "必填" : "选填"}
               </span>
             ) : null}
           </Label>
@@ -165,11 +221,14 @@ export function ApplicationCreateForm({
               </option>
             ))}
           </select>
-          {selectedConfig ? (
-            <p className="text-xs text-muted-foreground">{selectedConfig.tripHelpText}</p>
+          {selectedRule ? (
+            <p className="text-xs text-muted-foreground">
+              {selectedRule.requireTrip
+                ? "该积分申请需要选择关联团期。"
+                : "如该申请与某次带队相关，可选择团期；无法确认时可不关联。"}
+            </p>
           ) : null}
         </div>
-        <Field label="申请标题" name="title" />
         <div className="space-y-2 md:col-span-2">
           <Label htmlFor="description">申请说明</Label>
           <Textarea className="min-h-28 text-base md:text-sm" id="description" name="description" placeholder="补充发布内容、复购来源或其他背景" />
@@ -179,10 +238,73 @@ export function ApplicationCreateForm({
           <Textarea className="min-h-32 text-base md:text-sm" id="evidenceText" name="evidenceText" placeholder="填写截图说明、订单号、聊天记录说明等" />
         </div>
         <Field label="证明链接" name="evidenceUrl" placeholder="小红书链接、网盘链接或截图链接" />
+        <div className="space-y-3 md:col-span-2">
+          <div className="space-y-1">
+            <Label htmlFor="evidenceImages">证明图片</Label>
+            <p className="text-xs text-muted-foreground">
+              最多上传 3 张，支持 JPG、PNG、WEBP，单张不超过 5MB。
+            </p>
+          </div>
+          <Input
+            accept="image/jpeg,image/png,image/webp"
+            className="h-11 cursor-pointer text-base file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-sm file:font-medium file:text-primary-foreground md:text-sm"
+            disabled={isUploading || evidenceImages.length >= 3}
+            id="evidenceImages"
+            multiple
+            onChange={handleImageChange}
+            type="file"
+          />
+          {isUploading ? (
+            <p className="text-sm text-muted-foreground">图片上传中...</p>
+          ) : null}
+          {evidenceImages.length > 0 ? (
+            <div className="grid gap-3 sm:grid-cols-3">
+              {evidenceImages.map((image) => (
+                <div className="overflow-hidden rounded-lg border bg-background" key={image.url}>
+                  <a href={image.url} target="_blank" rel="noreferrer">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      alt="证明图片"
+                      className="h-28 w-full object-cover"
+                      src={image.url}
+                    />
+                  </a>
+                  <div className="flex items-center justify-between gap-2 p-2 text-xs">
+                    <span className="min-w-0 truncate text-muted-foreground">
+                      {image.filename}
+                    </span>
+                    <button
+                      aria-label="移除图片"
+                      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border text-muted-foreground hover:bg-muted"
+                      onClick={() => {
+                        setEvidenceImages((current) =>
+                          current.filter((item) => item.url !== image.url),
+                        );
+                      }}
+                      type="button"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="flex items-center gap-2 text-sm text-muted-foreground">
+              <ImagePlus className="h-4 w-4" />
+              可从手机相册选择或拍照后上传。
+            </p>
+          )}
+        </div>
       </div>
-      <Button className="mt-4 h-11 w-full md:w-auto" disabled={isSubmitting} type="submit">
+      {error ? (
+        <p className="mt-4 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {error}
+        </p>
+      ) : null}
+      <Button className="mt-4 h-11 w-full md:w-auto" disabled={isSubmitting || isUploading} type="submit">
         <Send className="h-4 w-4" />
-        {isSubmitting ? "提交中..." : "提交申请"}
+        {isSubmitting ? "提交中..." : isUploading ? "图片上传中..." : "提交申请"}
       </Button>
     </form>
   );

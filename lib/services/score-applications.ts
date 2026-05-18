@@ -2,10 +2,10 @@ import type {
   Prisma,
   ScoreApplicationStatus,
   ScoreApplicationType,
+  ScoreRule,
 } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
 import {
-  SCORE_APPLICATION_CONFIGS,
   getApplicationTypeLabel,
   isSupportedApplicationType,
   mapApplicationTypeToRuleCode,
@@ -13,12 +13,26 @@ import {
 import { buildRuleSnapshot, getActiveScoreRule } from "@/lib/services/score-rules";
 
 export type CreateLeaderApplicationInput = {
+  ruleId?: unknown;
   type?: unknown;
   tripId?: unknown;
-  title?: unknown;
   description?: unknown;
   evidenceText?: unknown;
   evidenceUrl?: unknown;
+  evidenceImages?: unknown;
+};
+
+export type EvidenceImage = {
+  url: string;
+  filename: string;
+  mimeType: string;
+  size: number;
+};
+
+export type ApplicationEvidence = {
+  text: string | null;
+  url: string | null;
+  images: EvidenceImage[];
 };
 
 export type AdminScoreApplicationParams = {
@@ -69,20 +83,72 @@ export async function getLeaderApplicationTrips(userId: string) {
   };
 }
 
-export async function getApplicationTypeRules() {
+export type LeaderApplicationRuleOption = {
+  id: string;
+  code: string;
+  name: string;
+  points: number;
+  description: string | null;
+  requireTrip: boolean;
+};
+
+export function parseLeaderApplicationRuleConfig(configJson: string | null | undefined) {
+  if (!configJson) {
+    return { allowLeaderApplication: false, requireTrip: false };
+  }
+
+  try {
+    const parsed = JSON.parse(configJson) as {
+      allowLeaderApplication?: unknown;
+      requireTrip?: unknown;
+    };
+
+    return {
+      allowLeaderApplication: parsed.allowLeaderApplication === true,
+      requireTrip: parsed.requireTrip === true,
+    };
+  } catch {
+    return { allowLeaderApplication: false, requireTrip: false };
+  }
+}
+
+export async function getLeaderApplicationRules() {
   const now = new Date();
-  const entries = await Promise.all(
-    Object.entries(SCORE_APPLICATION_CONFIGS).map(async ([type, config]) => {
-      const rule = await getActiveScoreRule({
-        code: config.ruleCode,
-        occurredAt: now,
-      });
+  const rules = await prisma.scoreRule.findMany({
+    where: {
+      isActive: true,
+      direction: "ADD",
+      effectiveFrom: { lte: now },
+      OR: [{ effectiveTo: null }, { effectiveTo: { gte: now } }],
+    },
+    orderBy: [{ category: "asc" }, { code: "asc" }, { version: "desc" }],
+  });
 
-      return [type, rule] as const;
-    }),
-  );
+  const latestRulesByCode = new Map<string, (typeof rules)[number]>();
 
-  return Object.fromEntries(entries);
+  for (const rule of rules) {
+    const existing = latestRulesByCode.get(rule.code);
+    if (!existing || rule.version > existing.version) {
+      latestRulesByCode.set(rule.code, rule);
+    }
+  }
+
+  return Array.from(latestRulesByCode.values())
+    .map((rule) => ({ rule, config: parseLeaderApplicationRuleConfig(rule.configJson) }))
+    .filter(({ config }) => config.allowLeaderApplication)
+    .map(({ rule, config }) => ({
+      id: rule.id,
+      code: rule.code,
+      name: rule.name,
+      points: rule.points,
+      description: rule.description,
+      requireTrip: config.requireTrip,
+    }));
+}
+
+export async function getApplicationTypeRules() {
+  const rules = await getLeaderApplicationRules();
+  return Object.fromEntries(rules.map((rule) => [rule.code, rule]));
 }
 
 export async function createLeaderScoreApplication(
@@ -95,44 +161,38 @@ export async function createLeaderScoreApplication(
     return { ok: false as const, status: 400, message: "当前账号尚未绑定队长档案" };
   }
 
-  const typeText = normalizeRequiredString(input.type);
-
-  if (!isSupportedApplicationType(typeText)) {
-    return { ok: false as const, status: 400, message: "申请类型无效" };
-  }
-
-  const type = typeText as ScoreApplicationType;
-  const config = SCORE_APPLICATION_CONFIGS[typeText];
-  const ruleCode = config.ruleCode;
+  const ruleId = normalizeRequiredString(input.ruleId);
   const tripId = normalizeOptionalString(input.tripId);
-  const title = normalizeRequiredString(input.title);
   const description = normalizeOptionalString(input.description);
   const evidenceText = normalizeOptionalString(input.evidenceText);
   const evidenceUrl = normalizeOptionalString(input.evidenceUrl);
+  const evidenceImagesResult = normalizeEvidenceImages(input.evidenceImages);
   const now = new Date();
 
-  if (config.requireTrip && !tripId) {
+  if (!ruleId) {
+    return { ok: false as const, status: 400, message: "请选择积分规则" };
+  }
+
+  if (!evidenceImagesResult.ok) {
     return {
       ok: false as const,
       status: 400,
-      message: config.defaultTripRequiredMessage,
+      message: evidenceImagesResult.message,
     };
   }
 
-  if (!title) {
-    return { ok: false as const, status: 400, message: "请填写申请标题" };
+  const evidenceImages = evidenceImagesResult.images;
+
+  if (!evidenceText && !evidenceUrl && evidenceImages.length === 0) {
+    return { ok: false as const, status: 400, message: "请填写证明材料、证明链接或上传证明图片" };
   }
 
-  if (config.requireEvidence && !evidenceText && !evidenceUrl) {
-    return { ok: false as const, status: 400, message: "请填写证明材料或证明链接" };
-  }
-
-  const [scoreYear, rule, trip] = await Promise.all([
+  const [scoreYear, selectedRule, trip] = await Promise.all([
     prisma.scoreYear.findFirst({
       where: { status: "ACTIVE" },
       orderBy: { startDate: "desc" },
     }),
-    getActiveScoreRule({ code: ruleCode, occurredAt: now }),
+    prisma.scoreRule.findUnique({ where: { id: ruleId } }),
     tripId
       ? prisma.trip.findFirst({
           where: {
@@ -148,19 +208,44 @@ export async function createLeaderScoreApplication(
     return { ok: false as const, status: 400, message: "未找到当前积分年度" };
   }
 
-  if (!rule) {
-    return { ok: false as const, status: 400, message: "未找到对应积分规则" };
+  if (!selectedRule) {
+    return { ok: false as const, status: 400, message: "该积分规则不可申请" };
+  }
+
+  const ruleConfig = parseLeaderApplicationRuleConfig(selectedRule.configJson);
+
+  if (
+    !selectedRule.isActive ||
+    selectedRule.direction !== "ADD" ||
+    selectedRule.effectiveFrom > now ||
+    (selectedRule.effectiveTo && selectedRule.effectiveTo < now) ||
+    !ruleConfig.allowLeaderApplication
+  ) {
+    return { ok: false as const, status: 400, message: "该积分规则不可申请" };
+  }
+
+  if (ruleConfig.requireTrip && !tripId) {
+    return { ok: false as const, status: 400, message: "该积分申请需要选择关联团期" };
   }
 
   if (tripId && !trip) {
     return { ok: false as const, status: 400, message: "关联团期不存在或你未参与该团期" };
   }
 
+  const rule = await getActiveScoreRule({ code: selectedRule.code, occurredAt: now });
+
+  if (!rule || rule.id !== selectedRule.id) {
+    return { ok: false as const, status: 400, message: "该积分规则不可申请" };
+  }
+
+  const type = inferApplicationTypeFromRule(rule);
+  const ruleCode = rule.code;
+  const title = rule.name;
+
   const duplicate = await findDuplicateApplication({
     leaderId: leader.id,
     tripId,
     ruleCode,
-    type,
     evidenceText,
   });
 
@@ -180,6 +265,7 @@ export async function createLeaderScoreApplication(
         description,
         evidenceText,
         evidenceUrl,
+        evidenceJson: buildEvidenceJson({ evidenceText, evidenceUrl, evidenceImages }),
         requestedPoints: rule.points,
         ruleId: rule.id,
         ruleCode,
@@ -199,6 +285,7 @@ export async function createLeaderScoreApplication(
           type,
           ruleCode,
           requestedPoints: rule.points,
+          evidenceImageCount: evidenceImages.length,
         }),
       },
     });
@@ -332,6 +419,7 @@ export async function approveScoreApplication(
       title: application.title,
       evidenceText: application.evidenceText,
       evidenceUrl: application.evidenceUrl,
+      evidenceJson: application.evidenceJson,
       requestedPoints: application.requestedPoints,
       approvedPoints,
     },
@@ -513,16 +601,14 @@ async function findDuplicateApplication({
   leaderId,
   tripId,
   ruleCode,
-  type,
   evidenceText,
 }: {
   leaderId: string;
   tripId: string | null;
   ruleCode: string;
-  type: ScoreApplicationType;
   evidenceText: string | null;
 }) {
-  if (type === "REPURCHASE" && !tripId) {
+  if (!tripId && !evidenceText) {
     return null;
   }
 
@@ -532,10 +618,18 @@ async function findDuplicateApplication({
       tripId,
       ruleCode,
       status: { in: ["PENDING", "APPROVED"] },
-      ...(type === "REPURCHASE" && evidenceText ? { evidenceText } : {}),
+      ...(!tripId && evidenceText ? { evidenceText } : {}),
     },
     select: { id: true },
   });
+}
+
+function inferApplicationTypeFromRule(rule: ScoreRule): ScoreApplicationType {
+  if (isSupportedApplicationType(rule.code)) {
+    return rule.code;
+  }
+
+  return "MOMENTS_POST";
 }
 
 function buildApplicationWhere(params: AdminScoreApplicationParams) {
@@ -557,6 +651,7 @@ function buildApplicationWhere(params: AdminScoreApplicationParams) {
       { title: { contains: params.keyword } },
       { evidenceText: { contains: params.keyword } },
       { evidenceUrl: { contains: params.keyword } },
+      { evidenceJson: { contains: params.keyword } },
       { leader: { realName: { contains: params.keyword } } },
       { leader: { nickname: { contains: params.keyword } } },
       { leader: { phone: { contains: params.keyword } } },
@@ -580,4 +675,107 @@ function parseOptionalNumber(value: unknown) {
   if (value === null || value === undefined || value === "") return null;
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
+}
+
+export function parseApplicationEvidence(application: {
+  evidenceText?: string | null;
+  evidenceUrl?: string | null;
+  evidenceJson?: string | null;
+}): ApplicationEvidence {
+  if (!application.evidenceJson) {
+    return {
+      text: application.evidenceText || null,
+      url: application.evidenceUrl || null,
+      images: [],
+    };
+  }
+
+  try {
+    const parsed = JSON.parse(application.evidenceJson) as Partial<ApplicationEvidence>;
+    const imagesResult = normalizeEvidenceImages(parsed.images);
+    const images = imagesResult.ok ? imagesResult.images : [];
+
+    return {
+      text: normalizeOptionalString(parsed.text) || application.evidenceText || null,
+      url: normalizeOptionalString(parsed.url) || application.evidenceUrl || null,
+      images,
+    };
+  } catch {
+    return {
+      text: application.evidenceText || null,
+      url: application.evidenceUrl || null,
+      images: [],
+    };
+  }
+}
+
+function buildEvidenceJson({
+  evidenceText,
+  evidenceUrl,
+  evidenceImages,
+}: {
+  evidenceText: string | null;
+  evidenceUrl: string | null;
+  evidenceImages: EvidenceImage[];
+}) {
+  if (!evidenceText && !evidenceUrl && evidenceImages.length === 0) {
+    return null;
+  }
+
+  return JSON.stringify({
+    text: evidenceText,
+    url: evidenceUrl,
+    images: evidenceImages,
+  });
+}
+
+function normalizeEvidenceImages(value: unknown):
+  | { ok: true; images: EvidenceImage[] }
+  | { ok: false; message: string } {
+  if (value === null || value === undefined || value === "") {
+    return { ok: true, images: [] };
+  }
+
+  if (!Array.isArray(value)) {
+    return { ok: false, message: "证明图片格式不正确" };
+  }
+
+  if (value.length > 3) {
+    return { ok: false, message: "最多上传 3 张证明图片" };
+  }
+
+  const images: EvidenceImage[] = [];
+
+  for (const image of value) {
+    if (!image || typeof image !== "object") {
+      return { ok: false, message: "证明图片格式不正确" };
+    }
+
+    const record = image as Record<string, unknown>;
+    const url = normalizeRequiredString(record.url);
+    const filename = normalizeRequiredString(record.filename);
+    const mimeType = normalizeRequiredString(record.mimeType);
+    const size = Number(record.size);
+
+    if (!url || !url.startsWith("/uploads/score-applications/")) {
+      return { ok: false, message: "证明图片地址不合法" };
+    }
+
+    if (!["image/jpeg", "image/png", "image/webp"].includes(mimeType)) {
+      return { ok: false, message: "仅支持 JPG、PNG、WEBP 图片" };
+    }
+
+    if (!Number.isFinite(size) || size <= 0 || size > 5 * 1024 * 1024) {
+      return { ok: false, message: "单张证明图片不能超过 5MB" };
+    }
+
+    images.push({
+      url,
+      filename: filename || url.split("/").pop() || "evidence",
+      mimeType,
+      size,
+    });
+  }
+
+  return { ok: true, images };
 }

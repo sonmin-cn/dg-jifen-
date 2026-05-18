@@ -7,7 +7,10 @@ import {
   SCORE_APPLICATION_STATUS_LABELS,
   getApplicationTypeLabel,
 } from "@/lib/constants/score-applications";
-import { getLeaderApplications } from "@/lib/services/score-applications";
+import {
+  getLeaderApplications,
+  parseApplicationEvidence,
+} from "@/lib/services/score-applications";
 
 export default async function LeaderApplicationsPage() {
   const user = await requireRole(["LEADER"], "/leader/applications");
@@ -36,9 +39,10 @@ export default async function LeaderApplicationsPage() {
           <thead className="bg-muted/60 text-left">
             <tr>
               <Th>提交时间</Th>
-              <Th>申请类型</Th>
-              <Th>申请标题</Th>
+              <Th>申请规则</Th>
+              <Th>规则编码</Th>
               <Th>关联团期</Th>
+              <Th>图片证明</Th>
               <Th>申请分值</Th>
               <Th>审核状态</Th>
               <Th>审核时间</Th>
@@ -50,9 +54,16 @@ export default async function LeaderApplicationsPage() {
               applications.map((application) => (
                 <tr className="border-t" key={application.id}>
                   <Td>{formatDateTime(application.submittedAt)}</Td>
-                  <Td>{getApplicationTypeLabel(application.type)}</Td>
-                  <Td className="font-medium">{application.title || "-"}</Td>
+                  <Td className="font-medium">{getApplicationRuleName(application)}</Td>
+                  <Td className="font-mono">{application.ruleCode || application.rule?.code || "-"}</Td>
                   <Td>{application.trip?.routeName || "未关联团期"}</Td>
+                  <Td>
+                    {hasEvidenceImages(application) ? (
+                      <Badge variant="secondary">有图片证明</Badge>
+                    ) : (
+                      "-"
+                    )}
+                  </Td>
                   <Td>+{formatPoints(application.requestedPoints)}</Td>
                   <Td>
                     <Badge variant={application.status === "PENDING" ? "secondary" : "outline"}>
@@ -65,7 +76,7 @@ export default async function LeaderApplicationsPage() {
               ))
             ) : (
               <tr>
-                <td className="px-4 py-10 text-center text-muted-foreground" colSpan={8}>
+                <td className="px-4 py-10 text-center text-muted-foreground" colSpan={9}>
                   暂无申请记录。
                 </td>
               </tr>
@@ -81,9 +92,9 @@ export default async function LeaderApplicationsPage() {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-sm text-muted-foreground">
-                    {getApplicationTypeLabel(application.type)}
+                    {getApplicationRuleName(application)}
                   </p>
-                  <h3 className="mt-1 font-medium">{application.title || "-"}</h3>
+                  <h3 className="mt-1 font-medium">{application.ruleCode || application.rule?.code || "-"}</h3>
                 </div>
                 <Badge variant={application.status === "PENDING" ? "secondary" : "outline"}>
                   {SCORE_APPLICATION_STATUS_LABELS[application.status]}
@@ -91,6 +102,7 @@ export default async function LeaderApplicationsPage() {
               </div>
               <div className="mt-4 grid gap-2 text-sm">
                 <InfoLine label="关联团期" value={application.trip?.routeName || "未关联团期"} />
+                <InfoLine label="图片证明" value={hasEvidenceImages(application) ? "有图片证明" : "未上传图片证明"} />
                 <InfoLine label="申请分值" value={`+${formatPoints(application.requestedPoints)}`} />
                 <InfoLine label="提交时间" value={formatDateTime(application.submittedAt)} />
                 <InfoLine label="审核时间" value={formatDateTime(application.reviewedAt)} />
@@ -128,6 +140,22 @@ function InfoLine({ label, value }: { label: string; value?: string | null }) {
       {label}：<span className="break-words text-foreground">{value || "-"}</span>
     </p>
   );
+}
+
+function getApplicationRuleName(application: {
+  title?: string | null;
+  type: Parameters<typeof getApplicationTypeLabel>[0];
+  rule?: { name: string | null } | null;
+}) {
+  return application.rule?.name || application.title || getApplicationTypeLabel(application.type);
+}
+
+function hasEvidenceImages(application: {
+  evidenceText?: string | null;
+  evidenceUrl?: string | null;
+  evidenceJson?: string | null;
+}) {
+  return parseApplicationEvidence(application).images.length > 0;
 }
 
 function formatDateTime(value: Date | null) {

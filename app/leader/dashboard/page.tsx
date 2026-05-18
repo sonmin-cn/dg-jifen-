@@ -88,9 +88,6 @@ export default async function LeaderDashboardPage() {
           </div>
           <div className="grid gap-2 sm:flex sm:flex-wrap">
             <Button className="h-11 w-full sm:w-auto" variant="outline" asChild>
-              <Link href="/leader/applications/new">提交加分申请</Link>
-            </Button>
-            <Button className="h-11 w-full sm:w-auto" variant="outline" asChild>
               <Link href="/leader/scores">查看积分明细</Link>
             </Button>
           </div>
