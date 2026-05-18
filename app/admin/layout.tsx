@@ -22,7 +22,10 @@ export default async function AdminLayout({
             </p>
             <h1 className="mt-1 text-3xl font-semibold">管理后台</h1>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" asChild>
+              <Link href="/admin/data-check">数据核对</Link>
+            </Button>
             <Button variant="outline" asChild>
               <Link href="/admin/score-ranking">积分排行榜</Link>
             </Button>

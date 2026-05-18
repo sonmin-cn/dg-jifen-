@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ClipboardCheck, ClipboardList, Database, ShieldAlert, Trophy, Users, WalletCards } from "lucide-react";
+import { Activity, ClipboardCheck, ClipboardList, Database, ShieldAlert, Trophy, Users, WalletCards } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const modules = [
@@ -37,6 +37,11 @@ const modules = [
     title: "奖金测算",
     description: "维护奖金池并进行年度奖金分配测算。",
     icon: WalletCards,
+  },
+  {
+    title: "试运营数据核对",
+    description: "检查账号绑定、团期积分、申请审核、积分异常与奖金测算风险。",
+    icon: Activity,
   },
 ];
 
@@ -92,6 +97,11 @@ export default function AdminDashboardPage() {
                 <Link href="/admin/bonus-settlement">测算</Link>
               </Button>
             </div>
+          ) : null}
+          {module.title === "试运营数据核对" ? (
+            <Button className="mt-4" size="sm" variant="outline" asChild>
+              <Link href="/admin/data-check">开始核对</Link>
+            </Button>
           ) : null}
         </article>
       ))}

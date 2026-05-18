@@ -55,6 +55,14 @@ export const BONUS_MANAGEMENT_ROLES: UserRole[] = [
   "FINANCE",
 ];
 
+export const DATA_CHECK_READ_ROLES: UserRole[] = [
+  "SUPER_ADMIN",
+  "LEADER_MANAGER",
+  "ADMIN",
+  "FINANCE",
+  "EXECUTIVE_VIEWER",
+];
+
 export const VIOLATION_READ_ROLES: UserRole[] = [
   "SUPER_ADMIN",
   "LEADER_MANAGER",
