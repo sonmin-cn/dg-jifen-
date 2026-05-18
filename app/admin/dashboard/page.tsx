@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Activity, ClipboardCheck, ClipboardList, Database, ShieldAlert, Trophy, Users, WalletCards } from "lucide-react";
+import { Activity, ClipboardCheck, ClipboardList, Database, FilePlus2, ListChecks, ShieldAlert, Trophy, Users, WalletCards } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const modules = [
@@ -27,6 +27,16 @@ const modules = [
     title: "积分申请审核",
     description: "审核队长提交的朋友圈、小红书和复购加分申请。",
     icon: ClipboardCheck,
+  },
+  {
+    title: "积分规则管理",
+    description: "维护加分、扣分和专项积分规则。",
+    icon: ListChecks,
+  },
+  {
+    title: "专项加分与补录",
+    description: "为优质素材、推荐队长、带教新人、特殊贡献等场景补录积分。",
+    icon: FilePlus2,
   },
   {
     title: "违规扣分",
@@ -81,6 +91,16 @@ export default function AdminDashboardPage() {
           {module.title === "积分申请审核" ? (
             <Button className="mt-4" size="sm" variant="outline" asChild>
               <Link href="/admin/score-applications">进入审核</Link>
+            </Button>
+          ) : null}
+          {module.title === "积分规则管理" ? (
+            <Button className="mt-4" size="sm" variant="outline" asChild>
+              <Link href="/admin/score-rules">进入规则</Link>
+            </Button>
+          ) : null}
+          {module.title === "专项加分与补录" ? (
+            <Button className="mt-4" size="sm" variant="outline" asChild>
+              <Link href="/admin/score-adjustments">进入补录</Link>
             </Button>
           ) : null}
           {module.title === "违规扣分" ? (

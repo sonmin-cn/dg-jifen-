@@ -27,6 +27,12 @@ export default async function AdminLayout({
               <Link href="/admin/data-check">数据核对</Link>
             </Button>
             <Button variant="outline" asChild>
+              <Link href="/admin/score-rules">积分规则</Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/admin/score-adjustments">专项加分</Link>
+            </Button>
+            <Button variant="outline" asChild>
               <Link href="/admin/score-ranking">积分排行榜</Link>
             </Button>
             <Button variant="outline" asChild>

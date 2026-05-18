@@ -63,6 +63,32 @@ export const DATA_CHECK_READ_ROLES: UserRole[] = [
   "EXECUTIVE_VIEWER",
 ];
 
+export const SCORE_RULE_READ_ROLES: UserRole[] = [
+  "SUPER_ADMIN",
+  "LEADER_MANAGER",
+  "ADMIN",
+  "FINANCE",
+  "EXECUTIVE_VIEWER",
+];
+
+export const SCORE_RULE_MANAGEMENT_ROLES: UserRole[] = [
+  "SUPER_ADMIN",
+  "ADMIN",
+];
+
+export const SCORE_ADJUSTMENT_READ_ROLES: UserRole[] = [
+  "SUPER_ADMIN",
+  "LEADER_MANAGER",
+  "ADMIN",
+  "FINANCE",
+  "EXECUTIVE_VIEWER",
+];
+
+export const SCORE_ADJUSTMENT_MANAGEMENT_ROLES: UserRole[] = [
+  "SUPER_ADMIN",
+  "ADMIN",
+];
+
 export const VIOLATION_READ_ROLES: UserRole[] = [
   "SUPER_ADMIN",
   "LEADER_MANAGER",
