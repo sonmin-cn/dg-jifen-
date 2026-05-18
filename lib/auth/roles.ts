@@ -33,6 +33,14 @@ export const SCORE_RECORD_VOID_ROLES: UserRole[] = [
   "ADMIN",
 ];
 
+export const SCORE_RANKING_READ_ROLES: UserRole[] = [
+  "SUPER_ADMIN",
+  "LEADER_MANAGER",
+  "ADMIN",
+  "FINANCE",
+  "EXECUTIVE_VIEWER",
+];
+
 export const VIOLATION_READ_ROLES: UserRole[] = [
   "SUPER_ADMIN",
   "LEADER_MANAGER",

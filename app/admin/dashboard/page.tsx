@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ClipboardCheck, ClipboardList, Database, ShieldAlert, Users, WalletCards } from "lucide-react";
+import { ClipboardCheck, ClipboardList, Database, ShieldAlert, Trophy, Users, WalletCards } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const modules = [
@@ -17,6 +17,11 @@ const modules = [
     title: "积分台账",
     description: "统一查看已生效积分、申请来源和审核信息。",
     icon: Database,
+  },
+  {
+    title: "积分排行榜",
+    description: "查看当前年度队长积分排名与奖金资格。",
+    icon: Trophy,
   },
   {
     title: "积分申请审核",
@@ -61,6 +66,11 @@ export default function AdminDashboardPage() {
           {module.title === "积分台账" ? (
             <Button className="mt-4" size="sm" variant="outline" asChild>
               <Link href="/admin/score-records">进入台账</Link>
+            </Button>
+          ) : null}
+          {module.title === "积分排行榜" ? (
+            <Button className="mt-4" size="sm" variant="outline" asChild>
+              <Link href="/admin/score-ranking">查看排行</Link>
             </Button>
           ) : null}
           {module.title === "积分申请审核" ? (
