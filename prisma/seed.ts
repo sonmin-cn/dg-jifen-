@@ -24,6 +24,7 @@ async function main() {
   await prisma.auditLog.deleteMany();
   await prisma.scoreRecord.deleteMany();
   await prisma.violationEvent.deleteMany();
+  await prisma.bonusSettlementItem.deleteMany();
   await prisma.bonusSettlement.deleteMany();
   await prisma.bonusPool.deleteMany();
   await prisma.holidayAttendance.deleteMany();
@@ -233,10 +234,12 @@ async function main() {
   await prisma.bonusPool.create({
     data: {
       scoreYearId: scoreYear.id,
-      month: "2026-05",
       amount: 10000,
+      title: "本地开发测试奖金池",
+      sourceType: "MANUAL",
+      description: "本地开发测试奖金池",
+      injectedAt: new Date("2026-05-01T10:00:00+08:00"),
       createdBy: finance.id,
-      remark: "本地开发测试奖金池",
     },
   });
 

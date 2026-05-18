@@ -83,6 +83,16 @@ export default function AdminDashboardPage() {
               <Link href="/admin/violations">进入扣分</Link>
             </Button>
           ) : null}
+          {module.title === "奖金测算" ? (
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button size="sm" variant="outline" asChild>
+                <Link href="/admin/bonus-pool">奖金池</Link>
+              </Button>
+              <Button size="sm" variant="outline" asChild>
+                <Link href="/admin/bonus-settlement">测算</Link>
+              </Button>
+            </div>
+          ) : null}
         </article>
       ))}
     </section>

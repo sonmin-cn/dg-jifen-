@@ -41,6 +41,20 @@ export const SCORE_RANKING_READ_ROLES: UserRole[] = [
   "EXECUTIVE_VIEWER",
 ];
 
+export const BONUS_READ_ROLES: UserRole[] = [
+  "SUPER_ADMIN",
+  "LEADER_MANAGER",
+  "ADMIN",
+  "FINANCE",
+  "EXECUTIVE_VIEWER",
+];
+
+export const BONUS_MANAGEMENT_ROLES: UserRole[] = [
+  "SUPER_ADMIN",
+  "ADMIN",
+  "FINANCE",
+];
+
 export const VIOLATION_READ_ROLES: UserRole[] = [
   "SUPER_ADMIN",
   "LEADER_MANAGER",

@@ -31,7 +31,7 @@ CREATE TABLE "new_ViolationEvent" (
     "approvedBy" TEXT,
     "occurredAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL,
     "handledAt" DATETIME,
     "approvedAt" DATETIME,
     CONSTRAINT "ViolationEvent_scoreYearId_fkey" FOREIGN KEY ("scoreYearId") REFERENCES "ScoreYear" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
@@ -49,19 +49,3 @@ CREATE INDEX "ViolationEvent_ruleCode_idx" ON "ViolationEvent"("ruleCode");
 CREATE INDEX "ViolationEvent_occurredAt_idx" ON "ViolationEvent"("occurredAt");
 PRAGMA foreign_keys=ON;
 PRAGMA defer_foreign_keys=OFF;
-
-UPDATE "ScoreRule"
-SET "category" = 'COMPLAINT'
-WHERE "code" IN ('VALID_COMPLAINT', 'SERIOUS_COMPLAINT');
-
-UPDATE "ScoreRule"
-SET "category" = 'SAFETY'
-WHERE "code" IN (
-    'SAFETY_MISSING_NOTICE',
-    'SAFETY_KEY_ACTION_MISSING',
-    'INSURANCE_REPORT_DELAY'
-);
-
-UPDATE "ScoreRule"
-SET "category" = 'REDLINE'
-WHERE "code" IN ('REDLINE', 'FAKE_BEHAVIOR');

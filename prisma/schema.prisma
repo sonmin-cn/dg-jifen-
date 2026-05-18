@@ -205,46 +205,47 @@ model User {
 }
 
 model Leader {
-  id                  String              @id @default(cuid())
-  userId              String?             @unique
-  user                User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
-  externalLeaderId    String?             @unique
-  miniProgramLeaderId String?
-  miniProgramPhone    String?
-  realName            String
-  nickname            String?
-  phone               String              @unique
-  region              String?
-  residentLocation    String?
-  status              LeaderStatus        @default(REGULAR)
-  level               String?
-  rawLeaderIdentity   String?
-  rawLeaderLevel      String?
-  rawJobStatus        String?
-  leadCount           Int?
-  leadDays            Float?
-  auditTime           DateTime?
-  frozenTime          DateTime?
-  jobStatus           String?
-  lastImportedAt      DateTime?
-  sourceSystem        String?
-  joinDate            DateTime?
-  recommenderLeaderId String?
-  recommenderLeader   Leader?             @relation("LeaderRecommendations", fields: [recommenderLeaderId], references: [id], onDelete: SetNull)
-  recommendedLeaders  Leader[]            @relation("LeaderRecommendations")
-  tags                String?
-  remark              String?
-  tripLeaders         TripLeader[]
-  scoreApplications   ScoreApplication[]
-  scoreRecords        ScoreRecord[]
-  socialPosts         SocialPost[]
-  repurchaseClaims    RepurchaseClaim[]
-  holidayAttendances  HolidayAttendance[]
-  bonusSettlements    BonusSettlement[]
-  violationEvents     ViolationEvent[]
-  bindRequests        LeaderBindRequest[]
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
+  id                   String                @id @default(cuid())
+  userId               String?               @unique
+  user                 User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
+  externalLeaderId     String?               @unique
+  miniProgramLeaderId  String?
+  miniProgramPhone     String?
+  realName             String
+  nickname             String?
+  phone                String                @unique
+  region               String?
+  residentLocation     String?
+  status               LeaderStatus          @default(REGULAR)
+  level                String?
+  rawLeaderIdentity    String?
+  rawLeaderLevel       String?
+  rawJobStatus         String?
+  leadCount            Int?
+  leadDays             Float?
+  auditTime            DateTime?
+  frozenTime           DateTime?
+  jobStatus            String?
+  lastImportedAt       DateTime?
+  sourceSystem         String?
+  joinDate             DateTime?
+  recommenderLeaderId  String?
+  recommenderLeader    Leader?               @relation("LeaderRecommendations", fields: [recommenderLeaderId], references: [id], onDelete: SetNull)
+  recommendedLeaders   Leader[]              @relation("LeaderRecommendations")
+  tags                 String?
+  remark               String?
+  tripLeaders          TripLeader[]
+  scoreApplications    ScoreApplication[]
+  scoreRecords         ScoreRecord[]
+  socialPosts          SocialPost[]
+  repurchaseClaims     RepurchaseClaim[]
+  holidayAttendances   HolidayAttendance[]
+  bonusSettlements     BonusSettlement[]
+  bonusSettlementItems BonusSettlementItem[]
+  violationEvents      ViolationEvent[]
+  bindRequests         LeaderBindRequest[]
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
 
   @@index([status, region])
   @@index([jobStatus])
@@ -532,36 +533,68 @@ model BonusPool {
   id          String    @id @default(cuid())
   scoreYearId String
   scoreYear   ScoreYear @relation(fields: [scoreYearId], references: [id], onDelete: Restrict)
-  month       String
+  month       String?
   amount      Float
-  createdBy   String
+  sourceType  String?
+  title       String    @default("奖金池注入")
+  description String?
+  injectedAt  DateTime  @default(now())
+  createdBy   String?
   remark      String?
   createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
 
-  @@unique([scoreYearId, month])
+  @@index([scoreYearId, injectedAt])
 }
 
 model BonusSettlement {
-  id                      String                @id @default(cuid())
-  scoreYearId             String
-  scoreYear               ScoreYear             @relation(fields: [scoreYearId], references: [id], onDelete: Restrict)
-  leaderId                String
-  leader                  Leader                @relation(fields: [leaderId], references: [id], onDelete: Restrict)
-  rawTotalPoints          Float
-  effectiveTotalPoints    Float
-  convertedTripCount      Float
-  isQualified             Boolean
-  disqualifyReason        String?
-  calculatedBonus         Float
-  cappedBonus             Float
-  secondDistributionBonus Float
-  finalBonus              Float
-  status                  BonusSettlementStatus @default(DRAFT)
-  createdAt               DateTime              @default(now())
-  updatedAt               DateTime              @updatedAt
+  id                    String                @id @default(cuid())
+  scoreYearId           String
+  scoreYear             ScoreYear             @relation(fields: [scoreYearId], references: [id], onDelete: Restrict)
+  title                 String
+  totalPoolAmount       Float
+  eligibleLeaderCount   Int
+  totalEligiblePoints   Float
+  totalCalculatedAmount Float
+  totalFinalAmount      Float
+  totalCappedAmount     Float
+  undistributedAmount   Float
+  status                BonusSettlementStatus @default(DRAFT)
+  remark                String?
+  createdBy             String?
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  items                 BonusSettlementItem[]
+  leader                Leader?               @relation(fields: [leaderId], references: [id])
+  leaderId              String?
 
-  @@unique([scoreYearId, leaderId])
-  @@index([status, isQualified])
+  @@index([scoreYearId, createdAt])
+  @@index([status])
+}
+
+model BonusSettlementItem {
+  id                String          @id @default(cuid())
+  settlementId      String
+  settlement        BonusSettlement @relation(fields: [settlementId], references: [id], onDelete: Cascade)
+  leaderId          String
+  leader            Leader          @relation(fields: [leaderId], references: [id], onDelete: Restrict)
+  rank              Int
+  totalPoints       Float
+  baseTripPoints    Float?
+  applicationPoints Float?
+  deductPoints      Float?
+  tripCount         Int
+  tripDays          Float
+  eligible          Boolean
+  ineligibleReason  String?
+  pointShare        Float
+  calculatedAmount  Float
+  cappedAmount      Float
+  finalAmount       Float
+  createdAt         DateTime        @default(now())
+
+  @@index([settlementId, rank])
+  @@index([leaderId])
 }
 
 model ViolationEvent {
