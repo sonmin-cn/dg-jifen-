@@ -5,8 +5,12 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  SearchableSelect,
+  type SearchableSelectOption,
+} from "@/app/admin/components/SearchableSelect";
 
-type Option = { id: string; label: string };
+type Option = SearchableSelectOption;
 type RuleOption = {
   id: string;
   code: string;
@@ -110,14 +114,13 @@ export function ScoreAdjustmentCreateForm({
     <form className="rounded-lg border bg-card p-4 shadow-sm" onSubmit={handleSubmit}>
       <div className="grid gap-4 md:grid-cols-2">
         <Field label="队长">
-          <select className="h-10 rounded-md border bg-background px-3 text-sm" name="leaderId">
-            <option value="">请选择队长</option>
-            {leaders.map((leader) => (
-              <option key={leader.id} value={leader.id}>
-                {leader.label}
-              </option>
-            ))}
-          </select>
+          <SearchableSelect
+            emptyText="未找到匹配队长"
+            name="leaderId"
+            options={leaders}
+            placeholder="搜索姓名 / 昵称 / 手机号 / 队长ID"
+            required
+          />
         </Field>
         <Field label="积分年度">
           <select className="h-10 rounded-md border bg-background px-3 text-sm" defaultValue={defaultScoreYearId} name="scoreYearId">
@@ -129,14 +132,20 @@ export function ScoreAdjustmentCreateForm({
           </select>
         </Field>
         <Field label="积分规则">
-          <select className="h-10 rounded-md border bg-background px-3 text-sm" onChange={(event) => handleRuleChange(event.target.value)} value={selectedRuleId}>
-            {rules.length > 0 ? null : <option value="">暂无启用加分规则</option>}
-            {rules.map((rule) => (
-              <option key={rule.id} value={rule.id}>
-                {rule.name}（{rule.code}，+{formatPoints(rule.points)}）
-              </option>
-            ))}
-          </select>
+          <SearchableSelect
+            emptyText="暂无匹配的启用加分规则"
+            name="ruleId"
+            onChange={handleRuleChange}
+            options={rules.map((rule) => ({
+              id: rule.id,
+              label: `${rule.name} / ${rule.code} / +${formatPoints(rule.points)} / ${rule.category}`,
+              description: rule.description,
+              searchText: `${rule.name} ${rule.code} ${rule.category}`,
+            }))}
+            placeholder="搜索规则名称 / code / 分类"
+            required
+            value={selectedRuleId}
+          />
         </Field>
         <Field label="关联团期（选填）">
           <select className="h-10 rounded-md border bg-background px-3 text-sm" name="tripId">

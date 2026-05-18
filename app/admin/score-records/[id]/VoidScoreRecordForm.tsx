@@ -22,11 +22,6 @@ export function VoidScoreRecordForm({ scoreRecordId }: { scoreRecordId: string }
       return;
     }
 
-    if (voidReason.length < 5) {
-      setError("作废原因不能少于 5 个字");
-      return;
-    }
-
     const confirmed = window.confirm(
       "作废后，该积分不再计入队长年度积分，但记录仍会保留在积分台账中。请确认是否作废。",
     );
@@ -78,7 +73,7 @@ export function VoidScoreRecordForm({ scoreRecordId }: { scoreRecordId: string }
           className="min-h-24"
           id="voidReason"
           name="voidReason"
-          placeholder="请写明作废原因，例如：重复生成基础积分，需重新核算。"
+          placeholder="请填写作废原因"
         />
       </div>
       <Button className="mt-4" disabled={isSubmitting} type="submit" variant="destructive">

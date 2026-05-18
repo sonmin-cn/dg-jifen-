@@ -100,10 +100,6 @@ export async function voidScoreRecord(
     return { ok: false as const, status: 400, message: "请填写作废原因" };
   }
 
-  if (voidReason.length < 5) {
-    return { ok: false as const, status: 400, message: "作废原因不能少于 5 个字" };
-  }
-
   const record = await prisma.scoreRecord.findUnique({
     where: { id },
     include: {

@@ -8,17 +8,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  SearchableSelect,
+  type SearchableSelectOption,
+} from "@/app/admin/components/SearchableSelect";
+import {
   VIOLATION_CONFIGS,
   VIOLATION_RULE_OPTIONS,
   type ViolationRuleCode,
 } from "@/lib/constants/violations";
 
-type LeaderOption = {
-  id: string;
-  realName: string;
-  nickname: string | null;
-  phone: string;
-};
+type LeaderOption = SearchableSelectOption;
 
 type TripOption = {
   id: string;
@@ -74,21 +73,6 @@ export function ViolationCreateForm({
       return;
     }
 
-    if (!String(payload.title || "").trim()) {
-      setError("请填写事件标题");
-      return;
-    }
-
-    if (!String(payload.description || "").trim()) {
-      setError("请填写事件说明");
-      return;
-    }
-
-    if (!String(payload.evidenceText || "").trim()) {
-      setError("请填写证据说明");
-      return;
-    }
-
     const confirmed = window.confirm("确认后将立即生成扣分记录，并影响队长积分。");
     if (!confirmed) {
       return;
@@ -134,16 +118,13 @@ export function ViolationCreateForm({
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="leaderId">队长</Label>
-          <select className="h-10 w-full rounded-md border bg-background px-3 text-sm" id="leaderId" name="leaderId">
-            <option value="">请选择队长</option>
-            {leaders.map((leader) => (
-              <option key={leader.id} value={leader.id}>
-                {leader.realName}
-                {leader.nickname ? `（${leader.nickname}）` : ""}
-                {leader.phone ? ` ****${leader.phone.slice(-4)}` : ""}
-              </option>
-            ))}
-          </select>
+          <SearchableSelect
+            emptyText="未找到匹配队长"
+            name="leaderId"
+            options={leaders}
+            placeholder="搜索姓名 / 昵称 / 手机号 / 队长ID"
+            required
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="ruleCode">扣分类型</Label>
@@ -201,15 +182,15 @@ export function ViolationCreateForm({
           name="occurredAt"
           type="datetime-local"
         />
-        <Field label="事件标题" name="title" placeholder="例如：带团期间抽烟" />
+        <Field label="事件标题（选填）" name="title" placeholder="为空时默认使用扣分规则名称" />
         <Field label="证据链接" name="evidenceUrl" placeholder="截图链接、工单链接或网盘链接" />
         <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="description">事件说明</Label>
-          <Textarea className="min-h-28" id="description" name="description" placeholder="请写清事实、时间、地点、涉及人员和处理依据" />
+          <Label htmlFor="description">事件说明（选填）</Label>
+          <Textarea className="min-h-28" id="description" name="description" placeholder="建议填写说明和证据，便于后续复核。" />
         </div>
         <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="evidenceText">证据说明</Label>
-          <Textarea className="min-h-28" id="evidenceText" name="evidenceText" placeholder="请填写投诉记录、聊天记录、现场照片或主管核实结论" />
+          <Label htmlFor="evidenceText">证据说明（选填）</Label>
+          <Textarea className="min-h-28" id="evidenceText" name="evidenceText" placeholder="建议填写投诉记录、聊天记录、现场照片或主管核实结论，便于后续复核。" />
         </div>
         <div className="space-y-2 md:col-span-2">
           <Label htmlFor="remark">处理备注</Label>

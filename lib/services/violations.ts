@@ -67,8 +67,8 @@ export async function createViolationEvent(
   const leaderId = normalizeRequiredString(input.leaderId);
   const ruleCodeText = normalizeRequiredString(input.ruleCode);
   const tripId = normalizeOptionalString(input.tripId);
-  const title = normalizeRequiredString(input.title);
-  const description = normalizeRequiredString(input.description);
+  const titleInput = normalizeOptionalString(input.title);
+  const description = normalizeOptionalString(input.description) || "";
   const evidenceText = normalizeOptionalString(input.evidenceText);
   const evidenceUrl = normalizeOptionalString(input.evidenceUrl);
   const remark = normalizeOptionalString(input.remark);
@@ -92,18 +92,6 @@ export async function createViolationEvent(
       status: 400,
       message: `${config.label}必须选择关联团期`,
     };
-  }
-
-  if (!title) {
-    return { ok: false as const, status: 400, message: "请填写事件标题" };
-  }
-
-  if (!description) {
-    return { ok: false as const, status: 400, message: "请填写事件说明" };
-  }
-
-  if (config.requiresEvidence && !evidenceText) {
-    return { ok: false as const, status: 400, message: "请填写证据说明" };
   }
 
   const [leader, scoreYear, rule, trip] = await Promise.all([
@@ -144,6 +132,7 @@ export async function createViolationEvent(
     return { ok: false as const, status: 400, message: "关联团期不存在或该队长未参与该团期" };
   }
 
+  const title = titleInput || rule.name || config.label;
   const duplicate = await findDuplicateViolation({
     leaderId,
     tripId,
@@ -224,7 +213,7 @@ export async function createViolationEvent(
         occurredAt,
         approvedBy: operatorUserId,
         approvedAt: handledAt,
-        remark: remark ? `${title}；${description}；处理备注：${remark}` : `${title}；${description}`,
+        remark: buildViolationRemark({ title, description, remark }),
       },
     });
 
@@ -426,6 +415,20 @@ function normalizeRequiredString(value: unknown) {
 function normalizeOptionalString(value: unknown) {
   const normalized = normalizeRequiredString(value);
   return normalized || null;
+}
+
+function buildViolationRemark({
+  title,
+  description,
+  remark,
+}: {
+  title: string;
+  description: string;
+  remark: string | null;
+}) {
+  return [title, description, remark ? `处理备注：${remark}` : ""]
+    .filter(Boolean)
+    .join("；");
 }
 
 function parseDateTime(value: unknown) {

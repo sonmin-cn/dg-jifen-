@@ -11,7 +11,15 @@ export default async function NewViolationPage() {
   const [leaders, trips, rulePreview] = await Promise.all([
     prisma.leader.findMany({
       orderBy: { realName: "asc" },
-      select: { id: true, realName: true, nickname: true, phone: true },
+      select: {
+        id: true,
+        realName: true,
+        nickname: true,
+        phone: true,
+        externalLeaderId: true,
+        status: true,
+        level: true,
+      },
     }),
     prisma.trip.findMany({
       orderBy: { endDate: "desc" },
@@ -32,7 +40,15 @@ export default async function NewViolationPage() {
           录入违规、投诉或安全事件后，系统会立即生成扣分积分记录。
         </p>
       </div>
-      <ViolationCreateForm leaders={leaders} rulePreview={rulePreview} trips={trips} />
+      <ViolationCreateForm
+        leaders={leaders.map((leader) => ({
+          id: leader.id,
+          label: `${leader.realName}${leader.nickname ? ` / ${leader.nickname}` : ""}${leader.phone ? ` / ****${leader.phone.slice(-4)}` : ""} / ${leader.status}${leader.level ? ` / ${leader.level}` : ""}`,
+          searchText: `${leader.realName} ${leader.nickname || ""} ${leader.phone || ""} ${leader.externalLeaderId || ""} ${leader.status} ${leader.level || ""}`,
+        }))}
+        rulePreview={rulePreview}
+        trips={trips}
+      />
     </div>
   );
 }

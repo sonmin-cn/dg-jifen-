@@ -22,6 +22,7 @@ import {
   formatScorePoints,
   getAdminScoreRecords,
 } from "@/lib/services/score-records";
+import { SearchableSelect } from "@/app/admin/components/SearchableSelect";
 
 type PageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -55,7 +56,15 @@ export default async function AdminScoreRecordsPage({ searchParams }: PageProps)
     }),
     prisma.leader.findMany({
       orderBy: { realName: "asc" },
-      select: { id: true, realName: true, nickname: true, phone: true },
+      select: {
+        id: true,
+        realName: true,
+        nickname: true,
+        phone: true,
+        externalLeaderId: true,
+        status: true,
+        level: true,
+      },
     }),
   ]);
 
@@ -96,20 +105,17 @@ export default async function AdminScoreRecordsPage({ searchParams }: PageProps)
               </option>
             ))}
           </select>
-          <select
-            className="h-10 rounded-md border bg-background px-3 text-sm"
-            defaultValue={filters.leaderId}
+          <SearchableSelect
+            emptyText="未找到匹配队长"
             name="leaderId"
-          >
-            <option value="">全部队长</option>
-            {leaders.map((leader) => (
-              <option key={leader.id} value={leader.id}>
-                {leader.realName}
-                {leader.nickname ? `（${leader.nickname}）` : ""}
-                {leader.phone ? ` ${maskPhone(leader.phone)}` : ""}
-              </option>
-            ))}
-          </select>
+            options={leaders.map((leader) => ({
+              id: leader.id,
+              label: `${leader.realName}${leader.nickname ? ` / ${leader.nickname}` : ""}${leader.phone ? ` / ${maskPhone(leader.phone)}` : ""} / ${leader.status}${leader.level ? ` / ${leader.level}` : ""}`,
+              searchText: `${leader.realName} ${leader.nickname || ""} ${leader.phone || ""} ${leader.externalLeaderId || ""} ${leader.status} ${leader.level || ""}`,
+            }))}
+            placeholder="全部队长 / 搜索姓名昵称手机号"
+            value={filters.leaderId}
+          />
           <select
             className="h-10 rounded-md border bg-background px-3 text-sm"
             defaultValue={filters.category || ""}

@@ -11,7 +11,15 @@ export default async function AdminScoreAdjustmentNewPage() {
   const [leaders, scoreYears, activeYear, trips, rules] = await Promise.all([
     prisma.leader.findMany({
       orderBy: { realName: "asc" },
-      select: { id: true, realName: true, nickname: true, phone: true },
+      select: {
+        id: true,
+        realName: true,
+        nickname: true,
+        phone: true,
+        externalLeaderId: true,
+        status: true,
+        level: true,
+      },
     }),
     prisma.scoreYear.findMany({
       orderBy: { startDate: "desc" },
@@ -48,7 +56,8 @@ export default async function AdminScoreAdjustmentNewPage() {
         defaultScoreYearId={activeYear?.id || scoreYears[0]?.id || ""}
         leaders={leaders.map((leader) => ({
           id: leader.id,
-          label: `${leader.realName}${leader.nickname ? `（${leader.nickname}）` : ""}${leader.phone ? ` ****${leader.phone.slice(-4)}` : ""}`,
+          label: `${leader.realName}${leader.nickname ? ` / ${leader.nickname}` : ""}${leader.phone ? ` / ****${leader.phone.slice(-4)}` : ""} / ${leader.status}${leader.level ? ` / ${leader.level}` : ""}`,
+          searchText: `${leader.realName} ${leader.nickname || ""} ${leader.phone || ""} ${leader.externalLeaderId || ""} ${leader.status} ${leader.level || ""}`,
         }))}
         rules={rules.map((rule) => ({
           id: rule.id,

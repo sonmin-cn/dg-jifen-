@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/app/admin/components/SearchableSelect";
 import {
   TRIP_LEADER_ROLE_LABELS,
   TRIP_LEADER_ROLE_OPTIONS,
@@ -19,6 +20,10 @@ type LeaderOption = {
   id: string;
   realName: string;
   nickname: string | null;
+  phone: string;
+  status: string;
+  level: string | null;
+  externalLeaderId: string | null;
 };
 
 type TripFormData = {
@@ -486,15 +491,17 @@ function LeaderSelect({
   name: string;
 }) {
   return (
-    <select className="h-10 rounded-md border bg-background px-3 text-sm" name={name} required>
-      <option value="">选择队长</option>
-      {leaders.map((leader) => (
-        <option key={leader.id} value={leader.id}>
-          {leader.realName}
-          {leader.nickname ? `（${leader.nickname}）` : ""}
-        </option>
-      ))}
-    </select>
+    <SearchableSelect
+      emptyText="未找到匹配队长"
+      name={name}
+      options={leaders.map((leader) => ({
+        id: leader.id,
+        label: `${leader.realName}${leader.nickname ? ` / ${leader.nickname}` : ""}${leader.phone ? ` / ****${leader.phone.slice(-4)}` : ""} / ${leader.status}${leader.level ? ` / ${leader.level}` : ""}`,
+        searchText: `${leader.realName} ${leader.nickname || ""} ${leader.phone || ""} ${leader.externalLeaderId || ""} ${leader.status} ${leader.level || ""}`,
+      }))}
+      placeholder="搜索姓名 / 昵称 / 手机号 / 队长ID"
+      required
+    />
   );
 }
 
