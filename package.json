@@ -11,7 +11,8 @@
     "prisma:push": "prisma db push",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "tsx prisma/seed.ts",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "mvp:check": "tsx scripts/mvp-smoke-check.ts"
   },
   "dependencies": {
     "@prisma/client": "6",
