@@ -7,7 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { TripImportPreviewRow } from "@/lib/services/trip-import";
+import type {
+  TripImportConfirmDetail,
+  TripImportConfirmSummary,
+  TripImportPreviewRow,
+} from "@/lib/services/trip-import";
 
 type PreviewResponse = {
   sheetName: string;
@@ -15,15 +19,23 @@ type PreviewResponse = {
   rows: TripImportPreviewRow[];
 };
 
+type ConfirmResult = {
+  summary: TripImportConfirmSummary;
+  details: TripImportConfirmDetail[];
+};
+
 export function TripImportPreviewClient() {
   const [error, setError] = useState("");
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
+  const [confirmResult, setConfirmResult] = useState<ConfirmResult | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
     setPreview(null);
+    setConfirmResult(null);
     setIsSubmitting(true);
     const formData = new FormData(event.currentTarget);
 
@@ -50,6 +62,43 @@ export function TripImportPreviewClient() {
     }
   }
 
+  async function handleConfirmImport() {
+    if (!preview) return;
+    setError("");
+    setConfirmResult(null);
+    setIsConfirming(true);
+
+    try {
+      const response = await fetch("/api/trips/import/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rows: preview.rows }),
+      });
+      const data = (await response.json().catch(() => null)) as {
+        success?: boolean;
+        error?: string;
+        summary?: TripImportConfirmSummary;
+        details?: TripImportConfirmDetail[];
+      } | null;
+
+      if (!response.ok || data?.success === false || !data?.summary) {
+        setError(data?.error || "确认导入失败");
+        return;
+      }
+
+      setConfirmResult({
+        summary: data.summary,
+        details: data.details || [],
+      });
+    } catch {
+      setError("确认导入请求失败，请稍后重试");
+    } finally {
+      setIsConfirming(false);
+    }
+  }
+
+  const importableCount = preview?.rows.filter((row) => row.status === "可导入").length || 0;
+
   return (
     <div className="py-8">
       <Button className="mb-4" size="sm" variant="outline" asChild>
@@ -58,7 +107,7 @@ export function TripImportPreviewClient() {
       <div className="mb-6">
         <h2 className="text-2xl font-semibold">导入销转表预览</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          本阶段只解析并展示预览，不会写入团期或带队记录。
+          上传销转表后先预览解析结果，确认后会正式写入团期和带队记录。
         </p>
       </div>
 
@@ -98,10 +147,18 @@ export function TripImportPreviewClient() {
                 工作表：{preview.sheetName}，共 {preview.totalRows} 行
               </p>
             </div>
-            <Button disabled variant="outline">
-              确认导入（后续任务接入）
+            <Button
+              disabled={importableCount === 0 || isConfirming}
+              onClick={handleConfirmImport}
+              type="button"
+              variant="outline"
+            >
+              {isConfirming ? "导入中..." : `确认导入${importableCount ? `（${importableCount} 行）` : ""}`}
             </Button>
           </div>
+          {confirmResult ? (
+            <ImportResultPanel result={confirmResult} />
+          ) : null}
           <div className="overflow-x-auto rounded-md border">
             <table className="min-w-[1500px] border-collapse text-sm">
               <thead className="bg-muted/60 text-left">
@@ -173,6 +230,73 @@ export function TripImportPreviewClient() {
             </table>
           </div>
         </section>
+      ) : null}
+    </div>
+  );
+}
+
+function ImportResultPanel({ result }: { result: ConfirmResult }) {
+  const summaryItems = [
+    ["创建团期", result.summary.createdTrips],
+    ["更新团期", result.summary.updatedTrips],
+    ["创建带队记录", result.summary.createdTripLeaders],
+    ["更新带队记录", result.summary.updatedTripLeaders],
+    ["跳过带队记录", result.summary.skippedTripLeaders],
+    ["无法匹配队长", result.summary.unmatchedLeaders],
+    ["失败行", result.summary.failedRows],
+  ];
+
+  return (
+    <div className="mb-5 rounded-lg border bg-muted/20 p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h4 className="font-semibold">导入完成</h4>
+          <p className="mt-1 text-sm text-muted-foreground">
+            以下统计基于本次确认导入结果。
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" asChild>
+            <Link href="/admin/trips">返回团期列表</Link>
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => window.location.reload()} type="button">
+            继续导入
+          </Button>
+        </div>
+      </div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {summaryItems.map(([label, value]) => (
+          <div className="rounded-md border bg-background p-3" key={label}>
+            <p className="text-xs text-muted-foreground">{label}</p>
+            <p className="mt-1 text-lg font-semibold">{value}</p>
+          </div>
+        ))}
+      </div>
+      {result.details.length > 0 ? (
+        <div className="mt-4 max-h-72 overflow-auto rounded-md border bg-background">
+          <table className="min-w-[900px] w-full border-collapse text-sm">
+            <thead className="bg-muted/60 text-left">
+              <tr>
+                <th className="px-3 py-2 font-medium">行号</th>
+                <th className="px-3 py-2 font-medium">路线</th>
+                <th className="px-3 py-2 font-medium">队长</th>
+                <th className="px-3 py-2 font-medium">动作</th>
+                <th className="px-3 py-2 font-medium">说明</th>
+              </tr>
+            </thead>
+            <tbody>
+              {result.details.slice(0, 200).map((detail, index) => (
+                <tr className="border-t" key={`${detail.rowIndex}-${detail.action}-${index}`}>
+                  <td className="px-3 py-2">{detail.rowIndex}</td>
+                  <td className="px-3 py-2">{detail.routeName || "-"}</td>
+                  <td className="px-3 py-2">{detail.leaderName || "-"}</td>
+                  <td className="px-3 py-2">{detail.action}</td>
+                  <td className="px-3 py-2">{detail.message}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : null}
     </div>
   );

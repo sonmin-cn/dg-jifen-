@@ -54,8 +54,12 @@ export const DEFAULT_SCORE_RULES: DefaultScoreRule[] = [
     points: 0,
     reviewType: "AUTO",
     triggerType: "TRIP_COMPLETED",
-    description: "完成实际带队后自动计算：1 + 实际带队天数 * 3",
-    config: { formula: "1 + actualWorkDays * 3", perTripPoints: 1, perDayPoints: 3 },
+    description: "完成实际带队后自动计算：1分/团 + 实际带队天数 * 1分/天",
+    config: {
+      formula: "perTripPoints + actualWorkDays * perDayPoints",
+      perTripPoints: 1,
+      perDayPoints: 1,
+    },
   },
   {
     code: "MOMENTS_POST",

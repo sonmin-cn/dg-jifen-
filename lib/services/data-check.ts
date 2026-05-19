@@ -180,17 +180,21 @@ export async function getSystemSummary(scoreYearId: string) {
         endDate: { gte: range.startDate, lte: range.endDate },
       },
     }),
-    prisma.tripLeader.count({
-      where: {
-        isCompleted: true,
-        actualWorkDays: { gt: 0 },
-        baseScoreRecordId: null,
-        trip: {
-          status: "COMPLETED",
-          endDate: { gte: range.startDate, lte: range.endDate },
-        },
-      },
-    }),
+    isBaseTripRuleActive(range.endDate).then((isActive) =>
+      isActive
+        ? prisma.tripLeader.count({
+            where: {
+              isCompleted: true,
+              actualWorkDays: { gt: 0 },
+              baseScoreRecordId: null,
+              trip: {
+                status: "COMPLETED",
+                endDate: { gte: range.startDate, lte: range.endDate },
+              },
+            },
+          })
+        : 0,
+    ),
     getBonusPoolSummary(scoreYearId),
     getAdminScoreRanking({ scoreYearId, limit: "all" }),
   ]);
@@ -292,6 +296,8 @@ export async function getCompletedTripsWithoutBaseScore(params: DataCheckParams)
   const scoreYear = await getScoreYear(params.scoreYearId);
   if (!scoreYear) return [];
   const range = getScoreYearDateRange(scoreYear);
+  const baseTripRuleActive = await isBaseTripRuleActive(range.endDate);
+  if (!baseTripRuleActive) return [];
   const records = await prisma.tripLeader.findMany({
     where: {
       isCompleted: true,
@@ -326,6 +332,20 @@ export async function getCompletedTripsWithoutBaseScore(params: DataCheckParams)
       ],
     }),
   );
+}
+
+async function isBaseTripRuleActive(occurredAt: Date) {
+  const rule = await prisma.scoreRule.findFirst({
+    where: {
+      code: "BASE_TRIP",
+      isActive: true,
+      effectiveFrom: { lte: occurredAt },
+      OR: [{ effectiveTo: null }, { effectiveTo: { gte: occurredAt } }],
+    },
+    select: { id: true },
+  });
+
+  return Boolean(rule);
 }
 
 export async function getCompletedTripsWithIncompleteLeaders(params: DataCheckParams) {

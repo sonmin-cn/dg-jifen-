@@ -23,14 +23,35 @@ function errorResponse(error: unknown) {
 
 function parseRuleConfig(configJson: string | null) {
   if (!configJson) {
-    return {};
+    return getDefaultBaseTripConfig();
   }
 
   try {
-    return JSON.parse(configJson) as Record<string, unknown>;
+    const parsed = JSON.parse(configJson) as Record<string, unknown>;
+    return {
+      formula:
+        typeof parsed.formula === "string"
+          ? parsed.formula
+          : "perTripPoints + actualWorkDays * perDayPoints",
+      perTripPoints: normalizeConfigNumber(parsed.perTripPoints, 1),
+      perDayPoints: normalizeConfigNumber(parsed.perDayPoints, 1),
+    };
   } catch {
-    return {};
+    return getDefaultBaseTripConfig();
   }
+}
+
+function getDefaultBaseTripConfig() {
+  return {
+    formula: "perTripPoints + actualWorkDays * perDayPoints",
+    perTripPoints: 1,
+    perDayPoints: 1,
+  };
+}
+
+function normalizeConfigNumber(value: unknown, fallback: number) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
 }
 
 export async function POST(_request: NextRequest, context: RouteContext) {
@@ -145,8 +166,8 @@ export async function POST(_request: NextRequest, context: RouteContext) {
       let generatedTotalPoints = 0;
 
       for (const tripLeader of pendingTripLeaders) {
-        const points = calculateBaseTripPoints(tripLeader.actualWorkDays);
-        const remark = `基础带队积分：1分/团 + ${tripLeader.actualWorkDays}天 × 3分/天 = ${points}分`;
+        const points = calculateBaseTripPoints(tripLeader.actualWorkDays, ruleConfig);
+        const remark = `基础带队积分：${ruleConfig.perTripPoints}分/团 + ${tripLeader.actualWorkDays}天 × ${ruleConfig.perDayPoints}分/天 = ${points}分`;
         const snapshot = {
           ...ruleSnapshot,
           ...ruleConfig,
