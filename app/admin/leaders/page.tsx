@@ -42,7 +42,11 @@ export default async function AdminLeadersPage({ searchParams }: PageProps) {
     where.region = { contains: region };
   }
 
-  if (status && LEADER_STATUS_OPTIONS.includes(status as never)) {
+  if (!status || status === "NON_LEFT") {
+    where.status = { not: "LEFT" };
+  } else if (status === "ALL") {
+    // 显示全部状态，包含离职队长。
+  } else if (status && LEADER_STATUS_OPTIONS.includes(status as never)) {
     where.status = status as never;
   }
 
@@ -97,10 +101,11 @@ export default async function AdminLeadersPage({ searchParams }: PageProps) {
           <Input defaultValue={region} name="region" placeholder="区域" />
           <select
             className="h-10 rounded-md border bg-background px-3 text-sm"
-            defaultValue={status}
+            defaultValue={status || "NON_LEFT"}
             name="status"
           >
-            <option value="">全部状态</option>
+            <option value="NON_LEFT">全部在职状态</option>
+            <option value="ALL">全部状态（含离职）</option>
             {LEADER_STATUS_OPTIONS.map((option) => (
               <option key={option} value={option}>
                 {LEADER_STATUS_LABELS[option]}

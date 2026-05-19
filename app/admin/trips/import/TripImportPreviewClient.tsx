@@ -252,7 +252,7 @@ function ImportResultPanel({ result }: { result: ConfirmResult }) {
         <div>
           <h4 className="font-semibold">导入完成</h4>
           <p className="mt-1 text-sm text-muted-foreground">
-            以下统计基于本次确认导入结果。
+            以下统计基于本次确认导入结果。请确认团期状态、实际带队天数和完成状态后，在团期详情页或团期列表批量生成基础积分。
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

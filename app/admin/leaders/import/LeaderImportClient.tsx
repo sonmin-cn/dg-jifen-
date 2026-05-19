@@ -20,6 +20,8 @@ type PreviewRow = {
   auditTime: string | null;
   frozenTime: string | null;
   rawJobStatus: string;
+  status: string | null;
+  level: string | null;
   matchResult: string;
   action: "CREATE" | "UPDATE" | "ERROR" | "SKIP";
   importStatus: string;
@@ -205,7 +207,9 @@ export function LeaderImportClient() {
                     "手机号",
                     "常驻地",
                     "队长身份",
+                    "解析状态",
                     "队长级别",
+                    "解析等级",
                     "带队次数",
                     "带队天数",
                     "审核时间",
@@ -234,9 +238,11 @@ export function LeaderImportClient() {
                     <td className="px-4 py-3">{row.phone || "-"}</td>
                     <td className="px-4 py-3">{row.residentLocation || "-"}</td>
                     <td className="px-4 py-3">{row.rawLeaderIdentity || "-"}</td>
+                    <td className="px-4 py-3">{row.status || "-"}</td>
                     <td className="px-4 py-3 whitespace-pre-line">
                       {row.rawLeaderLevel || "-"}
                     </td>
+                    <td className="px-4 py-3">{row.level || "-"}</td>
                     <td className="px-4 py-3">{row.leadCount ?? "-"}</td>
                     <td className="px-4 py-3">{row.leadDays ?? "-"}</td>
                     <td className="px-4 py-3">{formatDate(row.auditTime)}</td>

@@ -15,6 +15,7 @@ import {
   TripEditForm,
   TripLeaderManager,
 } from "@/app/admin/trips/[id]/TripEditForms";
+import { DeleteTripButton } from "@/app/admin/trips/[id]/DeleteTripButton";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -120,6 +121,9 @@ export default async function AdminTripDetailPage({ params }: PageProps) {
             tripId={trip.id}
             tripLeaders={trip.tripLeaders}
           />
+          {user.role === "SUPER_ADMIN" || user.role === "ADMIN" ? (
+            <DeleteTripButton tripId={trip.id} />
+          ) : null}
         </>
       ) : (
         <section className="rounded-lg border bg-card p-5 text-sm text-muted-foreground shadow-sm">

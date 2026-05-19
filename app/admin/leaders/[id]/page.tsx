@@ -9,13 +9,14 @@ import { LEADER_MANAGEMENT_ROLES } from "@/lib/auth/roles";
 import { LEADER_STATUS_LABELS } from "@/lib/constants/leaders";
 import { leaderDetailSelect } from "@/lib/services/leader-select";
 import { LeaderEditForm } from "@/app/admin/leaders/[id]/LeaderEditForm";
+import { DeleteLeaderButton } from "@/app/admin/leaders/[id]/DeleteLeaderButton";
 
 type PageProps = {
   params: Promise<{ id: string }>;
 };
 
 export default async function AdminLeaderDetailPage({ params }: PageProps) {
-  await requireRole(LEADER_MANAGEMENT_ROLES, "/admin/leaders/:id");
+  const user = await requireRole(LEADER_MANAGEMENT_ROLES, "/admin/leaders/:id");
   const { id } = await params;
   const [leader, recommenderOptions] = await Promise.all([
     prisma.leader.findUnique({
@@ -38,6 +39,11 @@ export default async function AdminLeaderDetailPage({ params }: PageProps) {
   if (!leader) {
     notFound();
   }
+
+  const canDelete = user.role === "SUPER_ADMIN" || user.role === "ADMIN";
+  const deleteBlockReason = canDelete
+    ? await getLeaderDeleteBlockReason(id, Boolean(leader.user))
+    : "当前角色不能删除队长档案。";
 
   return (
     <div className="py-8">
@@ -76,8 +82,57 @@ export default async function AdminLeaderDetailPage({ params }: PageProps) {
         leader={leader}
         recommenderOptions={recommenderOptions}
       />
+      {canDelete ? (
+        <DeleteLeaderButton
+          leaderId={leader.id}
+          disabledReason={deleteBlockReason}
+        />
+      ) : null}
     </div>
   );
+}
+
+async function getLeaderDeleteBlockReason(id: string, hasBoundUser: boolean) {
+  if (hasBoundUser) {
+    return "该队长已绑定账号，不能删除，请设为离职。";
+  }
+
+  const [
+    tripLeaders,
+    scoreRecords,
+    scoreApplications,
+    violationEvents,
+    bonusSettlementItems,
+    bindRequests,
+    socialPosts,
+    repurchaseClaims,
+    holidayAttendances,
+    bonusSettlements,
+  ] = await Promise.all([
+    prisma.tripLeader.count({ where: { leaderId: id } }),
+    prisma.scoreRecord.count({ where: { leaderId: id } }),
+    prisma.scoreApplication.count({ where: { leaderId: id } }),
+    prisma.violationEvent.count({ where: { leaderId: id } }),
+    prisma.bonusSettlementItem.count({ where: { leaderId: id } }),
+    prisma.leaderBindRequest.count({ where: { leaderId: id } }),
+    prisma.socialPost.count({ where: { leaderId: id } }),
+    prisma.repurchaseClaim.count({ where: { leaderId: id } }),
+    prisma.holidayAttendance.count({ where: { leaderId: id } }),
+    prisma.bonusSettlement.count({ where: { leaderId: id } }),
+  ]);
+  const total =
+    tripLeaders +
+    scoreRecords +
+    scoreApplications +
+    violationEvents +
+    bonusSettlementItems +
+    bindRequests +
+    socialPosts +
+    repurchaseClaims +
+    holidayAttendances +
+    bonusSettlements;
+
+  return total > 0 ? "该队长已有业务记录，不能删除，请设为离职。" : "";
 }
 
 function Info({

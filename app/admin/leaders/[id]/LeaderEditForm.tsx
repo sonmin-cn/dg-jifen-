@@ -80,6 +80,10 @@ export function LeaderEditForm({
 
   async function handleStatusSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    await updateLeaderStatus(status);
+  }
+
+  async function updateLeaderStatus(nextStatus: LeaderStatus) {
     setStatusError("");
     setIsStatusSubmitting(true);
 
@@ -87,7 +91,7 @@ export function LeaderEditForm({
       const response = await fetch(`/api/leaders/${leader.id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status: nextStatus }),
       });
       const data = (await response.json()) as { message?: string };
 
@@ -199,9 +203,22 @@ export function LeaderEditForm({
             {statusError}
           </p>
         ) : null}
-        <Button className="mt-4 w-full" disabled={isStatusSubmitting} type="submit">
-          {isStatusSubmitting ? "更新中..." : "更新状态"}
-        </Button>
+        <div className="mt-4 grid gap-2">
+          <Button className="w-full" disabled={isStatusSubmitting} type="submit">
+            {isStatusSubmitting ? "更新中..." : "更新状态"}
+          </Button>
+          {leader.status !== "LEFT" ? (
+            <Button
+              className="w-full"
+              disabled={isStatusSubmitting}
+              onClick={() => updateLeaderStatus("LEFT")}
+              type="button"
+              variant="outline"
+            >
+              设为离职
+            </Button>
+          ) : null}
+        </div>
       </form>
     </div>
   );

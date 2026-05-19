@@ -36,9 +36,6 @@ const REQUIRED_HEADERS = [
   "队长id",
   "姓名",
   "手机号码",
-  "队长身份",
-  "队长级别",
-  "岗位状态",
 ];
 
 const HEADER_ALIASES = {
@@ -47,13 +44,13 @@ const HEADER_ALIASES = {
   nickname: "昵称",
   phone: "手机号码",
   residentLocation: "常驻地",
-  rawLeaderIdentity: "队长身份",
-  rawLeaderLevel: "队长级别",
+  rawLeaderIdentity: ["队长身份", "队长状态", "是否实习", "身份类型"],
+  rawLeaderLevel: ["队长级别", "等级"],
   leadCount: "带队次数",
   leadDays: "带队天数",
   auditTime: "审核时间",
   frozenTime: "冻结时间",
-  rawJobStatus: "岗位状态",
+  rawJobStatus: ["岗位状态", "在职状态"],
 } as const;
 
 function normalizeCell(value: unknown) {
@@ -94,11 +91,40 @@ function parseDate(value: unknown) {
 
 export function normalizeLeaderIdentity(value: unknown) {
   const text = normalizeCell(value);
-  if (text.includes("正式队长")) {
-    return { raw: text, status: LeaderStatus.REGULAR };
+  const normalized = text.toLowerCase();
+
+  if (
+    text.includes("离职") ||
+    normalized === "left" ||
+    normalized.includes("resigned")
+  ) {
+    return { raw: text, status: LeaderStatus.LEFT };
   }
-  if (text.includes("实习队长")) {
+  if (
+    text.includes("暂停") ||
+    text.includes("停用") ||
+    text.includes("冻结") ||
+    normalized === "suspended" ||
+    normalized.includes("disabled")
+  ) {
+    return { raw: text, status: LeaderStatus.SUSPENDED };
+  }
+  if (
+    text.includes("实习") ||
+    text === "是" ||
+    normalized === "yes" ||
+    normalized === "true" ||
+    normalized === "intern" ||
+    normalized.includes("intern")
+  ) {
     return { raw: text, status: LeaderStatus.INTERN };
+  }
+  if (
+    text.includes("正式") ||
+    normalized === "regular" ||
+    normalized.includes("regular")
+  ) {
+    return { raw: text, status: LeaderStatus.REGULAR };
   }
 
   return { raw: text, status: null };
@@ -114,17 +140,27 @@ export function normalizeLeaderLevel(value: unknown) {
 
 export function normalizeJobStatus(value: unknown) {
   const text = normalizeCell(value);
+  const normalized = text.toLowerCase();
   if (text.includes("在职")) {
-    return { raw: text, jobStatus: "ACTIVE" };
+    return { raw: text, jobStatus: "ACTIVE", leaderStatus: null };
   }
-  if (text.includes("冻结")) {
-    return { raw: text, jobStatus: "FROZEN" };
+  if (
+    text.includes("冻结") ||
+    text.includes("暂停") ||
+    text.includes("停用") ||
+    normalized === "suspended"
+  ) {
+    return {
+      raw: text,
+      jobStatus: "FROZEN",
+      leaderStatus: LeaderStatus.SUSPENDED,
+    };
   }
-  if (text.includes("离职")) {
-    return { raw: text, jobStatus: "LEFT" };
+  if (text.includes("离职") || normalized === "left") {
+    return { raw: text, jobStatus: "LEFT", leaderStatus: LeaderStatus.LEFT };
   }
 
-  return { raw: text, jobStatus: null };
+  return { raw: text, jobStatus: null, leaderStatus: null };
 }
 
 export async function parseLeaderImportWorkbook(file: File | ArrayBuffer | Buffer) {
@@ -179,9 +215,14 @@ export function parseLeaderImportRow(
   row: Record<string, unknown>,
   rowNumber = Number(row.rowNumber || 0),
 ): ParsedLeaderImportRow {
-  const identity = normalizeLeaderIdentity(row[HEADER_ALIASES.rawLeaderIdentity]);
-  const level = normalizeLeaderLevel(row[HEADER_ALIASES.rawLeaderLevel]);
-  const job = normalizeJobStatus(row[HEADER_ALIASES.rawJobStatus]);
+  const rawIdentityValue = getAliasedValue(row, HEADER_ALIASES.rawLeaderIdentity);
+  const rawLevelValue = getAliasedValue(row, HEADER_ALIASES.rawLeaderLevel);
+  const identity = normalizeLeaderIdentity(rawIdentityValue);
+  const levelIdentity = normalizeLeaderIdentity(rawLevelValue);
+  const level = normalizeLeaderLevel(rawLevelValue);
+  const job = normalizeJobStatus(getAliasedValue(row, HEADER_ALIASES.rawJobStatus));
+  const status = job.leaderStatus || identity.status || levelIdentity.status;
+  const parsedLevel = level.level || (status === LeaderStatus.INTERN ? "流星" : null);
   const parsed = {
     rowNumber,
     externalLeaderId: normalizeCell(row[HEADER_ALIASES.externalLeaderId]),
@@ -196,8 +237,8 @@ export function parseLeaderImportRow(
     auditTime: parseDate(row[HEADER_ALIASES.auditTime]),
     frozenTime: parseDate(row[HEADER_ALIASES.frozenTime]),
     rawJobStatus: job.raw,
-    status: identity.status,
-    level: level.level,
+    status,
+    level: parsedLevel,
     jobStatus: job.jobStatus,
   };
 
@@ -205,6 +246,22 @@ export function parseLeaderImportRow(
     ...parsed,
     rowSignature: buildRowSignature(parsed),
   };
+}
+
+function getAliasedValue(
+  row: Record<string, unknown>,
+  aliases: readonly string[] | string,
+) {
+  const candidates = Array.isArray(aliases) ? aliases : [aliases];
+
+  for (const alias of candidates) {
+    const value = row[alias];
+    if (normalizeCell(value)) {
+      return value;
+    }
+  }
+
+  return "";
 }
 
 export function dedupeLeaderImportRows(rows: ParsedLeaderImportRow[]) {
@@ -362,10 +419,16 @@ function buildRowSignature(row: Omit<ParsedLeaderImportRow, "rowSignature">) {
     rawLeaderLevel: row.rawLeaderLevel,
     leadCount: row.leadCount,
     leadDays: row.leadDays,
-    auditTime: row.auditTime?.toISOString() || "",
-    frozenTime: row.frozenTime?.toISOString() || "",
+    auditTime: formatSignatureDate(row.auditTime),
+    frozenTime: formatSignatureDate(row.frozenTime),
     rawJobStatus: row.rawJobStatus,
   });
+}
+
+function formatSignatureDate(value: Date | string | null) {
+  if (!value) return "";
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString();
 }
 
 function buildConflictMap(rows: ParsedLeaderImportRow[]) {

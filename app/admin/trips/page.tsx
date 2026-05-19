@@ -13,6 +13,7 @@ import {
 } from "@/lib/constants/trips";
 import { tripListSelect } from "@/lib/services/trip-select";
 import { TripCreateForm } from "@/app/admin/trips/TripCreateForm";
+import { BatchGenerateBaseScoreButton } from "@/app/admin/trips/BatchGenerateBaseScoreButton";
 
 type PageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -66,7 +67,7 @@ export default async function AdminTripsPage({ searchParams }: PageProps) {
           <div>
             <h2 className="text-2xl font-semibold">团期管理</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              维护团期信息和带队记录，基础积分生成将在任务 6 接入。
+              维护团期信息和带队记录，可在团期详情或列表批量生成基础积分。
             </p>
           </div>
           {canManage ? (
@@ -104,6 +105,12 @@ export default async function AdminTripsPage({ searchParams }: PageProps) {
           </Button>
         </div>
       </form>
+
+      {canManage ? (
+        <div className="mb-5">
+          <BatchGenerateBaseScoreButton tripIds={trips.map((trip) => trip.id)} />
+        </div>
+      ) : null}
 
       <section className="mb-6 overflow-hidden rounded-lg border bg-card shadow-sm">
         <table className="w-full border-collapse text-sm">
