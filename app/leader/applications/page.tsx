@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/back-button";
 import { requireRole } from "@/lib/auth/permissions";
 import {
   SCORE_APPLICATION_STATUS_LABELS,
@@ -22,6 +23,7 @@ export default async function LeaderApplicationsPage() {
 
   return (
     <div className="mt-6 space-y-5 md:mt-8">
+      <BackButton fallbackHref="/leader/dashboard" />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-2xl font-semibold md:text-3xl">我的加分申请</h2>

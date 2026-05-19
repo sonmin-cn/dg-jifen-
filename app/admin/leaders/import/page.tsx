@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/back-button";
 import { requireRole } from "@/lib/auth/permissions";
 import { LEADER_MANAGEMENT_ROLES } from "@/lib/auth/roles";
 import { LeaderImportClient } from "@/app/admin/leaders/import/LeaderImportClient";
@@ -9,6 +10,7 @@ export default async function AdminLeaderImportPage() {
 
   return (
     <div className="py-8">
+      <BackButton fallbackHref="/admin/dashboard" />
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-2xl font-semibold">导入队长数据</h2>

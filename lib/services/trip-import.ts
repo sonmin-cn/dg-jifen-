@@ -41,6 +41,7 @@ export type TripImportPreviewRow = {
   mainLeaders: string[];
   assistantLeaders: string[];
   followerLeaders: string[];
+  otherLeaders?: string[];
   status: "可导入" | "缺少队长安排" | "缺少开始/结束时间" | "无法解析队长";
 };
 
@@ -479,6 +480,11 @@ function normalizePreviewRow(value: unknown): TripImportPreviewRow | null {
   }
 
   const row = value as Partial<TripImportPreviewRow>;
+  const followerLeaders =
+    row.followerLeaders && row.followerLeaders.length > 0
+      ? row.followerLeaders
+      : row.otherLeaders;
+
   return {
     rowNumber: Number(row.rowNumber) || 0,
     packageNo: normalizeCell(row.packageNo),
@@ -495,7 +501,7 @@ function normalizePreviewRow(value: unknown): TripImportPreviewRow | null {
     routeOwner: normalizeCell(row.routeOwner),
     mainLeaders: normalizeStringArray(row.mainLeaders),
     assistantLeaders: normalizeStringArray(row.assistantLeaders),
-    followerLeaders: normalizeStringArray(row.followerLeaders),
+    followerLeaders: normalizeStringArray(followerLeaders),
     status: row.status || "无法解析队长",
   };
 }

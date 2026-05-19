@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/back-button";
 import { requireRole } from "@/lib/auth/permissions";
 import { VIOLATION_READ_ROLES } from "@/lib/auth/roles";
 import { SCORE_CATEGORY_LABELS } from "@/lib/constants/scores";
@@ -29,6 +30,7 @@ export default async function ViolationDetailPage({ params }: PageProps) {
 
   return (
     <div className="py-8">
+      <BackButton fallbackHref="/admin/dashboard" />
       <Button className="mb-4" size="sm" variant="outline" asChild>
         <Link href="/admin/violations">返回扣分列表</Link>
       </Button>

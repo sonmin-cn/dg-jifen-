@@ -4,6 +4,7 @@ import { requireRole } from "@/lib/auth/permissions";
 import { prisma } from "@/lib/db/prisma";
 import { getLeaderBindingState, maskPhone } from "@/lib/services/leader-binding";
 import { BindRequestButton } from "@/app/leader/bind/BindRequestButton";
+import { BackButton } from "@/components/back-button";
 
 export default async function LeaderBindPage() {
   const user = await requireRole(["LEADER"], "/leader/bind");
@@ -61,7 +62,9 @@ export default async function LeaderBindPage() {
   const leader = candidates[0];
 
   return (
-    <section className="mt-6 max-w-3xl rounded-lg border bg-card p-4 shadow-sm md:mt-8 md:p-6">
+    <div className="mt-6 md:mt-8">
+      <BackButton fallbackHref="/leader/dashboard" />
+      <section className="max-w-3xl rounded-lg border bg-card p-4 shadow-sm md:p-6">
       <div className="mb-6">
         <h2 className="text-2xl font-semibold md:text-3xl">绑定队长档案</h2>
         <p className="mt-2 text-sm text-muted-foreground">
@@ -89,7 +92,8 @@ export default async function LeaderBindPage() {
         </div>
       </div>
       <BindRequestButton />
-    </section>
+      </section>
+    </div>
   );
 }
 
@@ -103,15 +107,18 @@ function MessageCard({
   rejectReason?: string | null;
 }) {
   return (
-    <section className="mt-6 max-w-3xl rounded-lg border bg-card p-4 shadow-sm md:mt-8 md:p-6">
-      <h2 className="text-xl font-semibold">{title}</h2>
-      <p className="mt-3 text-sm text-muted-foreground">{message}</p>
-      {rejectReason ? (
-        <p className="mt-3 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          上一次申请被拒绝：{rejectReason}
-        </p>
-      ) : null}
-    </section>
+    <div className="mt-6 md:mt-8">
+      <BackButton fallbackHref="/leader/dashboard" />
+      <section className="max-w-3xl rounded-lg border bg-card p-4 shadow-sm md:p-6">
+        <h2 className="text-xl font-semibold">{title}</h2>
+        <p className="mt-3 text-sm text-muted-foreground">{message}</p>
+        {rejectReason ? (
+          <p className="mt-3 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            上一次申请被拒绝：{rejectReason}
+          </p>
+        ) : null}
+      </section>
+    </div>
   );
 }
 

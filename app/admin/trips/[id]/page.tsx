@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/back-button";
 import { prisma } from "@/lib/db/prisma";
 import { requireRole } from "@/lib/auth/permissions";
 import { TRIP_MANAGEMENT_ROLES, TRIP_READ_ROLES } from "@/lib/auth/roles";
@@ -71,6 +72,7 @@ export default async function AdminTripDetailPage({ params }: PageProps) {
 
   return (
     <div className="py-8">
+      <BackButton fallbackHref="/admin/dashboard" />
       <Button className="mb-4" size="sm" variant="outline" asChild>
         <Link href="/admin/trips">返回列表</Link>
       </Button>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/back-button";
 import { prisma } from "@/lib/db/prisma";
 import { requireRole } from "@/lib/auth/permissions";
 import { LEADER_MANAGEMENT_ROLES } from "@/lib/auth/roles";
@@ -40,6 +41,7 @@ export default async function AdminLeaderDetailPage({ params }: PageProps) {
 
   return (
     <div className="py-8">
+      <BackButton fallbackHref="/admin/dashboard" />
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <Button className="mb-4" size="sm" variant="outline" asChild>

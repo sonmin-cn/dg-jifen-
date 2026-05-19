@@ -12,7 +12,6 @@ import {
   SCORE_DIRECTION_OPTIONS,
 } from "@/lib/constants/scores";
 import { getAdminScoreRules } from "@/lib/services/score-rules";
-import { ScoreRuleForm } from "@/app/admin/score-rules/ScoreRuleForm";
 import { ScoreRuleStatusButton } from "@/app/admin/score-rules/ScoreRuleStatusButton";
 
 type PageProps = {
@@ -34,10 +33,19 @@ export default async function AdminScoreRulesPage({ searchParams }: PageProps) {
   return (
     <div className="py-8">
       <div className="mb-6 flex flex-col gap-2">
-        <h2 className="text-2xl font-semibold">积分规则管理</h2>
-        <p className="text-sm text-muted-foreground">
-          维护加分、扣分和专项积分规则。历史积分已保存规则快照，规则修改不会自动改变历史积分。
-        </p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 className="text-2xl font-semibold">积分规则管理</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              维护加分、扣分和专项积分规则。历史积分已保存规则快照，规则修改不会自动改变历史积分。
+            </p>
+          </div>
+          {canManage ? (
+            <Button asChild>
+              <Link href="/admin/score-rules/new">新增积分规则</Link>
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       <form className="mb-5 rounded-lg border bg-card p-4 shadow-sm">
@@ -67,13 +75,6 @@ export default async function AdminScoreRulesPage({ searchParams }: PageProps) {
           <Button type="submit">筛选</Button>
         </div>
       </form>
-
-      {canManage ? (
-        <section className="mb-5">
-          <h3 className="mb-3 font-semibold">新增积分规则</h3>
-          <ScoreRuleForm mode="create" />
-        </section>
-      ) : null}
 
       <section className="overflow-x-auto rounded-lg border bg-card shadow-sm">
         <table className="min-w-[1500px] w-full border-collapse text-sm">

@@ -20,7 +20,7 @@ export default async function LeaderLayout({
             <h1 className="mt-1 text-2xl font-semibold md:text-3xl">队长积分中心</h1>
           </div>
           <Button className="h-11 w-full sm:w-auto" variant="outline" asChild>
-            <Link href="/">首页</Link>
+            <Link href="/leader/dashboard">首页</Link>
           </Button>
         </header>
         {children}

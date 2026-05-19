@@ -62,7 +62,7 @@ export default async function AdminLayout({
               </Link>
             </Button>
             <Button variant="outline" asChild>
-              <Link href="/">首页</Link>
+              <Link href="/admin/dashboard">首页</Link>
             </Button>
           </div>
         </header>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 
 export type SearchableSelectOption = {
@@ -31,6 +31,8 @@ export function SearchableSelect({
 }: SearchableSelectProps) {
   const [query, setQuery] = useState("");
   const [internalValue, setInternalValue] = useState(value || "");
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
   const selectedValue = value ?? internalValue;
   const selectedOption = options.find((option) => option.id === selectedValue) || null;
   const normalizedQuery = query.trim().toLowerCase();
@@ -51,6 +53,7 @@ export function SearchableSelect({
   function selectOption(option: SearchableSelectOption) {
     setInternalValue(option.id);
     setQuery(option.label);
+    setIsOpen(false);
     onChange?.(option.id);
   }
 
@@ -60,14 +63,30 @@ export function SearchableSelect({
     onChange?.("");
   }
 
+  useEffect(() => {
+    function handlePointerDown(event: MouseEvent) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, []);
+
   return (
-    <div className="space-y-2">
+    <div className="relative space-y-2" ref={containerRef}>
       <input name={name} type="hidden" value={selectedValue} />
       <Input
         aria-label={placeholder}
         className="h-10"
+        onFocus={() => setIsOpen(true)}
         onChange={(event) => {
           setQuery(event.target.value);
+          setIsOpen(true);
           if (selectedValue) {
             setInternalValue("");
             onChange?.("");
@@ -86,29 +105,31 @@ export function SearchableSelect({
           </button>
         </div>
       ) : null}
-      <div className="max-h-52 overflow-y-auto rounded-md border bg-background">
-        {filteredOptions.length > 0 ? (
-          filteredOptions.map((option) => (
-            <button
-              className={`block w-full px-3 py-2 text-left text-sm hover:bg-muted ${
-                option.id === selectedValue ? "bg-muted" : ""
-              }`}
-              key={option.id}
-              onClick={() => selectOption(option)}
-              type="button"
-            >
-              <span className="block font-medium">{option.label}</span>
-              {option.description ? (
-                <span className="mt-0.5 block text-xs text-muted-foreground">
-                  {option.description}
-                </span>
-              ) : null}
-            </button>
-          ))
-        ) : (
-          <p className="px-3 py-4 text-sm text-muted-foreground">{emptyText}</p>
-        )}
-      </div>
+      {isOpen ? (
+        <div className="absolute left-0 right-0 z-50 max-h-64 overflow-y-auto rounded-md border bg-background shadow-lg">
+          {filteredOptions.length > 0 ? (
+            filteredOptions.map((option) => (
+              <button
+                className={`block w-full px-3 py-2 text-left text-sm hover:bg-muted ${
+                  option.id === selectedValue ? "bg-muted" : ""
+                }`}
+                key={option.id}
+                onClick={() => selectOption(option)}
+                type="button"
+              >
+                <span className="block font-medium">{option.label}</span>
+                {option.description ? (
+                  <span className="mt-0.5 block text-xs text-muted-foreground">
+                    {option.description}
+                  </span>
+                ) : null}
+              </button>
+            ))
+          ) : (
+            <p className="px-3 py-4 text-sm text-muted-foreground">{emptyText}</p>
+          )}
+        </div>
+      ) : null}
       {required && !selectedValue ? (
         <p className="text-xs text-muted-foreground">请搜索并选择一项。</p>
       ) : null}

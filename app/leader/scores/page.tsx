@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import type { ScoreCategory, ScoreDirection } from "@prisma/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/back-button";
 import { requireRole } from "@/lib/auth/permissions";
 import {
   SCORE_CATEGORY_LABELS,
@@ -34,6 +35,7 @@ export default async function LeaderScoresPage({ searchParams }: PageProps) {
 
   return (
     <div className="mt-6 space-y-5 md:mt-8">
+      <BackButton fallbackHref="/leader/dashboard" />
       <div>
         <h2 className="text-2xl font-semibold md:text-3xl">积分明细</h2>
         <p className="mt-2 text-sm text-muted-foreground">

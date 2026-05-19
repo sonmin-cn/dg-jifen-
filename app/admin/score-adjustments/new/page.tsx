@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/back-button";
 import { requireRole } from "@/lib/auth/permissions";
 import { SCORE_ADJUSTMENT_MANAGEMENT_ROLES } from "@/lib/auth/roles";
 import { prisma } from "@/lib/db/prisma";
@@ -40,6 +41,7 @@ export default async function AdminScoreAdjustmentNewPage() {
 
   return (
     <div className="py-8">
+      <BackButton fallbackHref="/admin/dashboard" />
       <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <h2 className="text-2xl font-semibold">新增专项加分 / 积分补录</h2>

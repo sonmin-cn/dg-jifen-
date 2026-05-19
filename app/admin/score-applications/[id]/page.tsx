@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/back-button";
 import { requireRole } from "@/lib/auth/permissions";
 import { LEADER_MANAGEMENT_ROLES, SCORE_RECORD_READ_ROLES } from "@/lib/auth/roles";
 import {
@@ -32,6 +33,7 @@ export default async function AdminScoreApplicationDetailPage({ params }: PagePr
 
   return (
     <div className="py-8">
+      <BackButton fallbackHref="/admin/dashboard" />
       <Button className="mb-4" size="sm" variant="outline" asChild>
         <Link href="/admin/score-applications">返回申请列表</Link>
       </Button>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/back-button";
 import { requireRole } from "@/lib/auth/permissions";
 import { VIOLATION_MANAGEMENT_ROLES } from "@/lib/auth/roles";
 import { prisma } from "@/lib/db/prisma";
@@ -31,6 +32,7 @@ export default async function NewViolationPage() {
 
   return (
     <div className="py-8">
+      <BackButton fallbackHref="/admin/dashboard" />
       <Button className="mb-4" size="sm" variant="outline" asChild>
         <Link href="/admin/violations">返回扣分列表</Link>
       </Button>

@@ -100,7 +100,7 @@ export function TripImportPreviewClient() {
   const importableCount = preview?.rows.filter((row) => row.status === "可导入").length || 0;
 
   return (
-    <div className="py-8">
+    <div>
       <Button className="mb-4" size="sm" variant="outline" asChild>
         <Link href="/admin/trips">返回团期列表</Link>
       </Button>

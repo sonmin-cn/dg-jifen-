@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/back-button";
 import { requireRole } from "@/lib/auth/permissions";
 import {
   getLeaderApplicationRules,
@@ -21,6 +22,7 @@ export default async function NewLeaderApplicationPage() {
 
   return (
     <div className="mt-6 md:mt-8">
+      <BackButton fallbackHref="/leader/dashboard" />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-2xl font-semibold md:text-3xl">提交加分申请</h2>

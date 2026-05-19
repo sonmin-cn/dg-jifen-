@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/back-button";
 import { requireRole } from "@/lib/auth/permissions";
 import { BONUS_READ_ROLES } from "@/lib/auth/roles";
 import { LEADER_STATUS_LABELS } from "@/lib/constants/leaders";
@@ -27,6 +28,7 @@ export default async function BonusSettlementDetailPage({ params }: PageProps) {
 
   return (
     <div className="py-8">
+      <BackButton fallbackHref="/admin/dashboard" />
       <Button className="mb-4" size="sm" variant="outline" asChild>
         <Link href={`/admin/bonus-settlement?scoreYearId=${settlement.scoreYearId}`}>返回奖金测算</Link>
       </Button>

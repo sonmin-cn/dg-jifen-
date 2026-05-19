@@ -47,7 +47,11 @@ export default async function AdminTripsPage({ searchParams }: PageProps) {
     prisma.trip.findMany({
       where,
       select: tripListSelect,
-      orderBy: { startDate: "desc" },
+      orderBy: [
+        { updatedAt: "desc" },
+        { createdAt: "desc" },
+        { startDate: "desc" },
+      ],
       skip: (page - 1) * pageSize,
       take: pageSize,
     }),

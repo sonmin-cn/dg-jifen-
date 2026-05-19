@@ -4,6 +4,7 @@ import { requireRole } from "@/lib/auth/permissions";
 import { LEADER_STATUS_LABELS } from "@/lib/constants/leaders";
 import { leaderDetailSelect } from "@/lib/services/leader-select";
 import { redirect } from "next/navigation";
+import { BackButton } from "@/components/back-button";
 
 export default async function LeaderProfilePage() {
   const user = await requireRole(["LEADER"], "/leader/profile");
@@ -17,7 +18,9 @@ export default async function LeaderProfilePage() {
   }
 
   return (
-    <section className="mt-6 rounded-lg border bg-card p-4 shadow-sm md:mt-8 md:p-6">
+    <div className="mt-6 md:mt-8">
+      <BackButton fallbackHref="/leader/dashboard" />
+      <section className="rounded-lg border bg-card p-4 shadow-sm md:p-6">
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl font-semibold md:text-3xl">我的档案</h2>
@@ -54,7 +57,8 @@ export default async function LeaderProfilePage() {
           <Info label="备注" value={leader.remark} />
         </InfoGroup>
       </div>
-    </section>
+      </section>
+    </div>
   );
 }
 
