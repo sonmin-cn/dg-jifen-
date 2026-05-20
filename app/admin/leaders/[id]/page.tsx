@@ -6,7 +6,7 @@ import { BackButton } from "@/components/back-button";
 import { prisma } from "@/lib/db/prisma";
 import { requireRole } from "@/lib/auth/permissions";
 import { LEADER_MANAGEMENT_ROLES } from "@/lib/auth/roles";
-import { LEADER_STATUS_LABELS } from "@/lib/constants/leaders";
+import { LEADER_STATUS_LABELS, formatLeaderDisplayLevel } from "@/lib/constants/leaders";
 import { leaderDetailSelect } from "@/lib/services/leader-select";
 import { LeaderEditForm } from "@/app/admin/leaders/[id]/LeaderEditForm";
 import { DeleteLeaderButton } from "@/app/admin/leaders/[id]/DeleteLeaderButton";
@@ -65,7 +65,7 @@ export default async function AdminLeaderDetailPage({ params }: PageProps) {
 
       <section className="mb-5 grid gap-4 rounded-lg border bg-card p-5 text-sm shadow-sm md:grid-cols-3">
         <Info label="区域" value={leader.region} />
-        <Info label="等级" value={leader.level} />
+        <Info label="等级" value={formatLeaderDisplayLevel(leader.status, leader.level)} />
         <Info label="推荐人" value={leader.recommenderLeader?.realName} />
         <Info label="入职日期" value={formatDate(leader.joinDate)} />
         <Info label="绑定账号" value={leader.user?.username} />

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/back-button";
 import { requireRole } from "@/lib/auth/permissions";
 import { BONUS_READ_ROLES } from "@/lib/auth/roles";
-import { LEADER_STATUS_LABELS } from "@/lib/constants/leaders";
+import { LEADER_STATUS_LABELS, formatLeaderDisplayLevel } from "@/lib/constants/leaders";
 import {
   formatMoney,
   formatPercent,
@@ -81,7 +81,7 @@ export default async function BonusSettlementDetailPage({ params }: PageProps) {
                 <Td className="font-medium">{item.leader.realName}</Td>
                 <Td>{item.leader.nickname || "-"}</Td>
                 <Td>{LEADER_STATUS_LABELS[item.leader.status]}</Td>
-                <Td>{item.leader.level || "-"}</Td>
+                <Td>{formatLeaderDisplayLevel(item.leader.status, item.leader.level)}</Td>
                 <Td>{formatRankingPoints(item.totalPoints)}</Td>
                 <Td>{formatRankingPoints(item.baseTripPoints || 0, { signed: true })}</Td>
                 <Td>{formatRankingPoints(item.applicationPoints || 0, { signed: true })}</Td>

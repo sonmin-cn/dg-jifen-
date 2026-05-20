@@ -6,6 +6,7 @@ import {
   getScoreYearDateRange,
 } from "@/lib/services/score-ranking";
 import { getApplicationTypeLabel } from "@/lib/constants/score-applications";
+import { formatLeaderDisplayLevel } from "@/lib/constants/leaders";
 
 export type DataCheckCode =
   | "UNBOUND_LEADERS"
@@ -240,7 +241,7 @@ export async function getUnboundLeaders(params: DataCheckParams) {
         field("昵称", leader.nickname),
         field("手机号", maskPhone(leader.phone)),
         field("状态", leader.status),
-        field("等级", leader.level),
+        field("等级", formatLeaderDisplayLevel(leader.status, leader.level)),
         field("常驻地", leader.residentLocation || leader.region),
         field("最近导入时间", formatDateTime(leader.lastImportedAt)),
       ],

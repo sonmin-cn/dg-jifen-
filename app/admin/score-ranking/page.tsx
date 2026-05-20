@@ -9,6 +9,7 @@ import {
   LEADER_LEVEL_OPTIONS,
   LEADER_STATUS_LABELS,
   LEADER_STATUS_OPTIONS,
+  formatLeaderDisplayLevel,
 } from "@/lib/constants/leaders";
 import {
   formatRankingPoints,
@@ -154,7 +155,7 @@ export default async function AdminScoreRankingPage({ searchParams }: PageProps)
                       <Td>{row.leader.nickname || "-"}</Td>
                       <Td>{maskPhone(row.leader.phone)}</Td>
                       <Td>{LEADER_STATUS_LABELS[row.leader.status]}</Td>
-                      <Td>{row.leader.level || "-"}</Td>
+                      <Td>{formatLeaderDisplayLevel(row.leader.status, row.leader.level)}</Td>
                       <Td>{row.leader.residentLocation || row.leader.region || "-"}</Td>
                       <Td className="font-semibold">{formatRankingPoints(row.totalPoints)}</Td>
                       <Td>{formatRankingPoints(row.baseTripPoints, { signed: true })}</Td>

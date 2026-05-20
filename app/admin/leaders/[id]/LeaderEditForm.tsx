@@ -120,6 +120,12 @@ export function LeaderEditForm({
           <input name="status" type="hidden" value={leader.status} />
           <div className="space-y-2">
             <Label htmlFor="level">等级</Label>
+            {leader.status === "INTERN" ? (
+              <div className="flex h-10 items-center rounded-md border bg-muted/40 px-3 text-sm">
+                实习
+                <input name="level" type="hidden" value={leader.level || "流星"} />
+              </div>
+            ) : (
             <select
               className="h-10 w-full rounded-md border bg-background px-3 text-sm"
               defaultValue={leader.level || ""}
@@ -133,6 +139,7 @@ export function LeaderEditForm({
                 </option>
               ))}
             </select>
+            )}
           </div>
           <Field
             defaultValue={formatDateInput(leader.joinDate)}

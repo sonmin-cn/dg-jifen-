@@ -18,6 +18,7 @@ import {
   SCORE_RECORD_STATUS_OPTIONS,
 } from "@/lib/constants/scores";
 import { prisma } from "@/lib/db/prisma";
+import { formatLeaderDisplayLevel } from "@/lib/constants/leaders";
 import {
   formatScorePoints,
   getAdminScoreRecords,
@@ -110,7 +111,7 @@ export default async function AdminScoreRecordsPage({ searchParams }: PageProps)
             name="leaderId"
             options={leaders.map((leader) => ({
               id: leader.id,
-              label: `${leader.realName}${leader.nickname ? ` / ${leader.nickname}` : ""}${leader.phone ? ` / ${maskPhone(leader.phone)}` : ""} / ${leader.status}${leader.level ? ` / ${leader.level}` : ""}`,
+              label: `${leader.realName}${leader.nickname ? ` / ${leader.nickname}` : ""}${leader.phone ? ` / ${maskPhone(leader.phone)}` : ""} / ${leader.status} / ${formatLeaderDisplayLevel(leader.status, leader.level)}`,
               searchText: `${leader.realName} ${leader.nickname || ""} ${leader.phone || ""} ${leader.externalLeaderId || ""} ${leader.status} ${leader.level || ""}`,
             }))}
             placeholder="全部队长 / 搜索姓名昵称手机号"

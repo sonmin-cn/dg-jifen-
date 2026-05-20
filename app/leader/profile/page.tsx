@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { prisma } from "@/lib/db/prisma";
 import { requireRole } from "@/lib/auth/permissions";
-import { LEADER_STATUS_LABELS } from "@/lib/constants/leaders";
+import { LEADER_STATUS_LABELS, formatLeaderDisplayLevel } from "@/lib/constants/leaders";
 import { leaderDetailSelect } from "@/lib/services/leader-select";
 import { redirect } from "next/navigation";
 import { BackButton } from "@/components/back-button";
@@ -40,7 +40,7 @@ export default async function LeaderProfilePage() {
         </InfoGroup>
         <InfoGroup title="队长身份">
           <Info label="状态" value={LEADER_STATUS_LABELS[leader.status]} />
-          <Info label="等级" value={leader.level} />
+          <Info label="等级" value={formatLeaderDisplayLevel(leader.status, leader.level)} />
           <Info label="队长身份" value={leader.rawLeaderIdentity} />
           <Info label="原始等级" value={leader.rawLeaderLevel} />
           <Info label="岗位状态" value={leader.rawJobStatus} />

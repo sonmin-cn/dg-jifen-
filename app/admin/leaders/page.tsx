@@ -11,6 +11,7 @@ import {
   LEADER_LEVEL_OPTIONS,
   LEADER_STATUS_LABELS,
   LEADER_STATUS_OPTIONS,
+  formatLeaderDisplayLevel,
 } from "@/lib/constants/leaders";
 import { leaderDetailSelect } from "@/lib/services/leader-select";
 import { LeaderCreateForm } from "@/app/admin/leaders/LeaderCreateForm";
@@ -156,7 +157,7 @@ export default async function AdminLeadersPage({ searchParams }: PageProps) {
                   <Td>
                     <LeaderStatusBadge status={leader.status} />
                   </Td>
-                  <Td>{leader.level || "-"}</Td>
+                  <Td>{formatLeaderDisplayLevel(leader.status, leader.level)}</Td>
                   <Td>{leader.recommenderLeader?.realName || "-"}</Td>
                   <Td>
                     <Button size="sm" variant="outline" asChild>

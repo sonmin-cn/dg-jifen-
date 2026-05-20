@@ -15,6 +15,7 @@ import {
   TRIP_STATUS_LABELS,
   TRIP_STATUS_OPTIONS,
 } from "@/lib/constants/trips";
+import { formatLeaderDisplayLevel } from "@/lib/constants/leaders";
 
 type LeaderOption = {
   id: string;
@@ -496,7 +497,7 @@ function LeaderSelect({
       name={name}
       options={leaders.map((leader) => ({
         id: leader.id,
-        label: `${leader.realName}${leader.nickname ? ` / ${leader.nickname}` : ""}${leader.phone ? ` / ****${leader.phone.slice(-4)}` : ""} / ${leader.status}${leader.level ? ` / ${leader.level}` : ""}`,
+        label: `${leader.realName}${leader.nickname ? ` / ${leader.nickname}` : ""}${leader.phone ? ` / ****${leader.phone.slice(-4)}` : ""} / ${leader.status} / ${formatLeaderDisplayLevel(leader.status, leader.level)}`,
         searchText: `${leader.realName} ${leader.nickname || ""} ${leader.phone || ""} ${leader.externalLeaderId || ""} ${leader.status} ${leader.level || ""}`,
       }))}
       placeholder="搜索姓名 / 昵称 / 手机号 / 队长ID"

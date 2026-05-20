@@ -15,3 +15,14 @@ export const LEADER_STATUS_LABELS: Record<LeaderStatus, string> = {
   SUSPENDED: "暂停",
   LEFT: "离职",
 };
+
+export function formatLeaderDisplayLevel(
+  status: LeaderStatus | string | null | undefined,
+  level: string | null | undefined,
+) {
+  if (status === "INTERN") {
+    return "实习";
+  }
+
+  return level || "-";
+}

@@ -38,9 +38,9 @@ export default async function LeaderDashboardPage() {
       icon: ListChecks,
     },
     {
-      title: "奖金测算",
+      title: "奖金规则说明",
       value: "查看",
-      description: "查看当前奖金池、我的资格和最近一次测算",
+      description: "查看试运营阶段奖金规则说明和基础参与条件",
       icon: WalletCards,
     },
     {
@@ -77,10 +77,10 @@ export default async function LeaderDashboardPage() {
                 </Button>
               </div>
             ) : null}
-            {card.title === "奖金测算" ? (
+            {card.title === "奖金规则说明" ? (
               <div className="mt-4">
                 <Button className="h-11 w-full sm:w-auto" size="sm" variant="outline" asChild>
-                  <Link href="/leader/bonus">查看奖金信息</Link>
+                  <Link href="/leader/bonus">查看规则说明</Link>
                 </Button>
               </div>
             ) : null}

@@ -4,6 +4,7 @@ import { BackButton } from "@/components/back-button";
 import { requireRole } from "@/lib/auth/permissions";
 import { VIOLATION_MANAGEMENT_ROLES } from "@/lib/auth/roles";
 import { prisma } from "@/lib/db/prisma";
+import { formatLeaderDisplayLevel } from "@/lib/constants/leaders";
 import { getViolationRulePreview } from "@/lib/services/violations";
 import { ViolationCreateForm } from "@/app/admin/violations/ViolationCreateForm";
 
@@ -45,7 +46,7 @@ export default async function NewViolationPage() {
       <ViolationCreateForm
         leaders={leaders.map((leader) => ({
           id: leader.id,
-          label: `${leader.realName}${leader.nickname ? ` / ${leader.nickname}` : ""}${leader.phone ? ` / ****${leader.phone.slice(-4)}` : ""} / ${leader.status}${leader.level ? ` / ${leader.level}` : ""}`,
+          label: `${leader.realName}${leader.nickname ? ` / ${leader.nickname}` : ""}${leader.phone ? ` / ****${leader.phone.slice(-4)}` : ""} / ${leader.status} / ${formatLeaderDisplayLevel(leader.status, leader.level)}`,
           searchText: `${leader.realName} ${leader.nickname || ""} ${leader.phone || ""} ${leader.externalLeaderId || ""} ${leader.status} ${leader.level || ""}`,
         }))}
         rulePreview={rulePreview}

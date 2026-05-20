@@ -12,7 +12,7 @@ import {
   getBonusSettlements,
 } from "@/lib/services/bonus";
 import { BonusSettlementSaveForm } from "@/app/admin/bonus-settlement/BonusSettlementSaveForm";
-import { LEADER_STATUS_LABELS } from "@/lib/constants/leaders";
+import { LEADER_STATUS_LABELS, formatLeaderDisplayLevel } from "@/lib/constants/leaders";
 
 type PageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -127,7 +127,7 @@ export default async function BonusSettlementPage({ searchParams }: PageProps) {
                       <Td className="font-medium">{item.leaderName}</Td>
                       <Td>{item.nickname || "-"}</Td>
                       <Td>{LEADER_STATUS_LABELS[item.leaderStatus as keyof typeof LEADER_STATUS_LABELS]}</Td>
-                      <Td>{item.level || "-"}</Td>
+                      <Td>{formatLeaderDisplayLevel(item.leaderStatus, item.level)}</Td>
                       <Td>{formatRankingPoints(item.totalPoints)}</Td>
                       <Td>{formatRankingPoints(item.baseTripPoints, { signed: true })}</Td>
                       <Td>{formatRankingPoints(item.applicationPoints, { signed: true })}</Td>
