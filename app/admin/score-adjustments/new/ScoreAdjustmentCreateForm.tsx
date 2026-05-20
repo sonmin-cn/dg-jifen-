@@ -21,6 +21,12 @@ type RuleOption = {
   effectiveFrom: string;
   effectiveTo: string | null;
 };
+type EvidenceImage = {
+  url: string;
+  filename?: string;
+  mimeType?: string;
+  size?: number;
+};
 
 type ScoreAdjustmentCreateFormProps = {
   leaders: Option[];
@@ -42,6 +48,8 @@ export function ScoreAdjustmentCreateForm({
   const [points, setPoints] = useState(String(rules[0]?.points ?? ""));
   const [item, setItem] = useState(rules[0]?.name || "");
   const [error, setError] = useState("");
+  const [evidenceImages, setEvidenceImages] = useState<EvidenceImage[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const selectedRule = useMemo(
     () => rules.find((rule) => rule.id === selectedRuleId) || null,
@@ -78,6 +86,7 @@ export function ScoreAdjustmentCreateForm({
       item,
       reason: String(formData.get("reason") || ""),
       evidenceText: String(formData.get("evidenceText") || ""),
+      evidenceImages,
       evidenceUrl: String(formData.get("evidenceUrl") || ""),
       points: Number(points),
       overrideReason: String(formData.get("overrideReason") || ""),
@@ -107,6 +116,59 @@ export function ScoreAdjustmentCreateForm({
       setError("网络异常，创建失败");
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function handleImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files || []);
+    event.target.value = "";
+    setError("");
+
+    if (files.length === 0) return;
+    if (evidenceImages.length + files.length > 3) {
+      setError("最多上传 3 张证明图片");
+      return;
+    }
+
+    const unsupported = files.find(
+      (file) => !["image/jpeg", "image/png", "image/webp"].includes(file.type),
+    );
+    if (unsupported) {
+      setError("仅支持 JPG、PNG、WEBP 图片");
+      return;
+    }
+
+    const oversized = files.find((file) => file.size > 5 * 1024 * 1024);
+    if (oversized) {
+      setError("单张证明图片不能超过 5MB");
+      return;
+    }
+
+    const formData = new FormData();
+    files.forEach((file) => formData.append("images", file));
+    setIsUploading(true);
+
+    try {
+      const response = await fetch("/api/admin/score-adjustments/upload-evidence", {
+        method: "POST",
+        body: formData,
+      });
+      const data = (await response.json().catch(() => null)) as {
+        success?: boolean;
+        error?: string;
+        images?: EvidenceImage[];
+      } | null;
+
+      if (!response.ok || data?.success === false || !data?.images) {
+        setError(data?.error || "图片上传失败");
+        return;
+      }
+
+      setEvidenceImages((current) => [...current, ...data.images!].slice(0, 3));
+    } catch {
+      setError("图片上传请求失败，请稍后重试");
+    } finally {
+      setIsUploading(false);
     }
   }
 
@@ -194,7 +256,52 @@ export function ScoreAdjustmentCreateForm({
         </div>
         <div className="md:col-span-2">
           <Field label="证据说明">
-            <Textarea name="evidenceText" rows={3} />
+            <Textarea name="evidenceText" placeholder="选填。建议填写说明和证据，便于后续复核。" rows={3} />
+          </Field>
+        </div>
+        <div className="md:col-span-2">
+          <Field label="证据截图（选填，最多 3 张）">
+            <div className="space-y-3">
+              <Input
+                accept="image/jpeg,image/png,image/webp"
+                disabled={isUploading || evidenceImages.length >= 3}
+                multiple
+                onChange={handleImageUpload}
+                type="file"
+              />
+              <p className="text-xs text-muted-foreground">
+                支持 JPG、PNG、WEBP，单张不超过 5MB。不上传截图也可以提交。
+              </p>
+              {isUploading ? (
+                <p className="text-sm text-muted-foreground">图片上传中...</p>
+              ) : null}
+              {evidenceImages.length > 0 ? (
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {evidenceImages.map((image) => (
+                    <div className="rounded-md border bg-background p-2" key={image.url}>
+                      <a href={image.url} rel="noreferrer" target="_blank">
+                        <img
+                          alt={image.filename || "证明截图"}
+                          className="h-28 w-full rounded object-cover"
+                          src={image.url}
+                        />
+                      </a>
+                      <button
+                        className="mt-2 text-xs text-muted-foreground hover:text-foreground"
+                        onClick={() =>
+                          setEvidenceImages((current) =>
+                            current.filter((item) => item.url !== image.url),
+                          )
+                        }
+                        type="button"
+                      >
+                        移除
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
           </Field>
         </div>
         <Field label="证据链接（选填）">

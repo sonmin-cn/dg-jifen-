@@ -201,7 +201,10 @@ export default async function AdminScoreRecordsPage({ searchParams }: PageProps)
           <tbody>
             {data.records.length > 0 ? (
               data.records.map((record) => (
-                <tr className="border-t" key={record.id}>
+                <tr
+                  className={`border-t ${record.status === "VOIDED" ? "bg-muted/40 text-muted-foreground" : ""}`}
+                  key={record.id}
+                >
                   <Td>{formatDate(record.occurredAt)}</Td>
                   <Td className="font-medium">{record.leader.realName}</Td>
                   <Td>{record.leader.nickname || "-"}</Td>
@@ -221,7 +224,11 @@ export default async function AdminScoreRecordsPage({ searchParams }: PageProps)
                         : record.effectivePoints,
                     )}
                   </Td>
-                  <Td>{SCORE_RECORD_STATUS_LABELS[record.status]}</Td>
+                  <Td>
+                    <Badge variant={record.status === "VOIDED" ? "outline" : "secondary"}>
+                      {SCORE_RECORD_STATUS_LABELS[record.status]}
+                    </Badge>
+                  </Td>
                   <Td>{record.trip?.routeName || "未关联团期"}</Td>
                   <Td>{record.ruleName || record.rule?.name || "-"}</Td>
                   <Td>{record.ruleCode || record.rule?.code || "-"}</Td>

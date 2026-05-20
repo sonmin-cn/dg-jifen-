@@ -24,10 +24,18 @@ export type CreateScoreAdjustmentInput = {
   item?: unknown;
   reason?: unknown;
   evidenceText?: unknown;
+  evidenceImages?: unknown;
   evidenceUrl?: unknown;
   points?: unknown;
   overrideReason?: unknown;
   remark?: unknown;
+};
+
+export type EvidenceImage = {
+  url: string;
+  filename?: string;
+  mimeType?: string;
+  size?: number;
 };
 
 export async function getAdminScoreAdjustments(params: AdminScoreAdjustmentParams) {
@@ -85,6 +93,7 @@ export async function createScoreAdjustment(
   const item = normalizeRequiredString(input.item);
   const reason = normalizeRequiredString(input.reason);
   const evidenceText = normalizeRequiredString(input.evidenceText);
+  const evidenceImages = normalizeEvidenceImages(input.evidenceImages);
   const evidenceUrl = normalizeOptionalString(input.evidenceUrl);
   const points = parsePositiveNumber(input.points);
   const overrideReason = normalizeOptionalString(input.overrideReason);
@@ -95,7 +104,9 @@ export async function createScoreAdjustment(
   if (!ruleId) return { ok: false as const, status: 400, message: "请选择积分规则" };
   if (!item) return { ok: false as const, status: 400, message: "请填写加分标题" };
   if (!reason) return { ok: false as const, status: 400, message: "请填写加分原因" };
-  if (!evidenceText) return { ok: false as const, status: 400, message: "请填写证据说明" };
+  if (!evidenceImages.ok) {
+    return { ok: false as const, status: 400, message: evidenceImages.message };
+  }
   if (points === null || points <= 0) {
     return { ok: false as const, status: 400, message: "加分分值必须大于 0" };
   }
@@ -148,6 +159,7 @@ export async function createScoreAdjustment(
     adjustment: {
       reason,
       evidenceText,
+      evidenceImages: evidenceImages.images,
       evidenceUrl,
       originalRulePoints: rule.points,
       actualPoints: points,
@@ -159,7 +171,10 @@ export async function createScoreAdjustment(
   };
   const fullRemark = [
     `加分原因：${reason}`,
-    `证据说明：${evidenceText}`,
+    evidenceText ? `证据说明：${evidenceText}` : "",
+    evidenceImages.images.length > 0
+      ? `证据图片：${evidenceImages.images.map((image) => image.url).join("，")}`
+      : "",
     evidenceUrl ? `证据链接：${evidenceUrl}` : "",
     remark ? `备注：${remark}` : "",
     overrideReason ? `覆盖原因：${overrideReason}` : "",
@@ -212,6 +227,7 @@ export async function createScoreAdjustment(
           scoreRecordId: created.id,
           reason,
           evidenceText,
+          evidenceImages: evidenceImages.images,
           evidenceUrl,
           overrideReason,
           tripId,
@@ -308,4 +324,43 @@ function parseDateTime(value: unknown) {
   if (typeof value !== "string" || !value) return null;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function normalizeEvidenceImages(value: unknown):
+  | { ok: true; images: EvidenceImage[] }
+  | { ok: false; message: string } {
+  if (value === undefined || value === null) {
+    return { ok: true, images: [] };
+  }
+
+  if (!Array.isArray(value)) {
+    return { ok: false, message: "证明图片格式不正确" };
+  }
+
+  if (value.length > 3) {
+    return { ok: false, message: "最多上传 3 张证明图片" };
+  }
+
+  const images: EvidenceImage[] = [];
+  for (const image of value) {
+    if (!image || typeof image !== "object") {
+      return { ok: false, message: "证明图片格式不正确" };
+    }
+    const item = image as Record<string, unknown>;
+    const url = normalizeRequiredString(item.url);
+    if (!url.startsWith("/uploads/score-applications/")) {
+      return { ok: false, message: "证明图片地址不合法" };
+    }
+    images.push({
+      url,
+      filename: normalizeRequiredString(item.filename) || undefined,
+      mimeType: normalizeRequiredString(item.mimeType) || undefined,
+      size:
+        typeof item.size === "number" && Number.isFinite(item.size)
+          ? item.size
+          : undefined,
+    });
+  }
+
+  return { ok: true, images };
 }

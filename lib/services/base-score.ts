@@ -103,6 +103,7 @@ export async function generateBaseScoresForTrips({
                 select: {
                   id: true,
                   realName: true,
+                  status: true,
                 },
               },
             },
@@ -187,6 +188,19 @@ export async function generateBaseScoresForTrips({
             leaderName,
             status: "skipped",
             reason: "带队记录未标记完成",
+          });
+          continue;
+        }
+
+        if (!["INTERN", "REGULAR"].includes(tripLeader.leader.status)) {
+          summary.skippedTripLeaders += 1;
+          details.push({
+            tripId: trip.id,
+            routeName: trip.routeName,
+            leaderId: tripLeader.leaderId,
+            leaderName,
+            status: "skipped",
+            reason: "队长状态不是实习或正式",
           });
           continue;
         }

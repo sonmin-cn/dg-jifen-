@@ -31,6 +31,7 @@ export default async function AdminScoreRecordDetailPage({ params }: PageProps) 
   }
 
   const snapshot = parseRuleSnapshotJson(record.ruleSnapshotJson);
+  const evidenceImages = extractEvidenceImages(record.ruleSnapshotJson);
   const canVoid = SCORE_RECORD_VOID_ROLES.includes(user.role);
 
   return (
@@ -46,7 +47,9 @@ export default async function AdminScoreRecordDetailPage({ params }: PageProps) 
           <Badge variant={record.direction === "ADD" ? "secondary" : "outline"}>
             {SCORE_DIRECTION_LABELS[record.direction]}
           </Badge>
-          <Badge variant="outline">{SCORE_RECORD_STATUS_LABELS[record.status]}</Badge>
+          <Badge variant={record.status === "VOIDED" ? "outline" : "secondary"}>
+            {SCORE_RECORD_STATUS_LABELS[record.status]}
+          </Badge>
         </div>
         <p className="text-sm text-muted-foreground">
           {record.leader.realName}
@@ -70,7 +73,12 @@ export default async function AdminScoreRecordDetailPage({ params }: PageProps) 
               : record.effectivePoints,
           )}
         />
-        <Info label="状态" value={SCORE_RECORD_STATUS_LABELS[record.status]} />
+        <div>
+          <p className="text-muted-foreground">状态</p>
+          <Badge className="mt-1" variant={record.status === "VOIDED" ? "outline" : "secondary"}>
+            {SCORE_RECORD_STATUS_LABELS[record.status]}
+          </Badge>
+        </div>
         <Info label="发生时间" value={formatDateTime(record.occurredAt)} />
         <Info label="审核人 ID" value={record.approvedBy} />
         <Info label="审核时间" value={formatDateTime(record.approvedAt)} />
@@ -123,6 +131,32 @@ export default async function AdminScoreRecordDetailPage({ params }: PageProps) 
           {snapshot || "无规则快照"}
         </pre>
       </section>
+
+      {evidenceImages.length > 0 ? (
+        <section className="mt-5 rounded-lg border bg-card p-5 text-sm shadow-sm">
+          <h3 className="text-lg font-semibold">证据截图</h3>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {evidenceImages.map((image) => (
+              <a
+                className="rounded-md border bg-background p-2 hover:border-primary"
+                href={image.url}
+                key={image.url}
+                rel="noreferrer"
+                target="_blank"
+              >
+                <img
+                  alt={image.filename || "证据截图"}
+                  className="h-32 w-full rounded object-cover"
+                  src={image.url}
+                />
+                <p className="mt-2 truncate text-xs text-muted-foreground">
+                  {image.filename || image.url}
+                </p>
+              </a>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="mt-5">
         {record.status === "VOIDED" ? (
@@ -177,4 +211,36 @@ function formatNullablePoints(value: number | null) {
   }
 
   return formatPlainPoints(value);
+}
+
+function extractEvidenceImages(value: string | null) {
+  if (!value) return [];
+
+  try {
+    const parsed = JSON.parse(value) as {
+      adjustment?: {
+        evidenceImages?: Array<{
+          url?: unknown;
+          filename?: unknown;
+        }>;
+      };
+      evidence?: {
+        images?: Array<{
+          url?: unknown;
+          filename?: unknown;
+        }>;
+      };
+    };
+    const images =
+      parsed.adjustment?.evidenceImages || parsed.evidence?.images || [];
+
+    return images
+      .map((image) => ({
+        url: typeof image.url === "string" ? image.url : "",
+        filename: typeof image.filename === "string" ? image.filename : "",
+      }))
+      .filter((image) => image.url.startsWith("/uploads/score-applications/"));
+  } catch {
+    return [];
+  }
 }

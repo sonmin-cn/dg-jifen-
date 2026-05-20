@@ -13,7 +13,12 @@ import {
 } from "@/lib/constants/trips";
 import { tripListSelect } from "@/lib/services/trip-select";
 import { TripCreateForm } from "@/app/admin/trips/TripCreateForm";
-import { BatchGenerateBaseScoreButton } from "@/app/admin/trips/BatchGenerateBaseScoreButton";
+import {
+  BatchGenerateBaseScoreButton,
+  TripSelectAllCheckbox,
+  TripSelectionCheckbox,
+  TripSelectionProvider,
+} from "@/app/admin/trips/BatchGenerateBaseScoreButton";
 
 type PageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -24,7 +29,7 @@ export default async function AdminTripsPage({ searchParams }: PageProps) {
   const canManage = TRIP_MANAGEMENT_ROLES.includes(user.role);
   const params = await searchParams;
   const page = Math.max(Number(getParam(params.page) || "1"), 1);
-  const pageSize = 10;
+  const pageSize = normalizePageSize(getParam(params.pageSize));
   const keyword = getParam(params.keyword);
   const region = getParam(params.region);
   const status = getParam(params.status);
@@ -49,7 +54,6 @@ export default async function AdminTripsPage({ searchParams }: PageProps) {
       where,
       select: tripListSelect,
       orderBy: [
-        { updatedAt: "desc" },
         { createdAt: "desc" },
         { startDate: "desc" },
       ],
@@ -82,6 +86,7 @@ export default async function AdminTripsPage({ searchParams }: PageProps) {
       </div>
 
       <form className="mb-5 rounded-lg border bg-card p-4 shadow-sm">
+        <input name="pageSize" type="hidden" value={pageSize} />
         <div className="grid gap-3 md:grid-cols-6">
           <Input defaultValue={keyword} name="keyword" placeholder="路线名称" />
           <Input defaultValue={region} name="region" placeholder="区域" />
@@ -106,16 +111,22 @@ export default async function AdminTripsPage({ searchParams }: PageProps) {
         </div>
       </form>
 
-      {canManage ? (
-        <div className="mb-5">
-          <BatchGenerateBaseScoreButton tripIds={trips.map((trip) => trip.id)} />
-        </div>
-      ) : null}
+      <TripSelectionProvider tripIds={trips.map((trip) => trip.id)}>
+        {canManage ? (
+          <div className="mb-5">
+            <BatchGenerateBaseScoreButton />
+          </div>
+        ) : null}
 
       <section className="mb-6 overflow-hidden rounded-lg border bg-card shadow-sm">
         <table className="w-full border-collapse text-sm">
           <thead className="bg-muted/60 text-left">
             <tr>
+              {canManage ? (
+                <Th>
+                  <TripSelectAllCheckbox />
+                </Th>
+              ) : null}
               <Th>路线</Th>
               <Th>区域</Th>
               <Th>日期</Th>
@@ -130,6 +141,11 @@ export default async function AdminTripsPage({ searchParams }: PageProps) {
             {trips.length > 0 ? (
               trips.map((trip) => (
                 <tr className="border-t" key={trip.id}>
+                  {canManage ? (
+                    <Td>
+                      <TripSelectionCheckbox tripId={trip.id} />
+                    </Td>
+                  ) : null}
                   <Td className="font-medium">{trip.routeName}</Td>
                   <Td>{trip.region || "-"}</Td>
                   <Td>
@@ -150,7 +166,7 @@ export default async function AdminTripsPage({ searchParams }: PageProps) {
               ))
             ) : (
               <tr>
-                <td className="px-4 py-10 text-center text-muted-foreground" colSpan={8}>
+                <td className="px-4 py-10 text-center text-muted-foreground" colSpan={canManage ? 9 : 8}>
                   暂无团期数据，调整筛选条件或新增团期。
                 </td>
               </tr>
@@ -158,12 +174,29 @@ export default async function AdminTripsPage({ searchParams }: PageProps) {
           </tbody>
         </table>
       </section>
+      </TripSelectionProvider>
 
-      <div className="mb-8 flex items-center justify-between text-sm text-muted-foreground">
+      <div className="mb-8 flex flex-col gap-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
         <span>
           共 {total} 条，第 {page} / {pageCount} 页
         </span>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <span>每页</span>
+          {[10, 20, 50, 100].map((size) => (
+            <Button
+              key={size}
+              size="sm"
+              variant={pageSize === size ? "secondary" : "outline"}
+              asChild={pageSize !== size}
+              disabled={pageSize === size}
+            >
+              {pageSize === size ? (
+                <span>{size}</span>
+              ) : (
+                <Link href={buildPageSizeHref(params, size)}>{size}</Link>
+              )}
+            </Button>
+          ))}
           <Button disabled={page <= 1} size="sm" variant="outline" asChild={page > 1}>
             {page > 1 ? <Link href={buildPageHref(params, page - 1)}>上一页</Link> : <span>上一页</span>}
           </Button>
@@ -220,4 +253,25 @@ function buildPageHref(
   }
   searchParams.set("page", String(page));
   return `/admin/trips?${searchParams.toString()}`;
+}
+
+function buildPageSizeHref(
+  params: Record<string, string | string[] | undefined>,
+  pageSize: number,
+) {
+  const searchParams = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    const normalized = getParam(value);
+    if (normalized && key !== "page" && key !== "pageSize") {
+      searchParams.set(key, normalized);
+    }
+  }
+  searchParams.set("page", "1");
+  searchParams.set("pageSize", String(pageSize));
+  return `/admin/trips?${searchParams.toString()}`;
+}
+
+function normalizePageSize(value: string) {
+  const parsed = Number(value || "10");
+  return [10, 20, 50, 100].includes(parsed) ? parsed : 10;
 }
