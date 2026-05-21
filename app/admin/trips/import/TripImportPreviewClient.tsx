@@ -174,6 +174,7 @@ export function TripImportPreviewClient() {
                     "结束时间",
                     "城市",
                     "套餐状态",
+                    "解析状态",
                     "目前旅客数",
                     "最大成行人数",
                     "路线负责人",
@@ -204,6 +205,7 @@ export function TripImportPreviewClient() {
                       <td className="px-3 py-2">{row.endTime || "-"}</td>
                       <td className="px-3 py-2">{row.city || "-"}</td>
                       <td className="px-3 py-2">{row.packageStatus || "-"}</td>
+                      <td className="px-3 py-2">{formatTripStatus(row.parsedTripStatus)}</td>
                       <td className="px-3 py-2">{row.travelerCount || "-"}</td>
                       <td className="px-3 py-2">{row.maxTravelerCount || "-"}</td>
                       <td className="px-3 py-2">{row.routeOwner || "-"}</td>
@@ -221,7 +223,7 @@ export function TripImportPreviewClient() {
                   ))
                 ) : (
                   <tr>
-                    <td className="px-4 py-8 text-center text-muted-foreground" colSpan={17}>
+                    <td className="px-4 py-8 text-center text-muted-foreground" colSpan={18}>
                       没有可预览的数据行。
                     </td>
                   </tr>
@@ -312,4 +314,14 @@ function ImportStatusBadge({
       {status}
     </Badge>
   );
+}
+
+function formatTripStatus(status: TripImportPreviewRow["parsedTripStatus"]) {
+  const labels = {
+    PLANNED: "计划中",
+    COMPLETED: "已完成",
+    CANCELLED: "已取消",
+  } satisfies Record<TripImportPreviewRow["parsedTripStatus"], string>;
+
+  return labels[status] || status;
 }

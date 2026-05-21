@@ -5,6 +5,7 @@ import { Upload } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { LEADER_STATUS_LABELS, formatLeaderDisplayLevel } from "@/lib/constants/leaders";
 
 type PreviewRow = {
   rowNumber: number;
@@ -209,7 +210,7 @@ export function LeaderImportClient() {
                     "队长身份",
                     "解析状态",
                     "队长级别",
-                    "解析等级",
+                    "展示等级",
                     "带队次数",
                     "带队天数",
                     "审核时间",
@@ -238,11 +239,11 @@ export function LeaderImportClient() {
                     <td className="px-4 py-3">{row.phone || "-"}</td>
                     <td className="px-4 py-3">{row.residentLocation || "-"}</td>
                     <td className="px-4 py-3">{row.rawLeaderIdentity || "-"}</td>
-                    <td className="px-4 py-3">{row.status || "-"}</td>
+                    <td className="px-4 py-3">{formatStatus(row.status)}</td>
                     <td className="px-4 py-3 whitespace-pre-line">
                       {row.rawLeaderLevel || "-"}
                     </td>
-                    <td className="px-4 py-3">{row.level || "-"}</td>
+                    <td className="px-4 py-3">{formatLeaderDisplayLevel(row.status, row.level)}</td>
                     <td className="px-4 py-3">{row.leadCount ?? "-"}</td>
                     <td className="px-4 py-3">{row.leadDays ?? "-"}</td>
                     <td className="px-4 py-3">{formatDate(row.auditTime)}</td>
@@ -273,4 +274,9 @@ function formatDate(value: string | null) {
 
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? "-" : date.toISOString().slice(0, 10);
+}
+
+function formatStatus(status: string | null) {
+  if (!status) return "-";
+  return LEADER_STATUS_LABELS[status as keyof typeof LEADER_STATUS_LABELS] || status;
 }

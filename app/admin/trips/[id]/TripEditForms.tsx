@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { TripLeaderRole, TripStatus } from "@prisma/client";
@@ -15,6 +16,7 @@ import {
   TRIP_STATUS_LABELS,
   TRIP_STATUS_OPTIONS,
 } from "@/lib/constants/trips";
+import { formatLeaderDisplayLevel } from "@/lib/constants/leaders";
 
 type LeaderOption = {
   id: string;
@@ -496,7 +498,7 @@ function LeaderSelect({
       name={name}
       options={leaders.map((leader) => ({
         id: leader.id,
-        label: `${leader.realName}${leader.nickname ? ` / ${leader.nickname}` : ""}${leader.phone ? ` / ****${leader.phone.slice(-4)}` : ""} / ${leader.status}${leader.level ? ` / ${leader.level}` : ""}`,
+        label: `${leader.realName}${leader.nickname ? ` / ${leader.nickname}` : ""}${leader.phone ? ` / ****${leader.phone.slice(-4)}` : ""} / ${leader.status} / ${formatLeaderDisplayLevel(leader.status, leader.level)}`,
         searchText: `${leader.realName} ${leader.nickname || ""} ${leader.phone || ""} ${leader.externalLeaderId || ""} ${leader.status} ${leader.level || ""}`,
       }))}
       placeholder="搜索姓名 / 昵称 / 手机号 / 队长ID"
@@ -528,10 +530,17 @@ function RoleSelect({
 }
 
 function ErrorText({ text }: { text: string }) {
+  const shouldLinkScoreYears = text.includes("/admin/score-years");
+
   return (
-    <p className="mt-4 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-      {text}
-    </p>
+    <div className="mt-4 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+      <p>{text}</p>
+      {shouldLinkScoreYears ? (
+        <Button className="mt-2" size="sm" variant="outline" asChild>
+          <Link href="/admin/score-years">前往积分年度管理</Link>
+        </Button>
+      ) : null}
+    </div>
   );
 }
 

@@ -64,7 +64,6 @@ export async function GET(request: NextRequest) {
         where,
         select: tripListSelect,
         orderBy: [
-          { updatedAt: "desc" },
           { createdAt: "desc" },
           { startDate: "desc" },
         ],

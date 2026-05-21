@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import type { LeaderStatus } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,7 @@ export function LeaderCreateForm({
   const router = useRouter();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [status, setStatus] = useState<LeaderStatus>("INTERN");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -88,6 +90,7 @@ export function LeaderCreateForm({
             defaultValue="INTERN"
             id="status"
             name="status"
+            onChange={(event) => setStatus(event.target.value as LeaderStatus)}
             required
           >
             {LEADER_STATUS_OPTIONS.map((status) => (
@@ -99,6 +102,12 @@ export function LeaderCreateForm({
         </div>
         <div className="space-y-2">
           <Label htmlFor="level">等级</Label>
+          {status === "INTERN" ? (
+            <div className="flex h-10 items-center rounded-md border bg-muted/40 px-3 text-sm">
+              实习
+              <input name="level" type="hidden" value="流星" />
+            </div>
+          ) : (
           <select
             className="h-10 w-full rounded-md border bg-background px-3 text-sm"
             id="level"
@@ -111,6 +120,7 @@ export function LeaderCreateForm({
               </option>
             ))}
           </select>
+          )}
         </div>
         <Field label="入职日期" name="joinDate" type="date" />
         <div className="space-y-2">

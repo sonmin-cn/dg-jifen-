@@ -103,6 +103,7 @@ export async function generateBaseScoresForTrips({
                 select: {
                   id: true,
                   realName: true,
+                  status: true,
                 },
               },
             },
@@ -150,12 +151,13 @@ export async function generateBaseScoresForTrips({
       ]);
 
       if (!scoreYear) {
+        const occurredAtText = formatDate(occurredAt);
         summary.failedTrips += 1;
         details.push({
           tripId: trip.id,
           routeName: trip.routeName,
           status: "failed",
-          reason: "未找到覆盖该团期结束日期的 ACTIVE 积分年度",
+          reason: `未找到覆盖 ${occurredAtText} 的 ACTIVE 积分年度，请先在积分年度管理中新增或启用覆盖该日期的积分年度。前往 /admin/score-years`,
         });
         continue;
       }
@@ -187,6 +189,19 @@ export async function generateBaseScoresForTrips({
             leaderName,
             status: "skipped",
             reason: "带队记录未标记完成",
+          });
+          continue;
+        }
+
+        if (!["INTERN", "REGULAR"].includes(tripLeader.leader.status)) {
+          summary.skippedTripLeaders += 1;
+          details.push({
+            tripId: trip.id,
+            routeName: trip.routeName,
+            leaderId: tripLeader.leaderId,
+            leaderName,
+            status: "skipped",
+            reason: "队长状态不是实习或正式",
           });
           continue;
         }
@@ -342,4 +357,8 @@ function normalizeConfigNumber(value: unknown, fallback: number) {
 
 function roundPoints(value: number) {
   return Math.round(value * 100) / 100;
+}
+
+function formatDate(value: Date) {
+  return value.toISOString().slice(0, 10);
 }

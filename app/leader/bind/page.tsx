@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db/prisma";
 import { getLeaderBindingState, maskPhone } from "@/lib/services/leader-binding";
 import { BindRequestButton } from "@/app/leader/bind/BindRequestButton";
 import { BackButton } from "@/components/back-button";
+import { formatLeaderDisplayLevel } from "@/lib/constants/leaders";
 
 export default async function LeaderBindPage() {
   const user = await requireRole(["LEADER"], "/leader/bind");
@@ -83,7 +84,7 @@ export default async function LeaderBindPage() {
         <Info label="常驻地" value={leader.residentLocation} />
         <Info label="区域" value={leader.region} />
         <Info label="队长身份" value={leader.rawLeaderIdentity || leader.status} />
-        <Info label="队长级别" value={leader.rawLeaderLevel || leader.level} />
+        <Info label="队长级别" value={formatLeaderDisplayLevel(leader.status, leader.level)} />
         <div className="rounded-md border bg-muted/20 p-3">
           <p className="text-muted-foreground">匹配方式</p>
           <Badge className="mt-1" variant="secondary">

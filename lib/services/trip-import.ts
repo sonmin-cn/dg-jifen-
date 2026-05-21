@@ -1,5 +1,5 @@
 import * as XLSX from "xlsx";
-import type { Prisma, TripLeaderRole, TripStatus } from "@prisma/client";
+import type { Prisma, TripStatus } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
 
 const REQUIRED_HEADERS = [
@@ -34,6 +34,7 @@ export type TripImportPreviewRow = {
   endTime: string;
   city: string;
   packageStatus: string;
+  parsedTripStatus: TripStatus;
   travelerCount: string;
   maxTravelerCount: string;
   leaderAssignmentRaw: string;
@@ -181,6 +182,7 @@ export function mapImportRowToTripDraft(
     endTime: row["结束时间"] || "",
     city: row["城市"] || "",
     packageStatus: row["套餐状态"] || "",
+    parsedTripStatus: mapPackageStatus(row["套餐状态"] || ""),
     travelerCount: row["目前出行旅客数"] || "",
     maxTravelerCount: row["最大成行人数"] || "",
     leaderAssignmentRaw: assignment.rawText,
@@ -281,7 +283,7 @@ export async function confirmTripImport(input: TripImportConfirmInput, operatorU
             rowIndex: row.rowNumber,
             routeName: row.routeName,
             action: "updated_trip",
-            message: "已更新团期",
+            message: `已更新团期（套餐状态：${row.packageStatus || "-"}，解析状态：${formatTripStatus(tripStatus)}）`,
           });
         } else {
           summary.createdTrips += 1;
@@ -289,7 +291,7 @@ export async function confirmTripImport(input: TripImportConfirmInput, operatorU
             rowIndex: row.rowNumber,
             routeName: row.routeName,
             action: "created_trip",
-            message: "已创建团期",
+            message: `已创建团期（套餐状态：${row.packageStatus || "-"}，解析状态：${formatTripStatus(tripStatus)}）`,
           });
         }
 
@@ -495,6 +497,7 @@ function normalizePreviewRow(value: unknown): TripImportPreviewRow | null {
     endTime: normalizeCell(row.endTime),
     city: normalizeCell(row.city),
     packageStatus: normalizeCell(row.packageStatus),
+    parsedTripStatus: mapPackageStatus(normalizeCell(row.packageStatus)),
     travelerCount: normalizeCell(row.travelerCount),
     maxTravelerCount: normalizeCell(row.maxTravelerCount),
     leaderAssignmentRaw: normalizeMultilineCell(row.leaderAssignmentRaw),
@@ -568,9 +571,23 @@ function calculateTripDays(startDate: Date, endDate: Date) {
 
 function mapPackageStatus(value: string): TripStatus {
   const text = normalizeCell(value);
-  if (text.includes("取消")) return "CANCELLED";
-  if (text.includes("完成") || text.includes("结束")) return "COMPLETED";
+  if (!text) return "PLANNED";
+  if (/(已取消|取消|未成团)/.test(text)) return "CANCELLED";
+  if (/(已完成|已结束|出行结束|已出行|已核销)/.test(text)) {
+    return "COMPLETED";
+  }
+  if (/(已成行|待出行|已确认|报名中)/.test(text)) return "PLANNED";
   return "PLANNED";
+}
+
+function formatTripStatus(status: TripStatus) {
+  const labels: Record<TripStatus, string> = {
+    PLANNED: "计划中",
+    COMPLETED: "已完成",
+    CANCELLED: "已取消",
+  };
+
+  return labels[status];
 }
 
 function parseInteger(value: string) {

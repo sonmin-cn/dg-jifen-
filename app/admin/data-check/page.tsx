@@ -81,9 +81,15 @@ export default async function AdminDataCheckPage({ searchParams }: PageProps) {
       </form>
 
       {!data.scoreYear ? (
-        <section className="rounded-lg border bg-card px-4 py-10 text-center text-sm text-muted-foreground">
-          暂无当前积分年度，请先创建积分年度。
-        </section>
+        <div className="space-y-5">
+          <section className="rounded-lg border bg-card px-4 py-10 text-center text-sm text-muted-foreground">
+            暂无当前积分年度，请先创建积分年度。
+            <Button className="ml-3" size="sm" variant="outline" asChild>
+              <Link href="/admin/score-years">前往积分年度管理</Link>
+            </Button>
+          </section>
+          <CheckGroupsList groups={data.checkGroups} />
+        </div>
       ) : (
         <>
           <section className="mb-5 grid gap-4 md:grid-cols-3 xl:grid-cols-6">
@@ -109,80 +115,93 @@ export default async function AdminDataCheckPage({ searchParams }: PageProps) {
               当前筛选条件下未发现异常。
             </section>
           ) : (
-            <div className="space-y-5">
-              {data.checkGroups.map((group) => (
-                <section className="rounded-lg border bg-card shadow-sm" key={group.code}>
-                  <div className="flex flex-col gap-2 border-b p-4 md:flex-row md:items-start md:justify-between">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="font-semibold">{group.title}</h3>
-                        <Badge variant={group.total > 0 ? "secondary" : "outline"}>
-                          {group.total} 条
-                        </Badge>
-                      </div>
-                      <p className="mt-1 text-sm text-muted-foreground">{group.description}</p>
-                      <p className="mt-1 text-sm text-muted-foreground">处理建议：{group.suggestion}</p>
-                    </div>
-                  </div>
-
-                  {group.items.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <table className="min-w-[1100px] w-full border-collapse text-sm">
-                        <thead className="bg-muted/60 text-left">
-                          <tr>
-                            <Th>风险等级</Th>
-                            <Th>对象</Th>
-                            <Th>异常类型</Th>
-                            <Th>关键字段</Th>
-                            <Th>处理建议</Th>
-                            <Th>操作</Th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {group.items.map((item) => (
-                            <tr className="border-t" key={item.id}>
-                              <Td>
-                                <SeverityBadge severity={item.severity} />
-                              </Td>
-                              <Td className="font-medium">{item.target}</Td>
-                              <Td>{item.title}</Td>
-                              <Td>
-                                <dl className="grid min-w-[420px] grid-cols-2 gap-x-4 gap-y-1">
-                                  {item.fields.map((field) => (
-                                    <div key={`${item.id}-${field.label}`}>
-                                      <dt className="text-muted-foreground">{field.label}</dt>
-                                      <dd className="font-medium">{field.value}</dd>
-                                    </div>
-                                  ))}
-                                </dl>
-                              </Td>
-                              <Td className="max-w-[260px] text-muted-foreground">{item.suggestion}</Td>
-                              <Td>
-                                <Button size="sm" variant="outline" asChild>
-                                  <Link href={item.href}>{item.actionLabel}</Link>
-                                </Button>
-                              </Td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                      {group.total > group.items.length ? (
-                        <p className="border-t px-4 py-3 text-sm text-muted-foreground">
-                          仅展示前 20 条，请通过筛选进一步处理。
-                        </p>
-                      ) : null}
-                    </div>
-                  ) : (
-                    <div className="px-4 py-8 text-center text-sm text-muted-foreground">
-                      暂无异常。
-                    </div>
-                  )}
-                </section>
-              ))}
-            </div>
+            <CheckGroupsList groups={data.checkGroups} />
           )}
         </>
       )}
+    </div>
+  );
+}
+
+function CheckGroupsList({
+  groups,
+}: {
+  groups: Array<{
+    code: string;
+    title: string;
+    description: string;
+    suggestion: string;
+    total: number;
+    items: DataCheckIssue[];
+  }>;
+}) {
+  return (
+    <div className="space-y-5">
+      {groups.map((group) => (
+        <section className="rounded-lg border bg-card shadow-sm" key={group.code}>
+          <div className="flex flex-col gap-2 border-b p-4 md:flex-row md:items-start md:justify-between">
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="font-semibold">{group.title}</h3>
+                <Badge variant={group.total > 0 ? "secondary" : "outline"}>{group.total} 条</Badge>
+              </div>
+              <p className="mt-1 text-sm text-muted-foreground">{group.description}</p>
+              <p className="mt-1 text-sm text-muted-foreground">处理建议：{group.suggestion}</p>
+            </div>
+          </div>
+
+          {group.items.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-[1100px] w-full border-collapse text-sm">
+                <thead className="bg-muted/60 text-left">
+                  <tr>
+                    <Th>风险等级</Th>
+                    <Th>对象</Th>
+                    <Th>异常类型</Th>
+                    <Th>关键字段</Th>
+                    <Th>处理建议</Th>
+                    <Th>操作</Th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {group.items.map((item) => (
+                    <tr className="border-t" key={item.id}>
+                      <Td>
+                        <SeverityBadge severity={item.severity} />
+                      </Td>
+                      <Td className="font-medium">{item.target}</Td>
+                      <Td>{item.title}</Td>
+                      <Td>
+                        <dl className="grid min-w-[420px] grid-cols-2 gap-x-4 gap-y-1">
+                          {item.fields.map((field) => (
+                            <div key={`${item.id}-${field.label}`}>
+                              <dt className="text-muted-foreground">{field.label}</dt>
+                              <dd className="font-medium">{field.value}</dd>
+                            </div>
+                          ))}
+                        </dl>
+                      </Td>
+                      <Td className="max-w-[260px] text-muted-foreground">{item.suggestion}</Td>
+                      <Td>
+                        <Button size="sm" variant="outline" asChild>
+                          <Link href={item.href}>{item.actionLabel}</Link>
+                        </Button>
+                      </Td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {group.total > group.items.length ? (
+                <p className="border-t px-4 py-3 text-sm text-muted-foreground">
+                  仅展示前 20 条，请通过筛选进一步处理。
+                </p>
+              ) : null}
+            </div>
+          ) : (
+            <div className="px-4 py-8 text-center text-sm text-muted-foreground">暂无异常。</div>
+          )}
+        </section>
+      ))}
     </div>
   );
 }

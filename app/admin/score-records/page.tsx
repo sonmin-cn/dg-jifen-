@@ -18,6 +18,7 @@ import {
   SCORE_RECORD_STATUS_OPTIONS,
 } from "@/lib/constants/scores";
 import { prisma } from "@/lib/db/prisma";
+import { formatLeaderDisplayLevel } from "@/lib/constants/leaders";
 import {
   formatScorePoints,
   getAdminScoreRecords,
@@ -110,7 +111,7 @@ export default async function AdminScoreRecordsPage({ searchParams }: PageProps)
             name="leaderId"
             options={leaders.map((leader) => ({
               id: leader.id,
-              label: `${leader.realName}${leader.nickname ? ` / ${leader.nickname}` : ""}${leader.phone ? ` / ${maskPhone(leader.phone)}` : ""} / ${leader.status}${leader.level ? ` / ${leader.level}` : ""}`,
+              label: `${leader.realName}${leader.nickname ? ` / ${leader.nickname}` : ""}${leader.phone ? ` / ${maskPhone(leader.phone)}` : ""} / ${leader.status} / ${formatLeaderDisplayLevel(leader.status, leader.level)}`,
               searchText: `${leader.realName} ${leader.nickname || ""} ${leader.phone || ""} ${leader.externalLeaderId || ""} ${leader.status} ${leader.level || ""}`,
             }))}
             placeholder="全部队长 / 搜索姓名昵称手机号"
@@ -201,7 +202,10 @@ export default async function AdminScoreRecordsPage({ searchParams }: PageProps)
           <tbody>
             {data.records.length > 0 ? (
               data.records.map((record) => (
-                <tr className="border-t" key={record.id}>
+                <tr
+                  className={`border-t ${record.status === "VOIDED" ? "bg-muted/40 text-muted-foreground" : ""}`}
+                  key={record.id}
+                >
                   <Td>{formatDate(record.occurredAt)}</Td>
                   <Td className="font-medium">{record.leader.realName}</Td>
                   <Td>{record.leader.nickname || "-"}</Td>
@@ -221,7 +225,11 @@ export default async function AdminScoreRecordsPage({ searchParams }: PageProps)
                         : record.effectivePoints,
                     )}
                   </Td>
-                  <Td>{SCORE_RECORD_STATUS_LABELS[record.status]}</Td>
+                  <Td>
+                    <Badge variant={record.status === "VOIDED" ? "outline" : "secondary"}>
+                      {SCORE_RECORD_STATUS_LABELS[record.status]}
+                    </Badge>
+                  </Td>
                   <Td>{record.trip?.routeName || "未关联团期"}</Td>
                   <Td>{record.ruleName || record.rule?.name || "-"}</Td>
                   <Td>{record.ruleCode || record.rule?.code || "-"}</Td>

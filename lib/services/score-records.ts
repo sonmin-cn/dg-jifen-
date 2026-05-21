@@ -33,7 +33,7 @@ export async function getAdminScoreRecords(params: AdminScoreRecordParams) {
     prisma.scoreRecord.findMany({
       where,
       include: scoreRecordInclude,
-      orderBy: [{ occurredAt: "desc" }, { createdAt: "desc" }],
+      orderBy: [{ createdAt: "desc" }, { occurredAt: "desc" }],
       skip: (page - 1) * pageSize,
       take: pageSize,
     }),
@@ -230,6 +230,7 @@ export const scoreRecordInclude = {
       status: true,
       region: true,
       residentLocation: true,
+      externalLeaderId: true,
     },
   },
   trip: {
@@ -295,6 +296,7 @@ function buildScoreRecordWhere(params: AdminScoreRecordParams) {
       { leader: { realName: { contains: params.keyword } } },
       { leader: { nickname: { contains: params.keyword } } },
       { leader: { phone: { contains: params.keyword } } },
+      { leader: { externalLeaderId: { contains: params.keyword } } },
       { trip: { routeName: { contains: params.keyword } } },
     ];
   }

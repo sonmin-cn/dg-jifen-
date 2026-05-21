@@ -4,6 +4,7 @@ import { BackButton } from "@/components/back-button";
 import { requireRole } from "@/lib/auth/permissions";
 import { SCORE_ADJUSTMENT_MANAGEMENT_ROLES } from "@/lib/auth/roles";
 import { prisma } from "@/lib/db/prisma";
+import { formatLeaderDisplayLevel } from "@/lib/constants/leaders";
 import { getActiveAddScoreRules } from "@/lib/services/score-adjustments";
 import { ScoreAdjustmentCreateForm } from "@/app/admin/score-adjustments/new/ScoreAdjustmentCreateForm";
 
@@ -58,7 +59,7 @@ export default async function AdminScoreAdjustmentNewPage() {
         defaultScoreYearId={activeYear?.id || scoreYears[0]?.id || ""}
         leaders={leaders.map((leader) => ({
           id: leader.id,
-          label: `${leader.realName}${leader.nickname ? ` / ${leader.nickname}` : ""}${leader.phone ? ` / ****${leader.phone.slice(-4)}` : ""} / ${leader.status}${leader.level ? ` / ${leader.level}` : ""}`,
+          label: `${leader.realName}${leader.nickname ? ` / ${leader.nickname}` : ""}${leader.phone ? ` / ****${leader.phone.slice(-4)}` : ""} / ${leader.status} / ${formatLeaderDisplayLevel(leader.status, leader.level)}`,
           searchText: `${leader.realName} ${leader.nickname || ""} ${leader.phone || ""} ${leader.externalLeaderId || ""} ${leader.status} ${leader.level || ""}`,
         }))}
         rules={rules.map((rule) => ({
