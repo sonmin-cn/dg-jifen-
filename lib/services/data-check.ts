@@ -9,6 +9,7 @@ import { getApplicationTypeLabel } from "@/lib/constants/score-applications";
 import { formatLeaderDisplayLevel } from "@/lib/constants/leaders";
 
 export type DataCheckCode =
+  | "SCORE_YEAR_ANOMALIES"
   | "UNBOUND_LEADERS"
   | "PENDING_BIND_REQUESTS"
   | "COMPLETED_TRIPS_WITHOUT_BASE_SCORE"
@@ -23,6 +24,12 @@ export const DATA_CHECK_GROUPS: Array<{
   description: string;
   suggestion: string;
 }> = [
+  {
+    code: "SCORE_YEAR_ANOMALIES",
+    title: "积分年度异常",
+    description: "积分年度缺失、多个 ACTIVE、日期重叠或已完成团期无法匹配 ACTIVE 年度。",
+    suggestion: "进入积分年度管理，新增、启用或调整覆盖团期结束日期的积分年度。",
+  },
   {
     code: "UNBOUND_LEADERS",
     title: "队长账号绑定异常",
@@ -112,12 +119,17 @@ export async function getDataCheckDashboard(params: DataCheckParams) {
   ]);
 
   if (!selectedScoreYear) {
+    const groups = await buildIssueGroups({
+      scoreYearId: "",
+      checkType: params.checkType,
+      keyword: normalizeKeyword(params.keyword),
+    });
     return {
       scoreYear: null,
       scoreYears,
       summary: emptySystemSummary(),
       overview: emptyOverview(),
-      checkGroups: buildEmptyGroups(params.checkType),
+      checkGroups: groups,
     };
   }
 
@@ -144,7 +156,9 @@ export async function getDataCheckDashboard(params: DataCheckParams) {
       pendingApplicationCount: summary.pendingScoreApplicationCount,
       missingBaseScoreCount: summary.missingBaseScoreCount,
       scoreRecordAnomalyCount: groupByCode.get("SCORE_RECORD_ANOMALIES")?.total ?? 0,
-      bonusRiskCount: groupByCode.get("BONUS_SETTLEMENT_RISKS")?.total ?? 0,
+      bonusRiskCount:
+        (groupByCode.get("BONUS_SETTLEMENT_RISKS")?.total ?? 0) +
+        (groupByCode.get("SCORE_YEAR_ANOMALIES")?.total ?? 0),
       bonusPoolAmount: summary.bonusPoolAmount,
     },
     checkGroups: groups,
@@ -619,11 +633,124 @@ export async function getBonusSettlementRisks(params: DataCheckParams) {
   return filterIssuesByKeyword(issues, normalizeKeyword(params.keyword));
 }
 
+export async function getScoreYearAnomalies(params: DataCheckParams) {
+  const [activeYears, completedTrips] = await Promise.all([
+    prisma.scoreYear.findMany({
+      where: { status: "ACTIVE" },
+      orderBy: { startDate: "asc" },
+      select: { id: true, name: true, startDate: true, endDate: true },
+    }),
+    prisma.trip.findMany({
+      where: {
+        status: "COMPLETED",
+        ...(params.keyword
+          ? {
+              OR: [
+                { routeName: { contains: params.keyword } },
+                { region: { contains: params.keyword } },
+              ],
+            }
+          : {}),
+      },
+      select: { id: true, routeName: true, endDate: true },
+      orderBy: { endDate: "desc" },
+      take: 200,
+    }),
+  ]);
+  const issues: DataCheckIssue[] = [];
+
+  if (activeYears.length === 0) {
+    issues.push(
+      issue({
+        code: "SCORE_YEAR_ANOMALIES",
+        severity: "HIGH",
+        id: "score-year-no-active",
+        title: "暂无 ACTIVE 积分年度",
+        target: "积分年度",
+        href: "/admin/score-years",
+        actionLabel: "管理积分年度",
+        fields: [
+          field("异常类型", "没有 ACTIVE 积分年度"),
+          field("处理入口", "新增或启用积分年度"),
+        ],
+      }),
+    );
+  }
+
+  if (activeYears.length > 1) {
+    issues.push(
+      issue({
+        code: "SCORE_YEAR_ANOMALIES",
+        severity: "MEDIUM",
+        id: "score-year-multiple-active",
+        title: "存在多个 ACTIVE 积分年度",
+        target: "积分年度",
+        href: "/admin/score-years",
+        actionLabel: "管理积分年度",
+        fields: [
+          field("异常类型", "多个 ACTIVE 年度"),
+          field("ACTIVE 数量", activeYears.length),
+          field("年度名称", activeYears.map((year) => year.name).join("、")),
+        ],
+      }),
+    );
+  }
+
+  for (let index = 0; index < activeYears.length; index += 1) {
+    const current = activeYears[index];
+    for (const other of activeYears.slice(index + 1)) {
+      if (current.startDate <= other.endDate && current.endDate >= other.startDate) {
+        issues.push(
+          issue({
+            code: "SCORE_YEAR_ANOMALIES",
+            severity: "HIGH",
+            id: `score-year-overlap-${current.id}-${other.id}`,
+            title: "ACTIVE 积分年度日期重叠",
+            target: "积分年度",
+            href: "/admin/score-years",
+            actionLabel: "管理积分年度",
+            fields: [
+              field("年度 A", `${current.name}（${formatDate(current.startDate)} - ${formatDate(current.endDate)}）`),
+              field("年度 B", `${other.name}（${formatDate(other.startDate)} - ${formatDate(other.endDate)}）`),
+            ],
+          }),
+        );
+      }
+    }
+  }
+
+  for (const trip of completedTrips) {
+    const covered = activeYears.some(
+      (year) => year.startDate <= trip.endDate && year.endDate >= trip.endDate,
+    );
+    if (covered) continue;
+    issues.push(
+      issue({
+        code: "SCORE_YEAR_ANOMALIES",
+        severity: "HIGH",
+        id: `trip-without-active-score-year-${trip.id}`,
+        title: "已完成团期未被 ACTIVE 积分年度覆盖",
+        target: trip.routeName,
+        href: "/admin/score-years",
+        actionLabel: "管理积分年度",
+        fields: [
+          field("团期名称", trip.routeName),
+          field("团期结束日期", formatDate(trip.endDate)),
+          field("处理建议", "新增或启用覆盖该日期的 ACTIVE 积分年度"),
+        ],
+      }),
+    );
+  }
+
+  return filterIssuesByKeyword(issues, normalizeKeyword(params.keyword));
+}
+
 function buildIssueGroups(params: DataCheckParams & { scoreYearId: string }) {
   const checks: Array<{
     code: DataCheckCode;
     load: () => Promise<DataCheckIssue[]>;
   }> = [
+    { code: "SCORE_YEAR_ANOMALIES", load: () => getScoreYearAnomalies(params) },
     { code: "UNBOUND_LEADERS", load: () => getUnboundLeaders(params) },
     { code: "PENDING_BIND_REQUESTS", load: () => getPendingBindRequests(params) },
     {

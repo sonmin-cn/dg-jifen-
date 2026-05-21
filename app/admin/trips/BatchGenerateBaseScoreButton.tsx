@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import type {
@@ -183,6 +184,11 @@ export function BatchGenerateBaseScoreButton() {
                 {detail.status === "generated"
                   ? `已生成 ${detail.points} 分`
                   : detail.reason || "已跳过"}
+                {detail.reason?.includes("/admin/score-years") ? (
+                  <Link className="ml-2 underline" href="/admin/score-years">
+                    前往积分年度管理
+                  </Link>
+                ) : null}
               </div>
             ))}
           </div>

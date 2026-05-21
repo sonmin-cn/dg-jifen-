@@ -7,6 +7,7 @@ import {
   Database,
   FilePlus2,
   ListChecks,
+  CalendarRange,
   ShieldAlert,
   Trophy,
   Users,
@@ -22,6 +23,7 @@ import {
   SCORE_RANKING_READ_ROLES,
   SCORE_RECORD_READ_ROLES,
   SCORE_RULE_READ_ROLES,
+  SCORE_YEAR_READ_ROLES,
   TRIP_READ_ROLES,
   VIOLATION_READ_ROLES,
 } from "@/lib/auth/roles";
@@ -130,6 +132,14 @@ const groups = [
         button: "查看排行",
         icon: Trophy,
         roles: SCORE_RANKING_READ_ROLES,
+      },
+      {
+        title: "积分年度管理",
+        description: "维护积分年度日期范围和 ACTIVE 状态，保障积分生成归属。",
+        href: "/admin/score-years",
+        button: "管理年度",
+        icon: CalendarRange,
+        roles: SCORE_YEAR_READ_ROLES,
       },
       {
         title: "奖金池",

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { TripLeaderRole, TripStatus } from "@prisma/client";
@@ -529,10 +530,17 @@ function RoleSelect({
 }
 
 function ErrorText({ text }: { text: string }) {
+  const shouldLinkScoreYears = text.includes("/admin/score-years");
+
   return (
-    <p className="mt-4 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-      {text}
-    </p>
+    <div className="mt-4 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+      <p>{text}</p>
+      {shouldLinkScoreYears ? (
+        <Button className="mt-2" size="sm" variant="outline" asChild>
+          <Link href="/admin/score-years">前往积分年度管理</Link>
+        </Button>
+      ) : null}
+    </div>
   );
 }
 
