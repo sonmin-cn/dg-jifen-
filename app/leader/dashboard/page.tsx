@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Award, FilePlus, FileText, ListChecks, TrendingUp, WalletCards } from "lucide-react";
+import { Award, FilePlus, FileText, ListChecks, Trophy, TrendingUp, WalletCards } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { requireRole } from "@/lib/auth/permissions";
@@ -44,6 +44,12 @@ export default async function LeaderDashboardPage() {
       icon: WalletCards,
     },
     {
+      title: "积分榜",
+      value: "前50",
+      description: "查看当前年度前 50 名积分榜",
+      icon: Trophy,
+    },
+    {
       title: "积分申请",
       value: "提交",
       description: "朋友圈、小红书、老队员复购加分申请",
@@ -81,6 +87,13 @@ export default async function LeaderDashboardPage() {
               <div className="mt-4">
                 <Button className="h-11 w-full sm:w-auto" size="sm" variant="outline" asChild>
                   <Link href="/leader/bonus">查看规则说明</Link>
+                </Button>
+              </div>
+            ) : null}
+            {card.title === "积分榜" ? (
+              <div className="mt-4">
+                <Button className="h-11 w-full sm:w-auto" size="sm" variant="outline" asChild>
+                  <Link href="/leader/ranking">查看积分榜</Link>
                 </Button>
               </div>
             ) : null}

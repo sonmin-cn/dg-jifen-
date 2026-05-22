@@ -102,6 +102,7 @@ export default async function BonusSettlementPage({ searchParams }: PageProps) {
               <Info label="单人封顶" value={formatMoney(preview.ruleConfig.singleLeaderCap)} />
               <Info label="封顶余额二次分配" value={preview.ruleConfig.redistributeRemainder ? "是" : "否"} />
               <Info label="严重投诉取消资格" value={preview.ruleConfig.disqualifySeriousComplaint ? "是" : "否"} />
+              <Info label="虚假行为取消资格" value={preview.ruleConfig.disqualifyFakeBehavior ? "是" : "否"} />
               <Info label="红线积分清零并取消资格" value={preview.ruleConfig.disqualifyRedline && preview.ruleConfig.redlineClearsPoints ? "是" : "否"} />
               <Info label="节假日积分绑定" value="否，仅计入有效积分" />
             </div>
@@ -124,7 +125,7 @@ export default async function BonusSettlementPage({ searchParams }: PageProps) {
           ) : null}
 
           <section className="mb-5 overflow-x-auto rounded-lg border bg-card shadow-sm">
-            <table className="min-w-[2200px] w-full border-collapse text-sm">
+            <table className="min-w-[2450px] w-full border-collapse text-sm">
               <thead className="bg-muted/60 text-left">
                 <tr>
                   <Th>排名</Th>
@@ -145,7 +146,10 @@ export default async function BonusSettlementPage({ searchParams }: PageProps) {
                   <Th>资格</Th>
                   <Th>不符合原因</Th>
                   <Th>严重投诉取消</Th>
+                  <Th>虚假行为取消</Th>
                   <Th>红线取消</Th>
+                  <Th>有效投诉次数</Th>
+                  <Th>安全违规次数</Th>
                   <Th>积分占比</Th>
                   <Th>理论奖金</Th>
                   <Th>封顶扣减</Th>
@@ -178,7 +182,10 @@ export default async function BonusSettlementPage({ searchParams }: PageProps) {
                       </Td>
                       <Td>{item.ineligibleReason || "-"}</Td>
                       <Td>{item.disqualifiedBySeriousComplaint ? "是" : "否"}</Td>
+                      <Td>{item.disqualifiedByFakeBehavior ? "是" : "否"}</Td>
                       <Td>{item.disqualifiedByRedline ? "是" : "否"}</Td>
+                      <Td>{item.complaintCount}</Td>
+                      <Td>{item.safetyViolationCount}</Td>
                       <Td>{formatPercent(item.pointShare)}</Td>
                       <Td>{formatMoney(item.calculatedAmount)}</Td>
                       <Td>{formatMoney(item.cappedAmount)}</Td>
@@ -187,7 +194,7 @@ export default async function BonusSettlementPage({ searchParams }: PageProps) {
                   ))
                 ) : (
                   <tr>
-                    <td className="px-4 py-10 text-center text-muted-foreground" colSpan={23}>
+                    <td className="px-4 py-10 text-center text-muted-foreground" colSpan={26}>
                       暂无测算明细。
                     </td>
                   </tr>

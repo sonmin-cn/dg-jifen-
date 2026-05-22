@@ -11,11 +11,18 @@
    {
      "formula": "perTripPoints + actualWorkDays * perDayPoints",
      "perTripPoints": 1,
-     "perDayPoints": 1
+     "perDayPoints": 1,
+     "roundActualWorkDays": "CEIL_TO_DAY"
    }
    ```
 4. 在 `/admin/score-rules` 检查允许队长申请的规则，例如朋友圈、小红书、复购等是否启用。
 5. 在 `/admin/data-check` 先查看是否已有明显异常。
+
+V2.2 规则入口：
+- 完整规则见 `docs/LEADER_SCORE_RULES_V2_2.md`。
+- V2.2 规则从配置生效后向后适用，不自动重算历史积分。
+- 传播类年度有效积分上限为 80 分；推荐新队长年度上限为 30 分。
+- 严重投诉、虚假行为、红线行为在奖金测算中触发年度清零和资格取消。
 
 ## 二、第一次导入队长数据
 
@@ -283,6 +290,7 @@
 5. 超过 3 天待审核积分申请；
 6. 积分方向和分值异常；
 7. 奖金测算风险。
+8. V2.2 规则异常，包括传播上限、同团重复、复购归属、推荐上限、投诉 / 安全 / 红线资格风险。
 
 ## 十九、出错时怎么处理
 

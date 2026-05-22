@@ -10,6 +10,7 @@ export type ViolationRuleCode =
   | "IGNORE_MEMBERS"
   | "VALID_COMPLAINT"
   | "SERIOUS_COMPLAINT"
+  | "SAFETY_VIOLATION"
   | "SAFETY_MISSING_NOTICE"
   | "SAFETY_KEY_ACTION_MISSING"
   | "INSURANCE_REPORT_DELAY"
@@ -110,11 +111,21 @@ export const VIOLATION_CONFIGS: Record<ViolationRuleCode, ViolationConfig> = {
   },
   SERIOUS_COMPLAINT: {
     ruleCode: "SERIOUS_COMPLAINT",
-    label: "严重有效投诉",
+    label: "严重投诉",
     category: "COMPLAINT",
     type: "COMPLAINT",
     defaultSeverity: "CRITICAL",
     description: "情节严重且经核实成立的投诉。",
+    requiresTrip: false,
+    requiresEvidence: true,
+  },
+  SAFETY_VIOLATION: {
+    ruleCode: "SAFETY_VIOLATION",
+    label: "安全违规",
+    category: "SAFETY",
+    type: "SAFETY",
+    defaultSeverity: "CRITICAL",
+    description: "未做中高风险安全告知、未留证、未提醒救生衣、未及时保险报备或擅自组织高风险活动。",
     requiresTrip: false,
     requiresEvidence: true,
   },

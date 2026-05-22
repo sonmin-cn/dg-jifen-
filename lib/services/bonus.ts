@@ -46,7 +46,10 @@ export type BonusSettlementItemPreview = {
   ineligibleReason: string | null;
   participatesInDistribution: boolean;
   disqualifiedBySeriousComplaint: boolean;
+  disqualifiedByFakeBehavior: boolean;
   disqualifiedByRedline: boolean;
+  complaintCount: number;
+  safetyViolationCount: number;
   pointShare: number;
   calculatedAmount: number;
   cappedAmount: number;
@@ -411,13 +414,20 @@ function mapRankingRowToBonusItem(
 ): BonusSettlementItemPreview {
   const flags = violationFlags.get(row.leader.id);
   const bonusEffectivePoints =
-    flags?.hasRedline && ruleConfig.redlineClearsPoints ? 0 : row.totalPoints;
+    (flags?.hasRedline && ruleConfig.redlineClearsPoints) ||
+    (flags?.hasFakeBehavior && ruleConfig.fakeBehaviorClearsPoints) ||
+    (flags?.hasSeriousComplaint && ruleConfig.seriousComplaintClearsPoints)
+      ? 0
+      : row.totalPoints;
   const ineligibleReason = getIneligibleReason({
     leader: row.leader,
     tripCount: row.tripCount,
     bonusEffectivePoints,
     hasSeriousComplaint: Boolean(flags?.hasSeriousComplaint),
+    hasFakeBehavior: Boolean(flags?.hasFakeBehavior),
     hasRedline: Boolean(flags?.hasRedline),
+    complaintCount: flags?.validComplaintCount || 0,
+    safetyViolationCount: flags?.safetyViolationCount || 0,
     ruleConfig,
   });
 
@@ -443,7 +453,11 @@ function mapRankingRowToBonusItem(
     participatesInDistribution: !ineligibleReason,
     disqualifiedBySeriousComplaint:
       Boolean(flags?.hasSeriousComplaint) && ruleConfig.disqualifySeriousComplaint,
+    disqualifiedByFakeBehavior:
+      Boolean(flags?.hasFakeBehavior) && ruleConfig.disqualifyFakeBehavior,
     disqualifiedByRedline: Boolean(flags?.hasRedline) && ruleConfig.disqualifyRedline,
+    complaintCount: flags?.validComplaintCount || 0,
+    safetyViolationCount: flags?.safetyViolationCount || 0,
     pointShare: 0,
     calculatedAmount: 0,
     cappedAmount: 0,
@@ -462,7 +476,10 @@ function mapInactiveLeaderToBonusItem(
     tripCount: 0,
     bonusEffectivePoints: 0,
     hasSeriousComplaint: Boolean(flags?.hasSeriousComplaint),
+    hasFakeBehavior: Boolean(flags?.hasFakeBehavior),
     hasRedline: Boolean(flags?.hasRedline),
+    complaintCount: flags?.validComplaintCount || 0,
+    safetyViolationCount: flags?.safetyViolationCount || 0,
     ruleConfig,
   });
 
@@ -488,7 +505,11 @@ function mapInactiveLeaderToBonusItem(
     participatesInDistribution: false,
     disqualifiedBySeriousComplaint:
       Boolean(flags?.hasSeriousComplaint) && ruleConfig.disqualifySeriousComplaint,
+    disqualifiedByFakeBehavior:
+      Boolean(flags?.hasFakeBehavior) && ruleConfig.disqualifyFakeBehavior,
     disqualifiedByRedline: Boolean(flags?.hasRedline) && ruleConfig.disqualifyRedline,
+    complaintCount: flags?.validComplaintCount || 0,
+    safetyViolationCount: flags?.safetyViolationCount || 0,
     pointShare: 0,
     calculatedAmount: 0,
     cappedAmount: 0,
@@ -508,7 +529,10 @@ function getIneligibleReason(row: {
   tripCount: number;
   bonusEffectivePoints: number;
   hasSeriousComplaint: boolean;
+  hasFakeBehavior: boolean;
   hasRedline: boolean;
+  complaintCount: number;
+  safetyViolationCount: number;
   ruleConfig: BonusRuleConfig;
 }) {
   if (row.leader.status === "LEFT") return "队长已离职";
@@ -517,8 +541,15 @@ function getIneligibleReason(row: {
     return "实习队长暂不参与";
   }
   if (row.hasRedline && row.ruleConfig.disqualifyRedline) return "红线行为取消资格";
+  if (row.hasFakeBehavior && row.ruleConfig.disqualifyFakeBehavior) return "虚假行为取消资格";
   if (row.hasSeriousComplaint && row.ruleConfig.disqualifySeriousComplaint) {
     return "严重投诉取消资格";
+  }
+  if (row.complaintCount >= row.ruleConfig.disqualifyValidComplaintCount) {
+    return `有效投诉累计 ${row.complaintCount} 次取消资格`;
+  }
+  if (row.safetyViolationCount >= row.ruleConfig.disqualifySafetyViolationCount) {
+    return `安全违规累计 ${row.safetyViolationCount} 次取消资格`;
   }
   if (row.tripCount < row.ruleConfig.minTripCount) {
     return `年度带队次数不足 ${row.ruleConfig.minTripCount} 次`;
@@ -529,7 +560,10 @@ function getIneligibleReason(row: {
 
 type BonusViolationFlags = {
   hasSeriousComplaint: boolean;
+  hasFakeBehavior: boolean;
   hasRedline: boolean;
+  validComplaintCount: number;
+  safetyViolationCount: number;
 };
 
 async function getBonusViolationFlags(scoreYearId: string) {
@@ -540,8 +574,14 @@ async function getBonusViolationFlags(scoreYearId: string) {
         status: "EFFECTIVE",
         OR: [
           { ruleCode: "SERIOUS_COMPLAINT" },
+          { ruleCode: "VALID_COMPLAINT" },
+          { ruleCode: "SAFETY_VIOLATION" },
           { ruleCode: "REDLINE" },
+          { ruleCode: "FAKE_BEHAVIOR" },
+          { type: "COMPLAINT" },
+          { type: "SAFETY" },
           { type: "REDLINE" },
+          { type: "FAKE_BEHAVIOR" },
         ],
       },
       select: {
@@ -556,7 +596,12 @@ async function getBonusViolationFlags(scoreYearId: string) {
         status: "EFFECTIVE",
         OR: [
           { ruleCode: "SERIOUS_COMPLAINT" },
+          { ruleCode: "VALID_COMPLAINT" },
+          { ruleCode: "SAFETY_VIOLATION" },
           { ruleCode: "REDLINE" },
+          { ruleCode: "FAKE_BEHAVIOR" },
+          { category: "COMPLAINT" },
+          { category: "SAFETY" },
           { category: "REDLINE" },
         ],
       },
@@ -572,10 +617,22 @@ async function getBonusViolationFlags(scoreYearId: string) {
   for (const event of events) {
     const current = flags.get(event.leaderId) || {
       hasSeriousComplaint: false,
+      hasFakeBehavior: false,
       hasRedline: false,
+      validComplaintCount: 0,
+      safetyViolationCount: 0,
     };
     if (event.ruleCode === "SERIOUS_COMPLAINT") {
       current.hasSeriousComplaint = true;
+    }
+    if (event.ruleCode === "VALID_COMPLAINT") {
+      current.validComplaintCount += 1;
+    }
+    if (event.ruleCode === "SAFETY_VIOLATION" || event.type === "SAFETY") {
+      current.safetyViolationCount += 1;
+    }
+    if (event.ruleCode === "FAKE_BEHAVIOR" || event.type === "FAKE_BEHAVIOR") {
+      current.hasFakeBehavior = true;
     }
     if (event.ruleCode === "REDLINE" || event.type === "REDLINE") {
       current.hasRedline = true;
@@ -586,12 +643,27 @@ async function getBonusViolationFlags(scoreYearId: string) {
   for (const record of scoreRecords) {
     const current = flags.get(record.leaderId) || {
       hasSeriousComplaint: false,
+      hasFakeBehavior: false,
       hasRedline: false,
+      validComplaintCount: 0,
+      safetyViolationCount: 0,
     };
     if (record.ruleCode === "SERIOUS_COMPLAINT") {
       current.hasSeriousComplaint = true;
     }
-    if (record.ruleCode === "REDLINE" || record.category === "REDLINE") {
+    if (record.ruleCode === "VALID_COMPLAINT") {
+      current.validComplaintCount += 1;
+    }
+    if (record.ruleCode === "SAFETY_VIOLATION" || record.category === "SAFETY") {
+      current.safetyViolationCount += 1;
+    }
+    if (record.ruleCode === "FAKE_BEHAVIOR") {
+      current.hasFakeBehavior = true;
+    }
+    if (
+      record.ruleCode === "REDLINE" ||
+      (record.category === "REDLINE" && record.ruleCode !== "FAKE_BEHAVIOR")
+    ) {
       current.hasRedline = true;
     }
     flags.set(record.leaderId, current);

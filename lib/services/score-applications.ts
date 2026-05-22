@@ -92,21 +92,39 @@ export type LeaderApplicationRuleOption = {
   requireTrip: boolean;
 };
 
+type LeaderApplicationRuleConfig = {
+  allowLeaderApplication: boolean;
+  requireTrip: boolean;
+  perTripLimit?: number;
+  annualCategoryCap?: number;
+  annualCap?: number;
+  maxPointsPerPost?: number;
+  heartCountBased?: boolean;
+  oneOrderOneLeader?: boolean;
+  exclusiveWith?: string[];
+};
+
 export function parseLeaderApplicationRuleConfig(configJson: string | null | undefined) {
   if (!configJson) {
     return { allowLeaderApplication: false, requireTrip: false };
   }
 
   try {
-    const parsed = JSON.parse(configJson) as {
-      allowLeaderApplication?: unknown;
-      requireTrip?: unknown;
-    };
+    const parsed = JSON.parse(configJson) as Record<string, unknown>;
 
     return {
       allowLeaderApplication: parsed.allowLeaderApplication === true,
       requireTrip: parsed.requireTrip === true,
-    };
+      perTripLimit: parseOptionalPositiveInteger(parsed.perTripLimit),
+      annualCategoryCap: parseOptionalPositiveNumber(parsed.annualCategoryCap),
+      annualCap: parseOptionalPositiveNumber(parsed.annualCap),
+      maxPointsPerPost: parseOptionalPositiveNumber(parsed.maxPointsPerPost),
+      heartCountBased: parsed.heartCountBased === true,
+      oneOrderOneLeader: parsed.oneOrderOneLeader === true,
+      exclusiveWith: Array.isArray(parsed.exclusiveWith)
+        ? parsed.exclusiveWith.filter((item): item is string => typeof item === "string")
+        : [],
+    } satisfies LeaderApplicationRuleConfig;
   } catch {
     return { allowLeaderApplication: false, requireTrip: false };
   }
@@ -253,6 +271,39 @@ export async function createLeaderScoreApplication(
     return { ok: false as const, status: 400, message: "已存在待审核或已通过的同类申请" };
   }
 
+  if (ruleConfig.perTripLimit && tripId) {
+    const existingCount = await countTripApplications({
+      leaderId: leader.id,
+      tripId,
+      ruleCodes: [ruleCode],
+    });
+    if (existingCount >= ruleConfig.perTripLimit) {
+      return { ok: false as const, status: 400, message: "该团期已达到该类申请次数上限" };
+    }
+  }
+
+  if (ruleConfig.exclusiveWith?.length && tripId) {
+    const exclusiveCount = await countTripApplications({
+      leaderId: leader.id,
+      tripId,
+      ruleCodes: ruleConfig.exclusiveWith,
+    });
+    if (exclusiveCount > 0) {
+      return { ok: false as const, status: 400, message: "该团期已有互斥传播申请，不能重复计分" };
+    }
+  }
+
+  if (ruleConfig.oneOrderOneLeader && (evidenceText || evidenceUrl)) {
+    const existingOrderOwner = await findRepurchaseOrderOwner({
+      ruleCode,
+      evidenceText,
+      evidenceUrl,
+    });
+    if (existingOrderOwner && existingOrderOwner.leaderId !== leader.id) {
+      return { ok: false as const, status: 400, message: "该复购订单已归属其他队长" };
+    }
+  }
+
   const application = await prisma.$transaction(async (tx) => {
     const created = await tx.scoreApplication.create({
       data: {
@@ -379,17 +430,22 @@ export async function approveScoreApplication(
   }
 
   const requestedApprovedPoints = parseOptionalNumber(input.approvedPoints);
+  const ruleConfig = parseLeaderApplicationRuleConfig(rule.configJson);
   const approvedPoints = requestedApprovedPoints ?? rule.points;
 
   if (!Number.isFinite(approvedPoints) || approvedPoints <= 0) {
     return { ok: false as const, status: 400, message: "审核分值必须大于 0" };
   }
 
-  if (approvedPoints > rule.points && reviewer?.role !== "SUPER_ADMIN") {
+  const maxRulePoints = ruleConfig.heartCountBased
+    ? ruleConfig.maxPointsPerPost || rule.points
+    : rule.points;
+
+  if (approvedPoints > maxRulePoints && reviewer?.role !== "SUPER_ADMIN") {
     return {
       ok: false as const,
       status: 400,
-      message: "审核分值不能高于规则默认分值",
+      message: "审核分值不能高于规则允许上限",
     };
   }
 
@@ -411,6 +467,14 @@ export async function approveScoreApplication(
   }
 
   const reviewRemark = normalizeOptionalString(input.reviewRemark);
+  const capResult = await applyScoreApplicationCaps({
+    scoreYearId: application.scoreYearId,
+    leaderId: application.leaderId,
+    rule,
+    approvedPoints,
+    applicationId: application.id,
+    ruleConfig,
+  });
   const snapshot = {
     ...buildRuleSnapshot(rule),
     application: {
@@ -422,6 +486,8 @@ export async function approveScoreApplication(
       evidenceJson: application.evidenceJson,
       requestedPoints: application.requestedPoints,
       approvedPoints,
+      effectivePoints: capResult.effectivePoints,
+      cap: capResult.capSnapshot,
     },
   };
 
@@ -449,7 +515,7 @@ export async function approveScoreApplication(
         ruleCode: rule.code,
         ruleName: rule.name,
         ruleVersion: rule.version,
-        rulePoints: approvedPoints,
+        rulePoints: capResult.effectivePoints,
         ruleSnapshotJson: JSON.stringify(snapshot),
         sourceType: "APPLICATION",
         sourceId: application.id,
@@ -457,7 +523,7 @@ export async function approveScoreApplication(
         item: rule.name || application.title,
         direction: "ADD",
         rawPoints: approvedPoints,
-        effectivePoints: approvedPoints,
+        effectivePoints: capResult.effectivePoints,
         status: "EFFECTIVE",
         occurredAt,
         approvedBy: reviewerUserId,
@@ -624,6 +690,102 @@ async function findDuplicateApplication({
   });
 }
 
+async function countTripApplications({
+  leaderId,
+  tripId,
+  ruleCodes,
+}: {
+  leaderId: string;
+  tripId: string;
+  ruleCodes: string[];
+}) {
+  if (ruleCodes.length === 0) return 0;
+  return prisma.scoreApplication.count({
+    where: {
+      leaderId,
+      tripId,
+      ruleCode: { in: ruleCodes },
+      status: { in: ["PENDING", "APPROVED"] },
+    },
+  });
+}
+
+async function findRepurchaseOrderOwner({
+  ruleCode,
+  evidenceText,
+  evidenceUrl,
+}: {
+  ruleCode: string;
+  evidenceText: string | null;
+  evidenceUrl: string | null;
+}) {
+  return prisma.scoreApplication.findFirst({
+    where: {
+      ruleCode,
+      status: { in: ["PENDING", "APPROVED"] },
+      OR: [
+        ...(evidenceText ? [{ evidenceText }] : []),
+        ...(evidenceUrl ? [{ evidenceUrl }] : []),
+      ],
+    },
+    select: { id: true, leaderId: true },
+  });
+}
+
+async function applyScoreApplicationCaps({
+  scoreYearId,
+  leaderId,
+  rule,
+  approvedPoints,
+  applicationId,
+  ruleConfig,
+}: {
+  scoreYearId: string;
+  leaderId: string;
+  rule: ScoreRule;
+  approvedPoints: number;
+  applicationId: string;
+  ruleConfig: LeaderApplicationRuleConfig;
+}) {
+  const caps = [ruleConfig.annualCategoryCap, ruleConfig.annualCap].filter(
+    (value): value is number => typeof value === "number" && Number.isFinite(value),
+  );
+  if (caps.length === 0) {
+    return {
+      effectivePoints: approvedPoints,
+      capSnapshot: null,
+    };
+  }
+
+  const cap = Math.min(...caps);
+  const used = await prisma.scoreRecord.aggregate({
+    where: {
+      scoreYearId,
+      leaderId,
+      status: "EFFECTIVE",
+      applicationId: { not: applicationId },
+      category: rule.category,
+      direction: "ADD",
+    },
+    _sum: { effectivePoints: true },
+  });
+  const usedPoints = used._sum.effectivePoints || 0;
+  const remaining = Math.max(cap - usedPoints, 0);
+  const effectivePoints = Math.min(approvedPoints, remaining);
+
+  return {
+    effectivePoints,
+    capSnapshot: {
+      cap,
+      usedPoints,
+      remainingBeforeApproval: remaining,
+      rawApprovedPoints: approvedPoints,
+      effectivePoints,
+      cappedPoints: Math.max(approvedPoints - effectivePoints, 0),
+    },
+  };
+}
+
 function inferApplicationTypeFromRule(rule: ScoreRule): ScoreApplicationType {
   if (isSupportedApplicationType(rule.code)) {
     return rule.code;
@@ -675,6 +837,16 @@ function parseOptionalNumber(value: unknown) {
   if (value === null || value === undefined || value === "") return null;
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
+}
+
+function parseOptionalPositiveNumber(value: unknown) {
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? number : undefined;
+}
+
+function parseOptionalPositiveInteger(value: unknown) {
+  const number = Number(value);
+  return Number.isInteger(number) && number > 0 ? number : undefined;
 }
 
 export function parseApplicationEvidence(application: {

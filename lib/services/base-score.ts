@@ -35,15 +35,17 @@ type BaseTripRuleConfig = {
   formula: string;
   perTripPoints: number;
   perDayPoints: number;
+  roundActualWorkDays: "CEIL_TO_DAY" | "NONE";
 };
 
 const defaultBaseTripConfig: BaseTripRuleConfig = {
   formula: "perTripPoints + actualWorkDays * perDayPoints",
   perTripPoints: 1,
   perDayPoints: 1,
+  roundActualWorkDays: "CEIL_TO_DAY",
 };
 
-export function parseBaseTripRuleConfig(configJson: string | null) {
+export function parseBaseTripRuleConfig(configJson: string | null): BaseTripRuleConfig {
   if (!configJson) {
     return defaultBaseTripConfig;
   }
@@ -63,6 +65,8 @@ export function parseBaseTripRuleConfig(configJson: string | null) {
         parsed.perDayPoints,
         defaultBaseTripConfig.perDayPoints,
       ),
+      roundActualWorkDays:
+        parsed.roundActualWorkDays === "NONE" ? "NONE" : "CEIL_TO_DAY",
     };
   } catch {
     return defaultBaseTripConfig;
@@ -232,15 +236,17 @@ export async function generateBaseScoresForTrips({
           continue;
         }
 
-        const points = calculateBaseTripPoints(
-          tripLeader.actualWorkDays,
-          ruleConfig,
-        );
-        const remark = `基础带队积分：${ruleConfig.perTripPoints}分/团 + ${tripLeader.actualWorkDays}天 × ${ruleConfig.perDayPoints}分/天 = ${points}分`;
+        const effectiveWorkDays =
+          ruleConfig.roundActualWorkDays === "CEIL_TO_DAY"
+            ? Math.ceil(tripLeader.actualWorkDays)
+            : tripLeader.actualWorkDays;
+        const points = calculateBaseTripPoints(tripLeader.actualWorkDays, ruleConfig);
+        const remark = `基础带队积分：${ruleConfig.perTripPoints}分/团 + ${effectiveWorkDays}天 × ${ruleConfig.perDayPoints}分/天 = ${points}分`;
         const snapshot = {
           ...ruleSnapshot,
           ...ruleConfig,
           actualWorkDays: tripLeader.actualWorkDays,
+          effectiveWorkDays,
           calculatedPoints: points,
         };
         const scoreRecord = await tx.scoreRecord.create({

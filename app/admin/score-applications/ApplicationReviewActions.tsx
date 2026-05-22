@@ -13,6 +13,7 @@ export function ApplicationReviewActions({
   const router = useRouter();
   const [error, setError] = useState("");
   const [reviewRemark, setReviewRemark] = useState("");
+  const [approvedPoints, setApprovedPoints] = useState("");
   const [rejectReason, setRejectReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -32,7 +33,10 @@ export function ApplicationReviewActions({
           headers: { "Content-Type": "application/json" },
           body:
             action === "approve"
-              ? JSON.stringify({ reviewRemark })
+              ? JSON.stringify({
+                  reviewRemark,
+                  approvedPoints: approvedPoints ? Number(approvedPoints) : undefined,
+                })
               : JSON.stringify({ rejectReason }),
         },
       );
@@ -57,6 +61,14 @@ export function ApplicationReviewActions({
         onChange={(event) => setReviewRemark(event.target.value)}
         placeholder="通过备注，可选"
         value={reviewRemark}
+      />
+      <Input
+        min="0"
+        onChange={(event) => setApprovedPoints(event.target.value)}
+        placeholder="批准分值，可选；抖音/视频号可按截图小红心填写"
+        step="0.5"
+        type="number"
+        value={approvedPoints}
       />
       <div className="flex gap-2">
         <Button

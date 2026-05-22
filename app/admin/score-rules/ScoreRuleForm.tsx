@@ -280,7 +280,7 @@ export function ScoreRuleForm({ mode, rule }: ScoreRuleFormProps) {
                   />
                 </Field>
                 <p className="text-sm text-muted-foreground md:col-span-2">
-                  公式说明：每团基础分 + 实际带队天数 × 每天带队分。
+                  公式说明：每团基础分 + 实际带队天数 × 每天带队分。V2.2 暂不区分半天，0.5 天按 1 天、1.5 天按 2 天计算。
                 </p>
               </div>
             ) : null}
@@ -390,6 +390,7 @@ function buildConfigJson({
     config.formula = "perTripPoints + actualWorkDays * perDayPoints";
     config.perTripPoints = normalizedPerTripPoints;
     config.perDayPoints = normalizedPerDayPoints;
+    config.roundActualWorkDays = "CEIL_TO_DAY";
   }
 
   return { ok: true, configJson: JSON.stringify(config) };

@@ -13,6 +13,11 @@ export type BonusRuleConfig = {
   includeFullTimeAndPartTimeTogether: boolean;
   holidayPointsBindingMode: "POINTS_ONLY" | "REQUIRED";
   disqualifySeriousComplaint: boolean;
+  seriousComplaintClearsPoints: boolean;
+  disqualifyFakeBehavior: boolean;
+  fakeBehaviorClearsPoints: boolean;
+  disqualifyValidComplaintCount: number;
+  disqualifySafetyViolationCount: number;
   redlineClearsPoints: boolean;
   disqualifyRedline: boolean;
   distributionMode: "TIER_WEIGHT";
@@ -27,6 +32,11 @@ export const DEFAULT_BONUS_RULE_CONFIG: BonusRuleConfig = {
   includeFullTimeAndPartTimeTogether: true,
   holidayPointsBindingMode: "POINTS_ONLY",
   disqualifySeriousComplaint: true,
+  seriousComplaintClearsPoints: true,
+  disqualifyFakeBehavior: true,
+  fakeBehaviorClearsPoints: true,
+  disqualifyValidComplaintCount: 2,
+  disqualifySafetyViolationCount: 2,
   redlineClearsPoints: true,
   disqualifyRedline: true,
   distributionMode: "TIER_WEIGHT",

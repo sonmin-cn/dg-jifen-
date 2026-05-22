@@ -10,6 +10,7 @@ import { formatLeaderDisplayLevel } from "@/lib/constants/leaders";
 
 export type DataCheckCode =
   | "SCORE_YEAR_ANOMALIES"
+  | "V22_RULE_ANOMALIES"
   | "UNBOUND_LEADERS"
   | "PENDING_BIND_REQUESTS"
   | "COMPLETED_TRIPS_WITHOUT_BASE_SCORE"
@@ -29,6 +30,12 @@ export const DATA_CHECK_GROUPS: Array<{
     title: "积分年度异常",
     description: "积分年度缺失、多个 ACTIVE、日期重叠或已完成团期无法匹配 ACTIVE 年度。",
     suggestion: "进入积分年度管理，新增、启用或调整覆盖团期结束日期的积分年度。",
+  },
+  {
+    code: "V22_RULE_ANOMALIES",
+    title: "V2.2 规则异常",
+    description: "传播上限、每团重复、复购归属、推荐上限和资格取消事件的核对结果。",
+    suggestion: "请根据 V2.2 规则核对，必要时通过积分作废、重新审核或专项补录处理。",
   },
   {
     code: "UNBOUND_LEADERS",
@@ -745,12 +752,246 @@ export async function getScoreYearAnomalies(params: DataCheckParams) {
   return filterIssuesByKeyword(issues, normalizeKeyword(params.keyword));
 }
 
+export async function getV22RuleAnomalies(params: DataCheckParams) {
+  const scoreYearId = params.scoreYearId || "";
+  if (!scoreYearId) return [];
+  const [socialRecords, socialTripRecords, repurchaseApplications, referralRecords, violationEvents] =
+    await Promise.all([
+      prisma.scoreRecord.findMany({
+        where: {
+          scoreYearId,
+          status: "EFFECTIVE",
+          category: "SOCIAL",
+          direction: "ADD",
+        },
+        include: { leader: { select: { id: true, realName: true } } },
+      }),
+      prisma.scoreRecord.findMany({
+        where: {
+          scoreYearId,
+          status: "EFFECTIVE",
+          tripId: { not: null },
+          ruleCode: {
+            in: [
+              "MOMENTS_TRIP_SHARE",
+              "MOMENTS_POST",
+              "XHS_SIMPLE_POST",
+              "XHS_QUALITY_POST",
+              "XHS_POST",
+            ],
+          },
+        },
+        include: {
+          leader: { select: { id: true, realName: true } },
+          trip: { select: { id: true, routeName: true } },
+        },
+      }),
+      prisma.scoreApplication.findMany({
+        where: {
+          scoreYearId,
+          status: { in: ["PENDING", "APPROVED"] },
+          ruleCode: { in: ["REPURCHASE_COMPLETED", "REPURCHASE"] },
+          OR: [{ evidenceText: { not: null } }, { evidenceUrl: { not: null } }],
+        },
+        include: { leader: { select: { id: true, realName: true } } },
+      }),
+      prisma.scoreRecord.findMany({
+        where: {
+          scoreYearId,
+          status: "EFFECTIVE",
+          direction: "ADD",
+          ruleCode: { in: ["REFERRAL_NEW_LEADER", "REFERRAL_REGULAR"] },
+        },
+        include: { leader: { select: { id: true, realName: true } } },
+      }),
+      prisma.violationEvent.findMany({
+        where: {
+          scoreYearId,
+          status: "EFFECTIVE",
+          OR: [
+            { ruleCode: { in: ["VALID_COMPLAINT", "SAFETY_VIOLATION", "SERIOUS_COMPLAINT", "FAKE_BEHAVIOR", "REDLINE"] } },
+            { type: { in: ["SAFETY", "FAKE_BEHAVIOR", "REDLINE"] } },
+          ],
+        },
+        include: { leader: { select: { id: true, realName: true } } },
+      }),
+    ]);
+  const issues: DataCheckIssue[] = [];
+
+  const socialByLeader = new Map<string, { leaderName: string; points: number }>();
+  for (const record of socialRecords) {
+    const current = socialByLeader.get(record.leaderId) || {
+      leaderName: record.leader.realName,
+      points: 0,
+    };
+    current.points += record.effectivePoints;
+    socialByLeader.set(record.leaderId, current);
+  }
+  for (const [leaderId, row] of socialByLeader.entries()) {
+    if (row.points <= 80) continue;
+    issues.push(
+      issue({
+        code: "V22_RULE_ANOMALIES",
+        severity: "HIGH",
+        id: `${leaderId}-social-cap`,
+        title: "传播类年度有效积分超过 80 分",
+        target: row.leaderName,
+        href: `/admin/score-records?leaderId=${leaderId}&scoreYearId=${scoreYearId}&category=SOCIAL`,
+        actionLabel: "查看积分明细",
+        fields: [
+          field("队长姓名", row.leaderName),
+          field("传播有效积分", formatNumber(row.points)),
+          field("年度上限", "80"),
+        ],
+      }),
+    );
+  }
+
+  const tripRuleCount = new Map<string, { count: number; leaderName: string; tripName: string; ruleType: string; href: string }>();
+  for (const record of socialTripRecords) {
+    const ruleType = record.ruleCode?.startsWith("XHS") ? "小红书" : "朋友圈";
+    const key = `${record.leaderId}-${record.tripId}-${ruleType}`;
+    const current = tripRuleCount.get(key) || {
+      count: 0,
+      leaderName: record.leader.realName,
+      tripName: record.trip?.routeName || "未关联团期",
+      ruleType,
+      href: `/admin/score-records?leaderId=${record.leaderId}&scoreYearId=${scoreYearId}`,
+    };
+    current.count += 1;
+    tripRuleCount.set(key, current);
+  }
+  for (const [key, row] of tripRuleCount.entries()) {
+    if (row.count <= 1) continue;
+    issues.push(
+      issue({
+        code: "V22_RULE_ANOMALIES",
+        severity: "MEDIUM",
+        id: `${key}-per-trip-duplicate`,
+        title: `同一团期${row.ruleType}加分超过 1 次`,
+        target: row.leaderName,
+        href: row.href,
+        actionLabel: "查看积分明细",
+        fields: [
+          field("队长姓名", row.leaderName),
+          field("团期", row.tripName),
+          field("类型", row.ruleType),
+          field("次数", row.count),
+        ],
+      }),
+    );
+  }
+
+  const repurchaseOwner = new Map<string, { leaderIds: Set<string>; leaders: Set<string> }>();
+  for (const application of repurchaseApplications) {
+    const key = application.evidenceUrl || application.evidenceText || "";
+    if (!key) continue;
+    const current = repurchaseOwner.get(key) || { leaderIds: new Set<string>(), leaders: new Set<string>() };
+    current.leaderIds.add(application.leaderId);
+    current.leaders.add(application.leader.realName);
+    repurchaseOwner.set(key, current);
+  }
+  let repurchaseIndex = 0;
+  for (const [key, row] of repurchaseOwner.entries()) {
+    if (row.leaderIds.size <= 1) continue;
+    repurchaseIndex += 1;
+    issues.push(
+      issue({
+        code: "V22_RULE_ANOMALIES",
+        severity: "HIGH",
+        id: `repurchase-duplicate-${repurchaseIndex}`,
+        title: "同一复购证据归属多个队长",
+        target: Array.from(row.leaders).join("、"),
+        href: "/admin/score-applications?type=REPURCHASE",
+        actionLabel: "查看申请",
+        fields: [
+          field("涉及队长", Array.from(row.leaders).join("、")),
+          field("复购证据", key.slice(0, 80)),
+        ],
+      }),
+    );
+  }
+
+  const referralByLeader = new Map<string, { leaderName: string; points: number }>();
+  for (const record of referralRecords) {
+    const current = referralByLeader.get(record.leaderId) || {
+      leaderName: record.leader.realName,
+      points: 0,
+    };
+    current.points += record.effectivePoints;
+    referralByLeader.set(record.leaderId, current);
+  }
+  for (const [leaderId, row] of referralByLeader.entries()) {
+    if (row.points <= 30) continue;
+    issues.push(
+      issue({
+        code: "V22_RULE_ANOMALIES",
+        severity: "MEDIUM",
+        id: `${leaderId}-referral-cap`,
+        title: "推荐新队长年度积分超过 30 分",
+        target: row.leaderName,
+        href: `/admin/score-records?leaderId=${leaderId}&scoreYearId=${scoreYearId}&category=REFERRAL`,
+        actionLabel: "查看积分明细",
+        fields: [
+          field("队长姓名", row.leaderName),
+          field("推荐积分", formatNumber(row.points)),
+          field("年度上限", "30"),
+        ],
+      }),
+    );
+  }
+
+  const violationByLeader = new Map<
+    string,
+    { leaderName: string; validComplaints: number; safetyViolations: number; terminalEvents: string[] }
+  >();
+  for (const event of violationEvents) {
+    const current = violationByLeader.get(event.leaderId) || {
+      leaderName: event.leader.realName,
+      validComplaints: 0,
+      safetyViolations: 0,
+      terminalEvents: [],
+    };
+    if (event.ruleCode === "VALID_COMPLAINT") current.validComplaints += 1;
+    if (event.ruleCode === "SAFETY_VIOLATION" || event.type === "SAFETY") current.safetyViolations += 1;
+    if (["SERIOUS_COMPLAINT", "FAKE_BEHAVIOR", "REDLINE"].includes(event.ruleCode) || ["FAKE_BEHAVIOR", "REDLINE"].includes(event.type)) {
+      current.terminalEvents.push(event.ruleCode || event.type);
+    }
+    violationByLeader.set(event.leaderId, current);
+  }
+  for (const [leaderId, row] of violationByLeader.entries()) {
+    if (row.validComplaints < 2 && row.safetyViolations < 2 && row.terminalEvents.length === 0) {
+      continue;
+    }
+    issues.push(
+      issue({
+        code: "V22_RULE_ANOMALIES",
+        severity: "HIGH",
+        id: `${leaderId}-bonus-disqualify-risk`,
+        title: "存在奖金资格取消或年度清零事件",
+        target: row.leaderName,
+        href: `/admin/score-records?leaderId=${leaderId}&scoreYearId=${scoreYearId}`,
+        actionLabel: "查看积分明细",
+        fields: [
+          field("队长姓名", row.leaderName),
+          field("有效投诉次数", row.validComplaints),
+          field("安全违规次数", row.safetyViolations),
+          field("严重/虚假/红线事件", row.terminalEvents.join("、")),
+        ],
+      }),
+    );
+  }
+
+  return filterIssuesByKeyword(issues, normalizeKeyword(params.keyword));
+}
+
 function buildIssueGroups(params: DataCheckParams & { scoreYearId: string }) {
   const checks: Array<{
     code: DataCheckCode;
     load: () => Promise<DataCheckIssue[]>;
   }> = [
     { code: "SCORE_YEAR_ANOMALIES", load: () => getScoreYearAnomalies(params) },
+    { code: "V22_RULE_ANOMALIES", load: () => getV22RuleAnomalies(params) },
     { code: "UNBOUND_LEADERS", load: () => getUnboundLeaders(params) },
     { code: "PENDING_BIND_REQUESTS", load: () => getPendingBindRequests(params) },
     {

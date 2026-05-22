@@ -1,6 +1,7 @@
 export type BaseTripScoreConfig = {
   perTripPoints?: number;
   perDayPoints?: number;
+  roundActualWorkDays?: "CEIL_TO_DAY" | "NONE";
 };
 
 export function calculateBaseTripPoints(
@@ -13,8 +14,12 @@ export function calculateBaseTripPoints(
 
   const perTripPoints = normalizeConfigNumber(config.perTripPoints, 1);
   const perDayPoints = normalizeConfigNumber(config.perDayPoints, 1);
+  const effectiveWorkDays =
+    config.roundActualWorkDays === "CEIL_TO_DAY"
+      ? Math.ceil(actualWorkDays)
+      : actualWorkDays;
 
-  return Math.round((perTripPoints + actualWorkDays * perDayPoints) * 100) / 100;
+  return Math.round((perTripPoints + effectiveWorkDays * perDayPoints) * 100) / 100;
 }
 
 function normalizeConfigNumber(value: number | undefined, fallback: number) {
