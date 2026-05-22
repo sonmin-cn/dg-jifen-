@@ -4,9 +4,11 @@ import {
   getAdminScoreRanking,
   type ScoreRankingRow,
 } from "@/lib/services/score-ranking";
-
-const BONUS_CAP_AMOUNT = 2000;
-const BONUS_TRIP_COUNT_THRESHOLD = 8;
+import {
+  getBonusRuleSnapshot,
+  type BonusDistributionTier,
+  type BonusRuleConfig,
+} from "@/lib/constants/bonus";
 
 export type CreateBonusPoolInput = {
   scoreYearId?: unknown;
@@ -36,8 +38,15 @@ export type BonusSettlementItemPreview = {
   deductPoints: number;
   tripCount: number;
   tripDays: number;
+  bonusEffectivePoints: number;
+  tierName: string | null;
+  tierWeight: number;
+  weightedPoints: number;
   eligible: boolean;
   ineligibleReason: string | null;
+  participatesInDistribution: boolean;
+  disqualifiedBySeriousComplaint: boolean;
+  disqualifiedByRedline: boolean;
   pointShare: number;
   calculatedAmount: number;
   cappedAmount: number;
@@ -59,11 +68,13 @@ export type BonusSettlementPreview = {
   eligibleLeaderCount: number;
   totalEffectivePoints: number;
   totalEligiblePoints: number;
+  totalWeightedPoints: number;
   totalCalculatedAmount: number;
   totalFinalAmount: number;
   totalCappedAmount: number;
   undistributedAmount: number;
   capAmount: number;
+  ruleConfig: BonusRuleConfig;
   items: BonusSettlementItemPreview[];
 };
 
@@ -157,16 +168,18 @@ export async function createBonusPoolEntry(
 export async function calculateBonusSettlement(scoreYearId: string) {
   const scoreYear = await prisma.scoreYear.findUnique({
     where: { id: scoreYearId },
-    select: { id: true, name: true, status: true },
+    select: { id: true, name: true, status: true, startDate: true, endDate: true },
   });
 
   if (!scoreYear) {
     return { ok: false as const, status: 404, message: "积分年度不存在" };
   }
 
-  const [poolSummary, ranking] = await Promise.all([
+  const ruleConfig = getBonusRuleSnapshot();
+  const [poolSummary, ranking, violationFlags] = await Promise.all([
     getBonusPoolSummary(scoreYearId),
     getAdminScoreRanking({ scoreYearId, limit: "all" }),
+    getBonusViolationFlags(scoreYearId),
   ]);
   const totalPoolAmount = poolSummary.totalAmount;
   const rankedLeaderIds = new Set(ranking.allRows.map((row) => row.leader.id));
@@ -182,19 +195,37 @@ export async function calculateBonusSettlement(scoreYearId: string) {
     },
   });
   const baseItems = [
-    ...ranking.allRows.map(mapRankingRowToBonusItem),
-    ...inactiveLeaders.map(mapInactiveLeaderToBonusItem),
+    ...ranking.allRows.map((row) =>
+      mapRankingRowToBonusItem(row, ruleConfig, violationFlags),
+    ),
+    ...inactiveLeaders.map((leader) =>
+      mapInactiveLeaderToBonusItem(leader, ruleConfig, violationFlags),
+    ),
   ]
     .sort(compareBonusItems)
     .map((item, index) => ({ ...item, rank: index + 1 }));
-  const eligibleItems = baseItems.filter((item) => item.eligible);
+  const eligibleItems = baseItems.filter((item) => item.participatesInDistribution);
+  const tieredItems = assignBonusTiers(eligibleItems, ruleConfig.tiers);
+  const tieredItemByLeaderId = new Map(
+    tieredItems.map((item) => [item.leaderId, item]),
+  );
   const totalEligiblePoints = roundPoints(
-    eligibleItems.reduce((sum, item) => sum + item.totalPoints, 0),
+    eligibleItems.reduce((sum, item) => sum + item.bonusEffectivePoints, 0),
+  );
+  const totalWeightedPoints = roundPoints(
+    tieredItems.reduce((sum, item) => sum + item.weightedPoints, 0),
   );
   const items = baseItems.map((item) => {
-    if (!item.eligible || totalEligiblePoints <= 0 || totalPoolAmount <= 0) {
+    const tieredItem = tieredItemByLeaderId.get(item.leaderId);
+    const enrichedItem = tieredItem || item;
+
+    if (
+      !enrichedItem.participatesInDistribution ||
+      totalWeightedPoints <= 0 ||
+      totalPoolAmount <= 0
+    ) {
       return {
-        ...item,
+        ...enrichedItem,
         pointShare: 0,
         calculatedAmount: 0,
         cappedAmount: 0,
@@ -202,12 +233,12 @@ export async function calculateBonusSettlement(scoreYearId: string) {
       };
     }
 
-    const pointShare = item.totalPoints / totalEligiblePoints;
+    const pointShare = enrichedItem.weightedPoints / totalWeightedPoints;
     const calculatedAmount = roundMoney(totalPoolAmount * pointShare);
-    const finalAmount = roundMoney(Math.min(calculatedAmount, BONUS_CAP_AMOUNT));
+    const finalAmount = roundMoney(Math.min(calculatedAmount, ruleConfig.singleLeaderCap));
 
     return {
-      ...item,
+      ...enrichedItem,
       pointShare: roundRatio(pointShare),
       calculatedAmount,
       cappedAmount: roundMoney(Math.max(calculatedAmount - finalAmount, 0)),
@@ -229,11 +260,13 @@ export async function calculateBonusSettlement(scoreYearId: string) {
       eligibleLeaderCount: eligibleItems.length,
       totalEffectivePoints: roundPoints(baseItems.reduce((sum, item) => sum + item.totalPoints, 0)),
       totalEligiblePoints,
+      totalWeightedPoints,
       totalCalculatedAmount,
       totalFinalAmount,
       totalCappedAmount,
       undistributedAmount: roundMoney(Math.max(totalPoolAmount - totalFinalAmount, 0)),
-      capAmount: BONUS_CAP_AMOUNT,
+      capAmount: ruleConfig.singleLeaderCap,
+      ruleConfig,
       items,
     } satisfies BonusSettlementPreview,
   };
@@ -262,6 +295,8 @@ export async function saveBonusSettlement(
   }
 
   const { preview } = result;
+  const ruleSnapshotText = `奖金规则快照：${JSON.stringify(preview.ruleConfig)}`;
+  const savedRemark = remark ? `${remark}\n${ruleSnapshotText}` : ruleSnapshotText;
   const settlement = await prisma.$transaction(async (tx) => {
     const created = await tx.bonusSettlement.create({
       data: {
@@ -275,7 +310,7 @@ export async function saveBonusSettlement(
         totalCappedAmount: preview.totalCappedAmount,
         undistributedAmount: preview.undistributedAmount,
         status: "DRAFT",
-        remark,
+        remark: savedRemark,
         createdBy: operatorUserId,
         items: {
           create: preview.items.map((item) => ({
@@ -311,7 +346,9 @@ export async function saveBonusSettlement(
           totalPoolAmount: preview.totalPoolAmount,
           eligibleLeaderCount: preview.eligibleLeaderCount,
           totalEligiblePoints: preview.totalEligiblePoints,
+          totalWeightedPoints: preview.totalWeightedPoints,
           totalFinalAmount: preview.totalFinalAmount,
+          ruleConfig: preview.ruleConfig,
           operatorUserId,
         }),
       },
@@ -367,8 +404,22 @@ export function formatPercent(value: number) {
 
 export { formatRankingPoints };
 
-function mapRankingRowToBonusItem(row: ScoreRankingRow): BonusSettlementItemPreview {
-  const ineligibleReason = getIneligibleReason(row);
+function mapRankingRowToBonusItem(
+  row: ScoreRankingRow,
+  ruleConfig: BonusRuleConfig,
+  violationFlags: Map<string, BonusViolationFlags>,
+): BonusSettlementItemPreview {
+  const flags = violationFlags.get(row.leader.id);
+  const bonusEffectivePoints =
+    flags?.hasRedline && ruleConfig.redlineClearsPoints ? 0 : row.totalPoints;
+  const ineligibleReason = getIneligibleReason({
+    leader: row.leader,
+    tripCount: row.tripCount,
+    bonusEffectivePoints,
+    hasSeriousComplaint: Boolean(flags?.hasSeriousComplaint),
+    hasRedline: Boolean(flags?.hasRedline),
+    ruleConfig,
+  });
 
   return {
     leaderId: row.leader.id,
@@ -383,8 +434,16 @@ function mapRankingRowToBonusItem(row: ScoreRankingRow): BonusSettlementItemPrev
     deductPoints: row.deductPoints,
     tripCount: row.tripCount,
     tripDays: row.tripDays,
+    bonusEffectivePoints,
+    tierName: null,
+    tierWeight: 0,
+    weightedPoints: 0,
     eligible: !ineligibleReason,
     ineligibleReason,
+    participatesInDistribution: !ineligibleReason,
+    disqualifiedBySeriousComplaint:
+      Boolean(flags?.hasSeriousComplaint) && ruleConfig.disqualifySeriousComplaint,
+    disqualifiedByRedline: Boolean(flags?.hasRedline) && ruleConfig.disqualifyRedline,
     pointShare: 0,
     calculatedAmount: 0,
     cappedAmount: 0,
@@ -392,11 +451,19 @@ function mapRankingRowToBonusItem(row: ScoreRankingRow): BonusSettlementItemPrev
   };
 }
 
-function mapInactiveLeaderToBonusItem(leader: BonusLeaderSnapshot): BonusSettlementItemPreview {
+function mapInactiveLeaderToBonusItem(
+  leader: BonusLeaderSnapshot,
+  ruleConfig: BonusRuleConfig,
+  violationFlags: Map<string, BonusViolationFlags>,
+): BonusSettlementItemPreview {
+  const flags = violationFlags.get(leader.id);
   const ineligibleReason = getIneligibleReason({
     leader: { status: leader.status },
     tripCount: 0,
-    totalPoints: 0,
+    bonusEffectivePoints: 0,
+    hasSeriousComplaint: Boolean(flags?.hasSeriousComplaint),
+    hasRedline: Boolean(flags?.hasRedline),
+    ruleConfig,
   });
 
   return {
@@ -412,8 +479,16 @@ function mapInactiveLeaderToBonusItem(leader: BonusLeaderSnapshot): BonusSettlem
     deductPoints: 0,
     tripCount: 0,
     tripDays: 0,
+    bonusEffectivePoints: 0,
+    tierName: null,
+    tierWeight: 0,
+    weightedPoints: 0,
     eligible: false,
     ineligibleReason,
+    participatesInDistribution: false,
+    disqualifiedBySeriousComplaint:
+      Boolean(flags?.hasSeriousComplaint) && ruleConfig.disqualifySeriousComplaint,
+    disqualifiedByRedline: Boolean(flags?.hasRedline) && ruleConfig.disqualifyRedline,
     pointShare: 0,
     calculatedAmount: 0,
     cappedAmount: 0,
@@ -431,13 +506,128 @@ function compareBonusItems(a: BonusSettlementItemPreview, b: BonusSettlementItem
 function getIneligibleReason(row: {
   leader: { status: string };
   tripCount: number;
-  totalPoints: number;
+  bonusEffectivePoints: number;
+  hasSeriousComplaint: boolean;
+  hasRedline: boolean;
+  ruleConfig: BonusRuleConfig;
 }) {
   if (row.leader.status === "LEFT") return "队长已离职";
   if (row.leader.status === "SUSPENDED") return "队长已暂停";
-  if (row.tripCount < BONUS_TRIP_COUNT_THRESHOLD) return "年度带队次数不足 8 次";
-  if (row.totalPoints <= 0) return "年度有效积分不大于 0";
+  if (row.leader.status === "INTERN" && !row.ruleConfig.includeInternLeaders) {
+    return "实习队长暂不参与";
+  }
+  if (row.hasRedline && row.ruleConfig.disqualifyRedline) return "红线行为取消资格";
+  if (row.hasSeriousComplaint && row.ruleConfig.disqualifySeriousComplaint) {
+    return "严重投诉取消资格";
+  }
+  if (row.tripCount < row.ruleConfig.minTripCount) {
+    return `年度带队次数不足 ${row.ruleConfig.minTripCount} 次`;
+  }
+  if (row.bonusEffectivePoints <= 0) return "奖金测算积分不大于 0";
   return null;
+}
+
+type BonusViolationFlags = {
+  hasSeriousComplaint: boolean;
+  hasRedline: boolean;
+};
+
+async function getBonusViolationFlags(scoreYearId: string) {
+  const [events, scoreRecords] = await Promise.all([
+    prisma.violationEvent.findMany({
+      where: {
+        scoreYearId,
+        status: "EFFECTIVE",
+        OR: [
+          { ruleCode: "SERIOUS_COMPLAINT" },
+          { ruleCode: "REDLINE" },
+          { type: "REDLINE" },
+        ],
+      },
+      select: {
+        leaderId: true,
+        ruleCode: true,
+        type: true,
+      },
+    }),
+    prisma.scoreRecord.findMany({
+      where: {
+        scoreYearId,
+        status: "EFFECTIVE",
+        OR: [
+          { ruleCode: "SERIOUS_COMPLAINT" },
+          { ruleCode: "REDLINE" },
+          { category: "REDLINE" },
+        ],
+      },
+      select: {
+        leaderId: true,
+        ruleCode: true,
+        category: true,
+      },
+    }),
+  ]);
+  const flags = new Map<string, BonusViolationFlags>();
+
+  for (const event of events) {
+    const current = flags.get(event.leaderId) || {
+      hasSeriousComplaint: false,
+      hasRedline: false,
+    };
+    if (event.ruleCode === "SERIOUS_COMPLAINT") {
+      current.hasSeriousComplaint = true;
+    }
+    if (event.ruleCode === "REDLINE" || event.type === "REDLINE") {
+      current.hasRedline = true;
+    }
+    flags.set(event.leaderId, current);
+  }
+
+  for (const record of scoreRecords) {
+    const current = flags.get(record.leaderId) || {
+      hasSeriousComplaint: false,
+      hasRedline: false,
+    };
+    if (record.ruleCode === "SERIOUS_COMPLAINT") {
+      current.hasSeriousComplaint = true;
+    }
+    if (record.ruleCode === "REDLINE" || record.category === "REDLINE") {
+      current.hasRedline = true;
+    }
+    flags.set(record.leaderId, current);
+  }
+
+  return flags;
+}
+
+function assignBonusTiers(
+  items: BonusSettlementItemPreview[],
+  tiers: BonusDistributionTier[],
+) {
+  const sortedItems = [...items].sort(compareBonusItems);
+  const total = sortedItems.length;
+
+  return sortedItems.map((item, index) => {
+    const rank = index + 1;
+    const tier = findTierByRank(rank, total, tiers);
+    const weightedPoints = roundPoints(item.bonusEffectivePoints * tier.weight);
+
+    return {
+      ...item,
+      tierName: tier.name,
+      tierWeight: tier.weight,
+      weightedPoints,
+    };
+  });
+}
+
+function findTierByRank(rank: number, total: number, tiers: BonusDistributionTier[]) {
+  for (const tier of tiers) {
+    const upperBound = Math.ceil(total * (tier.toPercent / 100));
+    if (rank <= upperBound) return tier;
+  }
+
+  return tiers[tiers.length - 1] || { name: "默认档", fromPercent: 0, toPercent: 100, weight: 1 };
 }
 
 function normalizeRequiredString(value: unknown) {

@@ -42,7 +42,7 @@ export default async function BonusSettlementDetailPage({ params }: PageProps) {
       <section className="mb-5 grid gap-4 md:grid-cols-4">
         <Info label="奖金池总额" value={formatMoney(settlement.totalPoolAmount)} />
         <Info label="符合资格人数" value={String(settlement.eligibleLeaderCount)} />
-        <Info label="资格队长积分" value={formatRankingPoints(settlement.totalEligiblePoints)} />
+        <Info label="奖金测算积分" value={formatRankingPoints(settlement.totalEligiblePoints)} />
         <Info label="理论奖金合计" value={formatMoney(settlement.totalCalculatedAmount)} />
         <Info label="实际分配金额" value={formatMoney(settlement.totalFinalAmount)} />
         <Info label="封顶扣减" value={formatMoney(settlement.totalCappedAmount)} />
@@ -50,6 +50,10 @@ export default async function BonusSettlementDetailPage({ params }: PageProps) {
         <Info label="状态" value={settlement.status} />
         <Info label="备注" value={settlement.remark} wide />
       </section>
+
+      <p className="mb-3 text-sm text-muted-foreground">
+        历史测算详情按当前数据库已保存字段展示；本次测算使用的规则快照会写入备注，新的预览页会展示档位、权重和加权积分。
+      </p>
 
       <section className="overflow-x-auto rounded-lg border bg-card shadow-sm">
         <table className="min-w-[1500px] w-full border-collapse text-sm">

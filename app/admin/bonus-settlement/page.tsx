@@ -81,10 +81,37 @@ export default async function BonusSettlementPage({ searchParams }: PageProps) {
             <StatCard label="奖金池总额" value={formatMoney(preview.totalPoolAmount)} />
             <StatCard label="符合资格人数" value={String(preview.eligibleLeaderCount)} />
             <StatCard label="总有效积分" value={formatRankingPoints(preview.totalEffectivePoints)} />
-            <StatCard label="资格队长积分" value={formatRankingPoints(preview.totalEligiblePoints)} />
+            <StatCard label="奖金测算积分" value={formatRankingPoints(preview.totalEligiblePoints)} />
+            <StatCard label="加权积分合计" value={formatRankingPoints(preview.totalWeightedPoints)} />
             <StatCard label="实际分配金额" value={formatMoney(preview.totalFinalAmount)} />
             <StatCard label="封顶扣减" value={formatMoney(preview.totalCappedAmount)} />
             <StatCard label="未分配余额" value={formatMoney(preview.undistributedAmount)} />
+          </section>
+
+          <section className="mb-5 rounded-lg border bg-card p-5 shadow-sm">
+            <h3 className="text-lg font-semibold">当前测算规则配置</h3>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              满足基础资格的队长全部参与分配，不再限制“有效积分排名前 40%”。测算采用“有效积分 × 档位权重”的加权占比分配，
+              因为高档位权重大于低档位且排名靠前者积分不低于后一名，可避免第 21 名奖金超过第 20 名的档位倒挂。
+            </p>
+            <div className="mt-4 grid gap-3 text-sm md:grid-cols-2 xl:grid-cols-3">
+              <Info label="带队次数门槛" value={`${preview.ruleConfig.minTripCount} 次`} />
+              <Info label="分配模式" value="档位权重分配" />
+              <Info label="实习队长参与" value={preview.ruleConfig.includeInternLeaders ? "是" : "否"} />
+              <Info label="全职兼职共用奖金池" value={preview.ruleConfig.includeFullTimeAndPartTimeTogether ? "是" : "否"} />
+              <Info label="单人封顶" value={formatMoney(preview.ruleConfig.singleLeaderCap)} />
+              <Info label="封顶余额二次分配" value={preview.ruleConfig.redistributeRemainder ? "是" : "否"} />
+              <Info label="严重投诉取消资格" value={preview.ruleConfig.disqualifySeriousComplaint ? "是" : "否"} />
+              <Info label="红线积分清零并取消资格" value={preview.ruleConfig.disqualifyRedline && preview.ruleConfig.redlineClearsPoints ? "是" : "否"} />
+              <Info label="节假日积分绑定" value="否，仅计入有效积分" />
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {preview.ruleConfig.tiers.map((tier) => (
+                <Badge key={tier.name} variant="secondary">
+                  {tier.name}：{tier.fromPercent}%-{tier.toPercent}%，权重 {tier.weight}
+                </Badge>
+              ))}
+            </div>
           </section>
 
           {canManage ? (
@@ -97,7 +124,7 @@ export default async function BonusSettlementPage({ searchParams }: PageProps) {
           ) : null}
 
           <section className="mb-5 overflow-x-auto rounded-lg border bg-card shadow-sm">
-            <table className="min-w-[1680px] w-full border-collapse text-sm">
+            <table className="min-w-[2200px] w-full border-collapse text-sm">
               <thead className="bg-muted/60 text-left">
                 <tr>
                   <Th>排名</Th>
@@ -106,13 +133,19 @@ export default async function BonusSettlementPage({ searchParams }: PageProps) {
                   <Th>状态</Th>
                   <Th>等级</Th>
                   <Th>总有效积分</Th>
+                  <Th>奖金测算积分</Th>
                   <Th>基础带队</Th>
                   <Th>申请加分</Th>
                   <Th>扣分合计</Th>
                   <Th>带队次数</Th>
                   <Th>带队天数</Th>
+                  <Th>档位</Th>
+                  <Th>权重</Th>
+                  <Th>加权积分</Th>
                   <Th>资格</Th>
                   <Th>不符合原因</Th>
+                  <Th>严重投诉取消</Th>
+                  <Th>红线取消</Th>
                   <Th>积分占比</Th>
                   <Th>理论奖金</Th>
                   <Th>封顶扣减</Th>
@@ -129,17 +162,23 @@ export default async function BonusSettlementPage({ searchParams }: PageProps) {
                       <Td>{LEADER_STATUS_LABELS[item.leaderStatus as keyof typeof LEADER_STATUS_LABELS]}</Td>
                       <Td>{formatLeaderDisplayLevel(item.leaderStatus, item.level)}</Td>
                       <Td>{formatRankingPoints(item.totalPoints)}</Td>
+                      <Td>{formatRankingPoints(item.bonusEffectivePoints)}</Td>
                       <Td>{formatRankingPoints(item.baseTripPoints, { signed: true })}</Td>
                       <Td>{formatRankingPoints(item.applicationPoints, { signed: true })}</Td>
                       <Td>{formatRankingPoints(item.deductPoints, { signed: true })}</Td>
                       <Td>{item.tripCount}</Td>
                       <Td>{formatRankingPoints(item.tripDays)}</Td>
+                      <Td>{item.tierName || "-"}</Td>
+                      <Td>{item.tierWeight || "-"}</Td>
+                      <Td>{formatRankingPoints(item.weightedPoints)}</Td>
                       <Td>
                         <Badge variant={item.eligible ? "secondary" : "outline"}>
                           {item.eligible ? "符合" : "不符合"}
                         </Badge>
                       </Td>
                       <Td>{item.ineligibleReason || "-"}</Td>
+                      <Td>{item.disqualifiedBySeriousComplaint ? "是" : "否"}</Td>
+                      <Td>{item.disqualifiedByRedline ? "是" : "否"}</Td>
                       <Td>{formatPercent(item.pointShare)}</Td>
                       <Td>{formatMoney(item.calculatedAmount)}</Td>
                       <Td>{formatMoney(item.cappedAmount)}</Td>
@@ -148,7 +187,7 @@ export default async function BonusSettlementPage({ searchParams }: PageProps) {
                   ))
                 ) : (
                   <tr>
-                    <td className="px-4 py-10 text-center text-muted-foreground" colSpan={17}>
+                    <td className="px-4 py-10 text-center text-muted-foreground" colSpan={23}>
                       暂无测算明细。
                     </td>
                   </tr>
@@ -214,6 +253,15 @@ function StatCard({ label, value }: { label: string; value: string }) {
       <p className="text-sm text-muted-foreground">{label}</p>
       <p className="mt-2 text-xl font-semibold">{value}</p>
     </article>
+  );
+}
+
+function Info({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border bg-background px-3 py-2">
+      <p className="text-muted-foreground">{label}</p>
+      <p className="mt-1 font-medium">{value}</p>
+    </div>
   );
 }
 
