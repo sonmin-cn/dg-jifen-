@@ -10,9 +10,11 @@
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:seed": "tsx prisma/seed.ts",
+    "prisma:seed": "tsx prisma/seed-rules.ts",
     "prisma:studio": "prisma studio",
-    "mvp:check": "tsx scripts/mvp-smoke-check.ts"
+    "mvp:check": "tsx scripts/mvp-smoke-check.ts",
+    "seed:rules": "tsx prisma/seed-rules.ts",
+    "seed:test": "tsx prisma/seed-test.ts"
   },
   "dependencies": {
     "@prisma/client": "6",
@@ -37,6 +39,6 @@
     "typescript": "latest"
   },
   "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed-rules.ts"
   }
 }

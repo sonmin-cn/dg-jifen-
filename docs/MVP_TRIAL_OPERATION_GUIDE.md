@@ -18,6 +18,12 @@
 4. 在 `/admin/score-rules` 检查允许队长申请的规则，例如朋友圈、小红书、复购等是否启用。
 5. 在 `/admin/data-check` 先查看是否已有明显异常。
 
+规则同步命令：
+- 试运营 / 生产环境同步 V2.2 默认规则时，只能执行 `npm run seed:rules` 或 `npm run prisma:seed`。
+- `seed:rules` 只 upsert 规则、默认积分年度和系统角色，不会删除队长、团期、积分台账、申请、扣分、奖金等业务数据。
+- `npm run seed:test` 只用于本地开发重置测试数据，必须显式设置 `CONFIRM_SEED_TEST=RESET_LOCAL_DATA`，禁止在试运营 / 生产数据库执行。
+- 部署和初始化细节见 `docs/DEPLOYMENT_GUIDE.md`。
+
 V2.2 规则入口：
 - 完整规则见 `docs/LEADER_SCORE_RULES_V2_2.md`。
 - V2.2 规则从配置生效后向后适用，不自动重算历史积分。
