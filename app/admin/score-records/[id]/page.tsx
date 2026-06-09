@@ -15,6 +15,10 @@ import {
   getAdminScoreRecordDetail,
   parseRuleSnapshotJson,
 } from "@/lib/services/score-records";
+import {
+  isAllowedEvidenceImageUrl,
+  type EvidenceUrlScope,
+} from "@/lib/storage/evidence-url";
 import { VoidScoreRecordForm } from "@/app/admin/score-records/[id]/VoidScoreRecordForm";
 
 type PageProps = {
@@ -224,6 +228,9 @@ function extractEvidenceImages(value: string | null) {
           filename?: unknown;
         }>;
       };
+      application?: {
+        evidenceJson?: unknown;
+      };
       evidence?: {
         images?: Array<{
           url?: unknown;
@@ -231,16 +238,48 @@ function extractEvidenceImages(value: string | null) {
         }>;
       };
     };
-    const images =
-      parsed.adjustment?.evidenceImages || parsed.evidence?.images || [];
 
-    return images
-      .map((image) => ({
-        url: typeof image.url === "string" ? image.url : "",
-        filename: typeof image.filename === "string" ? image.filename : "",
-      }))
-      .filter((image) => image.url.startsWith("/uploads/score-applications/"));
+    const images = [
+      ...normalizeEvidenceImages(parsed.adjustment?.evidenceImages, "score-adjustments"),
+      ...normalizeEvidenceImages(parsed.evidence?.images, "score-applications"),
+      ...normalizeEvidenceImages(
+        parseApplicationEvidenceImages(parsed.application?.evidenceJson),
+        "score-applications",
+      ),
+    ];
+    const byUrl = new Map(images.map((image) => [image.url, image]));
+
+    return Array.from(byUrl.values());
   } catch {
     return [];
   }
+}
+
+function parseApplicationEvidenceImages(value: unknown) {
+  if (typeof value !== "string") return [];
+
+  try {
+    const parsed = JSON.parse(value) as {
+      images?: Array<{
+        url?: unknown;
+        filename?: unknown;
+      }>;
+    };
+
+    return parsed.images || [];
+  } catch {
+    return [];
+  }
+}
+
+function normalizeEvidenceImages(
+  value: Array<{ url?: unknown; filename?: unknown }> | undefined,
+  scope: EvidenceUrlScope,
+) {
+  return (value || [])
+    .map((image) => ({
+      url: typeof image.url === "string" ? image.url : "",
+      filename: typeof image.filename === "string" ? image.filename : "",
+    }))
+    .filter((image) => isAllowedEvidenceImageUrl(image.url, scope));
 }

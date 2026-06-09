@@ -2,6 +2,8 @@
 
 本文用于说明试运营 / 生产环境中如何安全同步基础配置，尤其是 V2.2 积分规则。默认原则：配置 seed 不得清空业务数据，测试数据 seed 只能在本地开发库使用。
 
+CloudBase 云托管 Staging 部署请先阅读：[CloudBase Staging 部署指南](./CLOUDBASE_STAGING_DEPLOYMENT.md)。
+
 ## 一、推荐命令
 
 ### 同步积分规则和系统基础配置

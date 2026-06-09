@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 import type { Prisma, ScoreCategory } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
 import { buildRuleSnapshot } from "@/lib/services/score-rules";
+import { isAllowedEvidenceImageUrl } from "@/lib/storage/evidence-url";
 
 export type AdminScoreAdjustmentParams = {
   scoreYearId?: string;
@@ -348,7 +349,7 @@ function normalizeEvidenceImages(value: unknown):
     }
     const item = image as Record<string, unknown>;
     const url = normalizeRequiredString(item.url);
-    if (!url.startsWith("/uploads/score-applications/")) {
+    if (!isAllowedEvidenceImageUrl(url, "score-adjustments")) {
       return { ok: false, message: "证明图片地址不合法" };
     }
     images.push({

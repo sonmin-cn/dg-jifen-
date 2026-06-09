@@ -11,6 +11,7 @@ import {
   mapApplicationTypeToRuleCode,
 } from "@/lib/constants/score-applications";
 import { buildRuleSnapshot, getActiveScoreRule } from "@/lib/services/score-rules";
+import { isAllowedEvidenceImageUrl } from "@/lib/storage/evidence-url";
 
 export type CreateLeaderApplicationInput = {
   ruleId?: unknown;
@@ -929,7 +930,7 @@ function normalizeEvidenceImages(value: unknown):
     const mimeType = normalizeRequiredString(record.mimeType);
     const size = Number(record.size);
 
-    if (!url || !url.startsWith("/uploads/score-applications/")) {
+    if (!isAllowedEvidenceImageUrl(url, "score-applications")) {
       return { ok: false, message: "证明图片地址不合法" };
     }
 

@@ -1,0 +1,12 @@
+.git
+.next
+.codex
+node_modules
+npm-debug.log*
+.env
+.env.*
+!.env.example
+prisma/*.db
+prisma/*.db-journal
+public/uploads
+uploads

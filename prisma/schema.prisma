@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -232,8 +232,8 @@ model Leader {
   recommenderLeaderId  String?
   recommenderLeader    Leader?               @relation("LeaderRecommendations", fields: [recommenderLeaderId], references: [id], onDelete: SetNull)
   recommendedLeaders   Leader[]              @relation("LeaderRecommendations")
-  tags                 String?
-  remark               String?
+  tags                 String?               @db.Text
+  remark               String?               @db.Text
   tripLeaders          TripLeader[]
   scoreApplications    ScoreApplication[]
   scoreRecords         ScoreRecord[]
@@ -263,10 +263,10 @@ model LeaderBindRequest {
   realNameInput String
   status        LeaderBindRequestStatus @default(PENDING)
   matchScore    Float?
-  matchReason   String?
+  matchReason   String?                 @db.Text
   reviewedBy    String?
   reviewedAt    DateTime?
-  rejectReason  String?
+  rejectReason  String?                 @db.Text
   createdAt     DateTime                @default(now())
   updatedAt     DateTime                @updatedAt
 
@@ -282,7 +282,7 @@ model ScoreYear {
   endDate            DateTime
   sealDate           DateTime?
   status             ScoreYearStatus
-  remark             String?
+  remark             String?             @db.Text
   scoreApplications  ScoreApplication[]
   scoreRecords       ScoreRecord[]
   holidayAttendances HolidayAttendance[]
@@ -308,8 +308,8 @@ model ScoreRule {
   isActive          Boolean              @default(true)
   effectiveFrom     DateTime             @default(now())
   effectiveTo       DateTime?
-  description       String?
-  configJson        String?
+  description       String?              @db.Text
+  configJson        String?              @db.Text
   scoreRecords      ScoreRecord[]
   scoreApplications ScoreApplication[]
   violationEvents   ViolationEvent[]
@@ -376,19 +376,19 @@ model ScoreApplication {
   ruleCode        String?
   type            ScoreApplicationType
   title           String                 @default("")
-  description     String?
-  evidenceText    String?
-  evidenceUrl     String?
-  evidenceJson    String?
+  description     String?                @db.Text
+  evidenceText    String?                @db.Text
+  evidenceUrl     String?                @db.Text
+  evidenceJson    String?                @db.Text
   requestedPoints Float
   approvedPoints  Float?
   status          ScoreApplicationStatus @default(PENDING)
-  payloadJson     String?
+  payloadJson     String?                @db.Text
   submittedAt     DateTime               @default(now())
   reviewedBy      String?
   reviewedAt      DateTime?
-  rejectReason    String?
-  remark          String?
+  rejectReason    String?                @db.Text
+  remark          String?                @db.Text
   createdAt       DateTime               @default(now())
   updatedAt       DateTime               @default(now()) @updatedAt
   scoreRecords    ScoreRecord[]
@@ -419,7 +419,7 @@ model ScoreRecord {
   ruleName         String?
   ruleVersion      Int?
   rulePoints       Float?
-  ruleSnapshotJson String?
+  ruleSnapshotJson String?           @db.Text
   sourceType       ScoreSourceType
   sourceId         String
   category         ScoreCategory
@@ -431,8 +431,8 @@ model ScoreRecord {
   occurredAt       DateTime
   approvedBy       String?
   approvedAt       DateTime?
-  remark           String?
-  voidReason       String?
+  remark           String?           @db.Text
+  voidReason       String?           @db.Text
   voidedBy         String?
   voidedAt         DateTime?
   createdAt        DateTime          @default(now())
@@ -448,9 +448,9 @@ model Evidence {
   id          String              @id @default(cuid())
   relatedType EvidenceRelatedType
   relatedId   String
-  fileUrl     String
+  fileUrl     String              @db.Text
   fileType    String?
-  description String?
+  description String?             @db.Text
   uploadedBy  String
   createdAt   DateTime            @default(now())
 
@@ -466,8 +466,8 @@ model SocialPost {
   tripId              String
   trip                Trip             @relation(fields: [tripId], references: [id], onDelete: Restrict)
   platform            SocialPlatform
-  postUrl             String?
-  screenshotUrl       String?
+  postUrl             String?          @db.Text
+  screenshotUrl       String?          @db.Text
   postedAt            DateTime
   isPublic            Boolean          @default(false)
   keep7DaysConfirmed  Boolean          @default(false)
@@ -497,9 +497,9 @@ model RepurchaseClaim {
   inviteTime             DateTime
   paymentTime            DateTime
   completedTrip          Boolean               @default(false)
-  chatEvidenceUrl        String?
+  chatEvidenceUrl        String?               @db.Text
   status                 RepurchaseClaimStatus @default(PENDING)
-  rejectReason           String?
+  rejectReason           String?               @db.Text
   createdAt              DateTime              @default(now())
   updatedAt              DateTime              @updatedAt
 
@@ -518,7 +518,7 @@ model HolidayAttendance {
   actuallyAssigned             Boolean     @default(false)
   actuallyCompleted            Boolean     @default(false)
   companyNotAssignedRecognized Boolean     @default(false)
-  recognitionReason            String?
+  recognitionReason            String?     @db.Text
   approvedBy                   String?
   points                       Float       @default(0)
   countsForDoubleBonus         Boolean     @default(false)
@@ -537,10 +537,10 @@ model BonusPool {
   amount      Float
   sourceType  String?
   title       String    @default("奖金池注入")
-  description String?
+  description String?   @db.Text
   injectedAt  DateTime  @default(now())
   createdBy   String?
-  remark      String?
+  remark      String?   @db.Text
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @default(now()) @updatedAt
 
@@ -560,7 +560,7 @@ model BonusSettlement {
   totalCappedAmount     Float
   undistributedAmount   Float
   status                BonusSettlementStatus @default(DRAFT)
-  remark                String?
+  remark                String?               @db.Text
   createdBy             String?
   createdAt             DateTime              @default(now())
   updatedAt             DateTime              @updatedAt
@@ -586,7 +586,7 @@ model BonusSettlementItem {
   tripCount         Int
   tripDays          Float
   eligible          Boolean
-  ineligibleReason  String?
+  ineligibleReason  String?         @db.Text
   pointShare        Float
   calculatedAmount  Float
   cappedAmount      Float
@@ -611,10 +611,10 @@ model ViolationEvent {
   type            ViolationType
   severity        ViolationSeverity
   title           String            @default("违规事件")
-  description     String
-  evidenceText    String?
-  evidenceUrl     String?
-  remark          String?
+  description     String            @db.Text
+  evidenceText    String?           @db.Text
+  evidenceUrl     String?           @db.Text
+  remark          String?           @db.Text
   points          Float
   scoreRecordId   String?
   disqualifyBonus Boolean           @default(false)
@@ -644,8 +644,8 @@ model AuditLog {
   action     String
   targetType String
   targetId   String
-  beforeJson String?
-  afterJson  String?
+  beforeJson String?  @db.Text
+  afterJson  String?  @db.Text
   createdAt  DateTime @default(now())
 
   @@index([userId, createdAt])

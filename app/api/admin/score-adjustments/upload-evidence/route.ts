@@ -1,22 +1,16 @@
-import { randomBytes } from "crypto";
-import { mkdir, writeFile } from "fs/promises";
-import path from "path";
 import { NextRequest, NextResponse } from "next/server";
 import { isAuthError, requireRole } from "@/lib/auth/permissions";
 import { SCORE_ADJUSTMENT_MANAGEMENT_ROLES } from "@/lib/auth/roles";
+import {
+  isCosStorageConfigError,
+  uploadEvidenceImageToCos,
+} from "@/lib/storage/cos";
 
 export const runtime = "nodejs";
 
 const MAX_FILE_COUNT = 3;
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const MAX_TOTAL_SIZE = 15 * 1024 * 1024;
-const PUBLIC_UPLOAD_DIR = path.join(
-  process.cwd(),
-  "public",
-  "uploads",
-  "score-applications",
-);
-const URL_PREFIX = "/uploads/score-applications";
 const ALLOWED_TYPES = new Map([
   ["image/jpeg", "jpg"],
   ["image/png", "png"],
@@ -58,7 +52,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await mkdir(PUBLIC_UPLOAD_DIR, { recursive: true });
     const images = [];
 
     for (const file of files) {
@@ -94,12 +87,17 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const filename = `${Date.now()}-${randomBytes(8).toString("hex")}.${extension}`;
       const buffer = Buffer.from(await file.arrayBuffer());
-      await writeFile(path.join(PUBLIC_UPLOAD_DIR, filename), buffer);
+      const uploaded = await uploadEvidenceImageToCos({
+        folder: "score-adjustments",
+        extension,
+        body: buffer,
+        contentType: file.type,
+      });
+
       images.push({
-        url: `${URL_PREFIX}/${filename}`,
-        filename,
+        url: uploaded.url,
+        filename: uploaded.filename,
         mimeType: file.type,
         size: file.size,
       });
@@ -111,6 +109,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: error.message },
         { status: error.status },
+      );
+    }
+
+    if (isCosStorageConfigError(error)) {
+      console.error(error);
+      return NextResponse.json(
+        { success: false, error: "图片上传配置缺失，请联系管理员" },
+        { status: 500 },
       );
     }
 
