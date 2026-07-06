@@ -22,6 +22,11 @@ export type CosEvidenceUploadResult = {
   key: string;
 };
 
+export type CosEvidenceObject = {
+  body: Buffer;
+  contentType?: string;
+};
+
 export class CosStorageConfigError extends Error {
   constructor(message: string) {
     super(message);
@@ -55,6 +60,32 @@ export async function uploadEvidenceImageToCos({
     url: `${config.publicBaseUrl}/${encodeObjectKey(key)}`,
     filename,
     key,
+  };
+}
+
+export async function readEvidenceImageFromCos(key: string): Promise<CosEvidenceObject> {
+  const config = getCosConfig();
+  const object = await new Promise<COS.GetObjectResult>((resolve, reject) => {
+    getCosClient(config).getObject(
+      {
+        Bucket: config.bucket,
+        Region: config.region,
+        Key: key,
+      },
+      (error, data) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+
+        resolve(data);
+      },
+    );
+  });
+
+  return {
+    body: object.Body,
+    contentType: readHeader(object.headers, "content-type"),
   };
 }
 
@@ -103,4 +134,16 @@ function normalizeObjectKey(value: string) {
 
 function encodeObjectKey(key: string) {
   return key.split("/").map(encodeURIComponent).join("/");
+}
+
+function readHeader(
+  headers: Record<string, string | string[] | undefined> | undefined,
+  name: string,
+) {
+  if (!headers) {
+    return undefined;
+  }
+
+  const value = headers[name] || headers[name.toLowerCase()];
+  return Array.isArray(value) ? value[0] : value;
 }

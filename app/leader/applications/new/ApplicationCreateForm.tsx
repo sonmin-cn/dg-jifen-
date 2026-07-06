@@ -259,35 +259,39 @@ export function ApplicationCreateForm({
           ) : null}
           {evidenceImages.length > 0 ? (
             <div className="grid gap-3 sm:grid-cols-3">
-              {evidenceImages.map((image) => (
-                <div className="overflow-hidden rounded-lg border bg-background" key={image.url}>
-                  <a href={image.url} target="_blank" rel="noreferrer">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      alt="证明图片"
-                      className="h-28 w-full object-cover"
-                      src={image.url}
-                    />
-                  </a>
-                  <div className="flex items-center justify-between gap-2 p-2 text-xs">
-                    <span className="min-w-0 truncate text-muted-foreground">
-                      {image.filename}
-                    </span>
-                    <button
-                      aria-label="移除图片"
-                      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border text-muted-foreground hover:bg-muted"
-                      onClick={() => {
-                        setEvidenceImages((current) =>
-                          current.filter((item) => item.url !== image.url),
-                        );
-                      }}
-                      type="button"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
+              {evidenceImages.map((image) => {
+                const displayUrl = image.displayUrl || image.url;
+
+                return (
+                  <div className="overflow-hidden rounded-lg border bg-background" key={image.url}>
+                    <a href={displayUrl} target="_blank" rel="noreferrer">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        alt="证明图片"
+                        className="h-28 w-full object-cover"
+                        src={displayUrl}
+                      />
+                    </a>
+                    <div className="flex items-center justify-between gap-2 p-2 text-xs">
+                      <span className="min-w-0 truncate text-muted-foreground">
+                        {image.filename}
+                      </span>
+                      <button
+                        aria-label="移除图片"
+                        className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border text-muted-foreground hover:bg-muted"
+                        onClick={() => {
+                          setEvidenceImages((current) =>
+                            current.filter((item) => item.url !== image.url),
+                          );
+                        }}
+                        type="button"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <p className="flex items-center gap-2 text-sm text-muted-foreground">

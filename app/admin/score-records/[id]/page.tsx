@@ -16,6 +16,7 @@ import {
   parseRuleSnapshotJson,
 } from "@/lib/services/score-records";
 import {
+  getEvidenceImageProxyUrl,
   isAllowedEvidenceImageUrl,
   type EvidenceUrlScope,
 } from "@/lib/storage/evidence-url";
@@ -141,22 +142,7 @@ export default async function AdminScoreRecordDetailPage({ params }: PageProps) 
           <h3 className="text-lg font-semibold">证据截图</h3>
           <div className="mt-4 grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {evidenceImages.map((image) => (
-              <a
-                className="rounded-md border bg-background p-2 hover:border-primary"
-                href={image.url}
-                key={image.url}
-                rel="noreferrer"
-                target="_blank"
-              >
-                <img
-                  alt={image.filename || "证据截图"}
-                  className="h-32 w-full rounded object-cover"
-                  src={image.url}
-                />
-                <p className="mt-2 truncate text-xs text-muted-foreground">
-                  {image.filename || image.url}
-                </p>
-              </a>
+              <EvidenceImageLink image={image} key={image.url} />
             ))}
           </div>
         </section>
@@ -177,6 +163,31 @@ export default async function AdminScoreRecordDetailPage({ params }: PageProps) 
         ) : null}
       </section>
     </div>
+  );
+}
+
+function EvidenceImageLink({ image }: { image: { url: string; filename: string } }) {
+  const scope = image.url.includes("/score-adjustments/")
+    ? "score-adjustments"
+    : "score-applications";
+  const displayUrl = getEvidenceImageProxyUrl(image.url, scope);
+
+  return (
+    <a
+      className="rounded-md border bg-background p-2 hover:border-primary"
+      href={displayUrl}
+      rel="noreferrer"
+      target="_blank"
+    >
+      <img
+        alt={image.filename || "证据截图"}
+        className="h-32 w-full rounded object-cover"
+        src={displayUrl}
+      />
+      <p className="mt-2 truncate text-xs text-muted-foreground">
+        {image.filename || image.url}
+      </p>
+    </a>
   );
 }
 

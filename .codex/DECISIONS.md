@@ -55,3 +55,178 @@
 * 原因：`AGENTS.md` 要求项目支持中断后从仓库文件恢复，Staging 部署也需要可追踪的状态、决策和操作清单。
 * 影响范围：提交范围和后续恢复流程。
 * 后续注意：真实密钥、`.env`、本地数据库、日志、缓存和临时文件不得提交；Staging Secret 只配置到 CloudBase 云托管环境变量。
+
+## 2026-06-09 - Staging 配置缺失时停止部署
+
+* 决策：当前 Staging 执行因必需环境变量在本地 shell 中缺失而停止，不运行数据库初始化、seed、CloudBase 部署或 Web 验收。
+* 原因：用户明确要求变量缺失时停止部署，并禁止打印真实 Secret、连接生产库或执行破坏性操作。
+* 影响范围：本次 Staging 初始化与部署验收任务。
+* 后续注意：下次继续前只需确认 Staging 变量已在安全终端或 CloudBase 控制台配置完成；不要把真实值写入聊天、`.codex/`、`.env.example` 或提交记录。
+
+## 2026-06-10 - Staging 控制台配置不记录真实密钥
+
+* 决策：CloudBase、MySQL、COS 和 CAM API 密钥先由用户在腾讯云控制台手工创建和配置；Codex 只记录字段名、资源名、地域、端口和非敏感检查结果，不记录真实密码、SecretKey、Session Secret 或完整含密码的连接串。
+* 原因：当前任务需要外部控制台操作，且用户明确要求不要把 Secret 发到聊天或提交到 Git。
+* 影响范围：`.codex/` 状态文件、部署指导、后续 Staging 验证命令。
+* 后续注意：如需本地验证，使用被 `.gitignore` 忽略的 `.env.staging.local` 或仅在当前安全 shell 中临时导出变量。
+
+## 2026-06-10 - Staging 环境采用实际创建名称
+
+* 决策：后续 Staging 配置使用用户已创建的 CloudBase 环境 `leader-score-system`，环境 ID `leader-score-system-d9byb5cc6528`，地域上海。
+* 原因：用户已在控制台完成环境创建；虽然名称不同于先前建议的 `leader-score-staging`，但环境 ID 和地域可满足 Staging 配置继续推进。
+* 影响范围：CloudBase 云托管、MySQL、COS、环境变量和后续验收记录。
+* 后续注意：云托管服务名仍使用 `leader-score-system`；后续记录中不要混淆“环境名称”和“云托管服务名称”。
+
+## 2026-06-10 - CloudBase 本地上传使用 clean git archive
+
+* 决策：CloudBase 本地代码上传使用 `/Users/sonmin/Desktop/leader-score-system-cloudbase.zip`，该包由 `git archive HEAD` 生成。
+* 原因：直接上传整个工作目录会包含 `node_modules`、`.next` 等大量文件，触发 CloudBase “上传文件数目不能超过 10000 个”限制，也更容易误带本地私密文件。
+* 影响范围：CloudBase 云托管服务创建与后续源码包上传。
+* 后续注意：每次代码有新提交后需要重新生成上传包；不要把真实 `.env` 或密钥文件放入上传包。
+
+## 2026-06-10 - Staging 资源配置顺序
+
+* 决策：按用户确认的顺序继续配置：CloudBase 环境已完成；下一步开通 CloudBase MySQL；之后创建 COS bucket、创建或选择 CAM API 密钥、生成 `SESSION_SECRET`，最后填写 CloudBase 云托管环境变量并部署。
+* 原因：云托管版本环境变量依赖 MySQL、COS 和安全密钥先就绪；先拿到这些值再创建/发布版本更稳。
+* 影响范围：`.codex/NEXT_ACTIONS.md`、后续控制台指导、Staging 部署验收流程。
+* 后续注意：只记录字段名和非敏感状态，不记录 MySQL 密码、完整 `DATABASE_URL`、`COS_SECRET_KEY` 或 `SESSION_SECRET`。
+
+## 2026-06-10 - CloudBase 自带 MySQL 表由 Prisma 创建
+
+* 决策：在 CloudBase SQL 型数据库页面不要手工新建业务表；后续通过 Prisma `migrate deploy` 创建应用所需表。
+* 原因：当前页面显示 MySQL 实例可访问但表为空，这是预期状态；手工建表会绕过 Prisma migration，容易造成 schema 不一致。
+* 影响范围：Staging MySQL 初始化、数据库验收、后续迁移命令。
+* 后续注意：`DATABASE_URL` 的 database 部分必须使用控制台实际数据库名；CloudBase 自带 MySQL 可能默认显示为环境 ID，而不是建议名 `leader_score_staging`。
+
+## 2026-06-10 - 不创建外部 MySQL 数据库连接器
+
+* 决策：当前不创建 `新建MySQL数据库连接配置`。
+* 原因：该弹窗是用于对接公网 IP/域名可访问的外部或自建 MySQL 数据库连接器；当前 Staging 路线使用 CloudBase 自带 MySQL，并通过 Prisma `DATABASE_URL` 直连数据库。
+* 影响范围：CloudBase SQL 型数据库配置、后续 MySQL 连接信息获取。
+* 后续注意：应关闭该弹窗，改去 `数据库设置` 查看自带 MySQL 的连接地址、账号和密码/重置入口。
+
+## 2026-06-10 - MySQL 账号密码来源
+
+* 决策：CloudBase 自带 MySQL 的用户名使用控制台 `数据库设置` 显示的默认账号；密码由用户在同页设置或重置后自行保存。
+* 原因：不要在外部数据库连接器里自造用户名密码；Prisma 需要的是 CloudBase 自带 MySQL 的真实账号和密码。
+* 影响范围：`DATABASE_URL` 组装、CloudBase 云托管环境变量、后续 `migrate deploy`。
+* 后续注意：不要把密码或完整 `DATABASE_URL` 写入聊天、`.codex/` 或 git。
+
+## 2026-06-10 - 使用 CloudBase 自动创建的云存储 bucket
+
+* 决策：Staging COS 配置使用当前 CloudBase 环境已有 bucket `6c65-leader-score-system-d9byb5cc6528-1439098102`，地域 `ap-shanghai`，权限为公有读私有写。
+* 原因：截图显示该 bucket 已存在、同地域且权限满足 Staging 图片 URL 直接访问验收需求，无需再创建 `leader-score-staging`。
+* 影响范围：`COS_BUCKET`, `COS_REGION`, `COS_PUBLIC_BASE_URL`, 后续图片上传验收。
+* 后续注意：项目配置优先使用 COS 原生访问域名 `https://6c65-leader-score-system-d9byb5cc6528-1439098102.cos.ap-shanghai.myqcloud.com`；CloudBase 默认域名 `https://6c65-leader-score-system-d9byb5cc6528-1439098102.tcb.qcloud.la` 可作为控制台参考，但不要和 `COS_PUBLIC_BASE_URL` 混填。
+
+## 2026-06-10 - COS 凭据使用服务端 API Key
+
+* 决策：生成或选择服务端 Tencent Cloud / CAM API Key，使用其 `SecretId` 和 `SecretKey` 配置 `COS_SECRET_ID` 与 `COS_SECRET_KEY`；不要使用客户端 Publishable Key。
+* 原因：当前代码在 CloudBase 云托管后端 API route 中通过 COS Node SDK 上传文件，需要服务端签名凭据；客户端可公开密钥不适合执行 COS 写入操作，也不能放进前端。
+* 影响范围：CAM API 密钥创建、CloudBase 云托管环境变量、COS 上传验收。
+* 后续注意：`SecretId` 和 `SecretKey` 只能填到 CloudBase 服务端环境变量或本地安全环境，不发聊天、不写入 git。
+
+## 2026-06-10 - 云托管运行时变量填写位置
+
+* 决策：CloudBase 云托管运行时环境变量在服务创建/新建版本的版本配置中填写，而不是在空的服务列表页直接填写。
+* 原因：当前控制台截图显示 `leader-score-system` 环境的云托管服务列表为空，必须先通过 `使用本地代码上传部署` 进入创建服务或版本配置流程。
+* 影响范围：CloudBase 云托管服务 `leader-score-system` 的首次创建、后续新版本发布、Staging 变量配置。
+* 后续注意：优先在本地代码上传部署流程的 `版本配置` / `高级配置` / `环境变量` 中填写；若首次流程未显示入口，先创建服务，再进入服务详情的 `新建版本` 或 `服务设置` 补填。
+
+## 2026-06-10 - 云托管端口映射
+
+* 决策：CloudBase 云托管端口映射中访问端口保持 `80`，服务端口填写 `3000`。
+* 原因：项目 Dockerfile 中 Next standalone 服务监听 `3000`；CloudBase 外部默认 HTTP 访问可通过 `80` 转发到容器内部 `3000`。
+* 影响范围：CloudBase 云托管首次部署、健康检查和公网访问。
+* 后续注意：不要把服务端口留成默认 `80`，否则容器实际监听端口与云托管转发端口不一致，可能导致访问失败。
+
+## 2026-06-10 - 云托管环境变量使用可视化输入
+
+* 决策：CloudBase 云托管环境变量本次使用 `可视化输入`，逐条填写 key/value。
+* 原因：变量包含数据库密码、SecretKey 和 session secret；可视化输入比 JSON 输入更不容易因转义字符出错，也避免通过配置文件落地密钥。
+* 影响范围：CloudBase 云托管服务 `leader-score-system` 首次部署的环境变量配置。
+* 后续注意：如果控制台自动带出 `CLOUDBASE_APIKEY`，可以保留；不要把 CAM API SecretId/SecretKey 填到 `CLOUDBASE_APIKEY` 里。
+
+## 2026-06-12 - 数据库物理表名保持英文
+
+* 决策：CloudBase MySQL 初始化继续使用 Prisma 现有英文物理表名，例如 `User`、`Leader`、`ScoreRule`、`ScoreYear`、`Trip`。
+* 原因：当前 Prisma schema 没有 `@@map`/`@map` 中文表名映射，MySQL 初始 migration 和应用代码/seed 都按英文表名生成；临时改中文表名会导致 Prisma client、外键、索引、seed 和后续 migration 不一致。
+* 影响范围：Staging MySQL schema 初始化、后续 Prisma migration、seed、MVP 验收。
+* 后续注意：中文业务名称放在 UI 文案、菜单、字段说明和文档中；如未来必须改中文物理表名，需要作为独立数据库重命名改造任务处理。
+
+## 2026-06-12 - CloudBase SQL 编辑器分段执行
+
+* 决策：CloudBase SQL 编辑器初始化 schema 时，先执行单条 `CREATE TABLE User` 测试语句；确认成功后再分段执行后续建表 SQL。
+* 原因：用户执行完整 Prisma migration SQL 时，编辑器返回 Error 1064 并指向第一条 `CREATE TABLE User`；分段执行可以排除整段多语句解析问题。
+* 影响范围：Staging MySQL 初始化操作方式，不改变 Prisma schema 或物理表名。
+* 后续注意：每段 SQL 仍必须来自 `prisma/migrations/20260608142000_init_mysql/migration.sql`，不要在控制台手工改字段、索引或表名。
+
+## 2026-06-13 - 剩余业务表继续单表执行
+
+* 决策：剩余业务表不要再用多表批量 SQL，继续每次只复制并执行一张表。
+* 原因：用户执行剩余 9 表批量 SQL 时，CloudBase SQL 编辑器在第二张表 `SocialPost` 处返回 Error 1064；`Evidence` 可能已被第一条语句创建，重复执行整批会带来重复表风险。
+* 影响范围：Staging MySQL 手工初始化流程。
+* 后续注意：从 `SocialPost` 单表 SQL 继续，后续依次执行 `RepurchaseClaim`、`HolidayAttendance`、`BonusPool`、`BonusSettlement`、`BonusSettlementItem`、`ViolationEvent`、`AuditLog`，最后再执行外键约束和 `_prisma_migrations` 记录。
+
+## 2026-06-14 - 手工建表后先补外键和 Prisma 迁移记录
+
+* 决策：用户确认全部 18 张业务表创建完成后，下一步先执行 Prisma migration 中的 34 条外键约束，再创建并写入 `_prisma_migrations` 记录；完成前不运行 seed。
+* 原因：手工建表绕过了 `prisma migrate deploy` 的自动追踪；需要补齐外键和 migration tracking，才能让后续 Prisma 命令识别当前初始化已经完成。
+* 影响范围：CloudBase MySQL 初始化、后续 `seed:rules`、Prisma migration 链路和 Staging 验收。
+* 后续注意：CloudBase SQL 编辑器继续一次只执行一个代码块；`duplicate constraint` 可跳过，`referenced table missing` 或 `cannot add foreign key` 必须停止排查。
+
+## 2026-06-14 - Staging 默认数据通过 SQL 编辑器初始化
+
+* 决策：外键和 `_prisma_migrations` 完成后，优先通过 `.codex/CLOUDBASE_SEED_SQL.md` 在 CloudBase SQL 编辑器中初始化默认系统账号、默认积分年度和默认积分规则。
+* 原因：当前 CloudBase MySQL host 是内网地址，本机未必能直接连接；让用户在控制台执行 SQL 可以继续推进，不需要暴露数据库密码或完整 `DATABASE_URL`。
+* 影响范围：Staging 默认数据初始化、首次登录验收和后续安全处理。
+* 后续注意：默认账号初始密码为 `123456`，只用于 Staging 首次验收；登录成功后必须尽快修改默认密码或禁用不需要的默认账号。
+
+## 2026-06-14 - 部署方案必须前置评估成本
+
+* 决策：后续选择或调整开发、部署、数据库、存储、网络和第三方服务方案前，必须提前评估新增付费项、费用风险和低成本替代方案，并把结论写入 `AGENTS.md`、`.codex/DECISIONS.md` 或 `.codex/PLANS.md`。
+* 原因：当前 CloudBase 云托管访问账号 MySQL 时暴露出网络隔离问题，若继续直连私有 MySQL 可能需要开通收费的私有网络能力；用户明确要求不能部署到一半才发现要开通额外服务。
+* 影响范围：后续 CloudBase、MySQL、COS、VPC/私有网络、NAT/固定出口 IP、云服务器、数据库迁移和生产部署选型。
+* 后续注意：继续 Staging 或生产部署前，必须先让用户确认当前路线的费用可接受，或改用应用和数据库同网络/同平台、轻量代理、固定出口白名单、公网安全连接等替代方案；价格以当前云厂商控制台或官方价格页为准。
+
+## 2026-06-14 - 暂停盲目推进 CloudBase 私网路线
+
+* 决策：在用户确认是否接受 CloudBase 私有网络费用或选择替代部署拓扑前，不继续把当前 CloudBase 云托管 + 私有 MySQL 直连路线视为默认最终方案。
+* 原因：项目预期访问量较低，私有网络费用可能相对不划算；成本是当前方案选型的重要约束。
+* 影响范围：默认数据初始化后的登录验收、COS 上传验收、生产部署方案和后续迁移计划。
+* 后续注意：已生成的 MySQL schema/seed SQL 可以保留；若切换平台或网络拓扑，优先复用 Prisma MySQL schema、Dockerfile 和 COS 相关代码，避免重做业务功能。
+
+## 2026-07-02 - 私有网络开通后恢复 CloudBase 验收
+
+* 决策：用户已开通私有网络服务，当前继续使用 CloudBase 云托管 + CloudBase MySQL + COS 的 Staging 路线做登录和业务验收。
+* 原因：私有网络打通后，最小验证应回到应用实际运行路径：浏览器访问云托管域名、应用容器通过 `DATABASE_URL` 访问 MySQL、登录接口写 session 并读取业务数据。
+* 影响范围：Staging 登录验收、默认账号安全处理、管理端基础页面、队长数据初始化、COS 上传验收。
+* 后续注意：截图显示 `User` seed 账号已存在、`Leader` 当前为空；登录成功后必须尽快修改默认密码或禁用不需要的默认账号，队长端验收前需要先创建或导入至少 1 条队长档案。
+
+## 2026-07-06 - 新后台管理员账号通过安全哈希 SQL 创建
+
+* 决策：新后台管理员账号通过 CloudBase SQL 编辑器插入 `User` 表创建；密码明文只在用户本机输入，按现有代码规则生成 `pbkdf2_sha512$100000$salt$hash` 后写入 `passwordHash`。
+* 原因：当前系统没有明显的后台改密页面或用户管理创建入口；直接使用符合应用校验规则的哈希可以在不暴露明文密码、不改业务代码的前提下完成安全收口。
+* 影响范围：后台管理员账号安全、默认 seed 账号禁用、Staging/生产化收口。
+* 后续注意：必须先确认新账号能登录后台，再禁用 `admin`、`manager`、`finance`、`viewer`、`product` 等默认 seed 账号；密码、哈希和数据库凭据都不得写入聊天、`.codex/` 或 Git。
+
+## 2026-07-06 - 验收通过后进入小范围内部试运行
+
+* 决策：当前 CloudBase Staging 验收通过后，可以进入小范围内部试运行；不建议在默认账号、暴露密钥、无备份、公有读凭证图片等风险未收口时作为正式生产长期运行。
+* 原因：用户报告业务验收通过，且本地 `npm run typecheck`、`npm run build` 均通过；但系统涉及账号、凭证图片、数据库和云服务密钥，生产运行还需要安全和运维收口。
+* 影响范围：上线节奏、账号安全、COS 权限、数据库备份、日志监控、后续生产发布计划。
+* 后续注意：小范围试运行期间继续使用现有 CloudBase、MySQL、COS 资源，不新增云服务；若正式生产需要私有读图片、日志告警、备份策略、固定域名或更高规格资源，必须先确认当前腾讯云控制台价格和费用可接受。
+
+## 2026-07-06 - COS 凭证图片读取采用后端代理
+
+* 决策：生产图片读取策略采用登录态保护的后端代理 `/api/evidence-images/...`，而不是让浏览器直接访问公有读 COS URL；数据库继续保存原始 COS URL，不做历史数据迁移。
+* 原因：凭证图片可能包含敏感业务材料，公有读不适合长期生产；后端代理可以复用当前账号登录态和角色权限，队长只能读取自己档案目录下的申请图片，后台角色可读取申请和专项加分图片。
+* 影响范围：COS bucket 可调整为私有读；队长端上传预览、后台审核详情、积分台账详情都改为站内代理图片 URL；云托管会承担图片读取流量。
+* 后续注意：该方案不新增云服务或固定费用，但图片流量会经过 CloudBase 云托管，未来图片访问量大时需评估签名 URL、CDN 鉴权或对象生命周期策略；部署本次代码前不要先关闭公有读，否则旧版本页面会破图。
+
+## 2026-07-06 - CloudBase 上传包使用当前工作区内容
+
+* 决策：本次 CloudBase 控制台上传包从当前工作区打包，而不是使用 `git archive HEAD`。
+* 原因：当前 COS 私有读后端代理和相关页面改动尚未提交，使用 `git archive HEAD` 会漏掉新路由和未提交源码；当前工作区才是准备部署验证的真实代码状态。
+* 影响范围：CloudBase 本地代码上传 zip、云托管新版本部署、COS 私有读图片代理验收。
+* 后续注意：打包时必须排除 `.env`、`.git`、`.codex`、`node_modules`、`.next`、`uploads` 和本地缓存；本次打包不新增云服务或额外固定费用，部署前仍需轮换 `SESSION_SECRET`。

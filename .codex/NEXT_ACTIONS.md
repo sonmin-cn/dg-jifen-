@@ -1,40 +1,69 @@
 # Next Actions
 
-* [ ] 1. 创建 Staging CloudBase 环境、MySQL 实例、COS bucket 和 HTTPS 域名。
-* [ ] 2. 在云托管服务配置 `DATABASE_URL`、`SESSION_SECRET`、COS 环境变量和预留微信小程序变量。
-* [ ] 3. 对 Staging MySQL 执行 `npx prisma validate`、`npx prisma generate`、`npx prisma migrate deploy`、`npm run seed:rules`、`npm run mvp:check`。
-* [ ] 4. 部署 CloudBase 云托管并完成登录、上传、提交、审核、积分记录验收。
-* [ ] 5. Staging 后端闭环后，再进入微信小程序队长端开发。
+* [ ] 1. 完成一次 MySQL 备份或导出，并记录恢复路径。
+* [ ] 2. 归档当前发布版本：记录部署包、验证结论、最终 commit 和非敏感环境配置名称。
+* [ ] 3. 开启 1-3 天小范围内部试运行，观察登录、上传、审核、积分写入和 CloudBase 日志。
+* [ ] 4. 试运行期间记录问题清单，按 P0/P1/P2 分级。
+* [ ] 5. 试运行稳定后再决定是否进入正式生产域名、监控告警和更细权限治理。
 
 ## Done This Session
 
-* [x] 读取 `AGENTS.md` 和全部 `.codex/` 状态文件。
-* [x] 运行 `pwd`、`git branch --show-current`、`git status --short`、`git diff --stat`。
-* [x] 将任务状态切换为 CloudBase 迁移实施中。
-* [x] 创建 `.codex/PLANS.md`。
-* [x] 创建并切换到 `codex/cloudbase-run-migration` 分支。
-* [x] 只读检查 Prisma schema/migrations、上传接口、`next.config.ts`、`package.json`、`.env.example`。
-* [x] 修改 standalone/Docker/env/Prisma provider，并移除旧 SQLite migration SQL。
-* [x] 记录 `npx prisma validate` 因缺少本地 `DATABASE_URL` 失败。
-* [x] 使用临时 MySQL `DATABASE_URL` 验证 Prisma schema 并生成 MySQL 初始 migration。
-* [x] 将两个证明图片上传接口改为 COS 存储。
-* [x] `npx prisma format`、`npm run prisma:generate`、`npm run typecheck` 通过。
-* [x] `npm run build` 因 Turbopack 非 ASCII 路径内部错误失败，已记录。
-* [x] 将 build 脚本改为 webpack 模式后，`npm run build` 通过。
-* [x] 检查 Docker 不可用，无法本地跑 MySQL 容器验证。
-* [x] 新增 CloudBase Staging 部署指南。
-* [x] Dockerfile builder 阶段补充构建用占位 env。
-* [x] 最终 `git diff --check` 通过。
-* [x] 2026-06-09 恢复审计发现：COS 上传返回值与服务层旧本地路径校验不兼容。
-* [x] 2026-06-09 复跑 Prisma validate/generate、typecheck、build 均通过。
-* [x] 2026-06-09 开始修复 COS URL 校验。
-* [x] 新增共享 URL helper 并替换两个服务校验。
-* [x] helper 逻辑检查通过：旧路径、合法 COS URL、错误域名、`http://`、错误前缀、空 URL、缺失 COS 配置均符合预期。
-* [x] 修复后 Prisma validate/generate、typecheck、build、`git diff --check` 均通过。
-* [x] 2026-06-09 21:06 开始 Staging 部署前收口审计。
-* [x] 重新读取 `AGENTS.md` 和 `.codex/` 状态文件，并执行 `pwd`、`git branch --show-current`、`git status --short`、`git diff --stat`、`git diff --check`。
-* [x] 审计发现 `app/admin/score-records/[id]/page.tsx` 仍只展示旧 `/uploads/score-applications/` 图片 URL，需最小迁移修复。
-* [x] 已修复积分台账详情页证据截图提取逻辑，支持积分申请和专项加分快照中的合法 COS URL。
-* [x] 修复后 `prisma validate`、`prisma generate`、`npm run typecheck`、`npm run build`、`git diff --check` 均通过。
-* [x] 2026-06-09 21:31 提交前检查通过，确认没有真实 `.env`、密钥、本地数据库、日志、临时测试文件、无关图片或缓存进入提交范围。
-* [x] `.codex` 恢复文件按 `AGENTS.md` 要求纳入提交范围。
+* [x] 用户确认外键和 `_prisma_migrations` 记录已经完成。
+* [x] 已检查 `prisma/seed-rules.ts` 和 `lib/services/score-rules.ts`。
+* [x] 已生成 `.codex/CLOUDBASE_SEED_SQL.md`，包含 5 个默认系统账号、1 个默认积分年度、42 条默认积分规则。
+* [x] 已确认默认系统账号初始密码为 `123456`，只用于 Staging 首次验收，后续必须修改。
+* [x] 已按恢复流程读取 `AGENTS.md` 和 `.codex` 状态文件，并检查当前分支、状态和 diff。
+* [x] 已确认当前问题是 CloudBase 云托管与 MySQL 网络隔离导致的额外私网成本风险。
+* [x] 已在 `AGENTS.md` 新增前期成本/付费服务评估规则。
+* [x] 已在 `.codex/DECISIONS.md` 和 `.codex/PLANS.md` 记录 CloudBase 私有网络成本风险和暂停盲目推进约束。
+* [x] 已检查 `git diff --stat` 和相关 diff，确认本次只改规则/状态记录，不改业务代码。
+* [x] 用户已开通私有网络服务，继续当前 CloudBase 路线。
+* [x] 截图确认 `User` 表已有 5 个默认账号，`Leader` 表当前暂无数据。
+* [x] 已检查登录接口、登录表单、session 跳转逻辑、MVP 烟测脚本和验收清单。
+* [x] 已检查现有代码，暂未发现明显的管理员改密页面或 API。
+* [x] 用户截图确认 `/login` 页面可打开，但提交 `admin / 123456` 显示 `登录请求失败，请稍后重试`。
+* [x] 已确认该错误来自前端 catch，不是登录接口返回的“用户名或密码错误”。
+* [x] 已检查 `writeAuditLog` 有 try/catch，审计日志失败不会阻断登录；更可能是 `prisma.user.findUnique` 处 MySQL/环境变量/服务端错误。
+* [x] 日志确认根因：Prisma 在读取 `User` 时连接 MySQL 认证失败，云托管 `DATABASE_URL` 的数据库凭据无效。
+* [x] 已确认当前应在 `SQL 型数据库 -> 数据库设置 -> 账号管理` 处理 MySQL 数据库账号；Staging 可重置现有 `root` 密码快速修复，长期建议创建应用专用数据库账号。
+* [x] 新日志确认部署 `004` 已使用新数据库账号，但 MySQL 仍拒绝该账号认证；问题集中在账号密码/主机配置本身。
+* [x] 用户确认新账号已创建、密码与 `DATABASE_URL` 一致，但登录仍失败；下一步需要验证 Host/Grant，或用 root 做分叉测试。
+* [x] 用户确认已成功登录 CloudBase 应用后台。
+* [x] 已确认队长端需要 `LEADER` 用户和手机号匹配的未绑定 `Leader` 档案，绑定审批后才能验收完整队长端。
+* [x] 用户确认队长端已经可以登录。
+* [x] 已检查图片上传代码，确认当前失败重点应排查 COS 环境变量、密钥权限、bucket/region/public URL 或 CloudBase 日志。
+* [x] CloudBase 日志确认 COS 返回 `403 InvalidAccessKeyId`，当前 `COS_SECRET_ID` 不是有效的腾讯云 CAM SecretId 格式。
+* [x] 用户确认队长端可以提交照片，后台打开 COS 图片直链返回 XML `AccessDenied`；已确认是对象匿名读权限问题。
+* [x] 用户选择 CloudBase 云存储公有读后，队长端与后台仍显示破图；下一步需确认该权限是否保存并作用于原始 COS URL。
+* [x] 用户确认队长端验收完成。
+* [x] 用户询问数据库密码、`SESSION_SECRET`、COS/CAM Secret 如何生成。
+* [x] 已确认后台账号位于 `User` 表，密码哈希格式为 `pbkdf2_sha512`，默认账号可通过 `status='DISABLED'` 禁用。
+* [x] 已创建 `.codex/CREATE_ADMIN_ACCOUNT_SQL.md`，包含新后台管理员创建、查询验证和默认账号禁用 SQL 模板。
+* [x] 已确认创建新管理员账号不需要新增云服务或额外付费资源。
+* [x] 用户报告当前验收已经通过。
+* [x] 已运行 `npm run typecheck`，结果通过。
+* [x] 已运行 `npm run build`，结果通过。
+* [x] 已判定当前可进入小范围内部试运行，但正式生产运行前仍需完成安全、备份、COS 权限和运维收口。
+* [x] 用户确认数据库密码、COS/CAM Secret 已更改。
+* [x] 用户确认默认 seed 账号已禁用或改密。
+* [x] 用户确认 `SESSION_SECRET` 尚未更改。
+* [x] 已实现 `/api/evidence-images/[...key]` 后端代理读取 COS 私有图片。
+* [x] 已将上传预览、后台审核详情、积分台账详情改为使用代理图片 URL。
+* [x] 已运行 `npm run typecheck`，结果通过。
+* [x] 已运行 `npm run build`，结果通过。
+* [x] 已运行 `git diff --check`，结果通过。
+* [x] 已按恢复流程读取 `AGENTS.md`、`.codex` 状态文件并检查当前 git 状态，准备生成 CloudBase 上传包。
+* [x] 已生成 `/Users/sonmin/Desktop/leader-score-system-cloudbase-20260706-1638.zip`。
+* [x] 已复制最新版到 `/Users/sonmin/Desktop/leader-score-system-cloudbase.zip`。
+* [x] 已验证 zip 不包含 `.env`、`.git`、`.codex`、`node_modules`、`.next`、`uploads`。
+* [x] 已验证 zip 包含 `Dockerfile`、`.dockerignore`、`package.json`、`package-lock.json`、`next.config.ts`、`prisma/schema.prisma`、`app/api/evidence-images/[...key]/route.ts`。
+* [x] 已确认当前截图选项为公有读，最终应在新版本部署成功后改为 `仅管理员可读写`。
+* [x] 用户报告 CloudBase 新版本已完成部署，进入部署后验收阶段。
+* [x] 已确认用户当前截图停留在 Elements 面板，且 `/leader/applications` 列表页不会触发 `evidence-images` 图片请求。
+* [x] 已完成反向泄露检查：COS 原始链接无登录返回 403 AccessDenied；代理链接无登录返回 401 请先登录。
+* [x] 用户报告部署后图片访问验证已完成，当前进入发布后计划阶段。
+* [x] 已按恢复流程读取项目状态和 git 状态，准备创建本地验证提交。
+* [x] 本轮提交前 `git diff --check` 通过。
+* [x] 本轮提交前 `npm run typecheck` 通过。
+* [x] 已暂存当前工作区全部变更并检查 staged 文件清单。
+* [x] 已创建本地 commit，提交信息为 `数据访问私有读写（已验证）`。

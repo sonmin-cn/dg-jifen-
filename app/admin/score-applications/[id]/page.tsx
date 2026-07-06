@@ -13,6 +13,7 @@ import {
   getAdminScoreApplicationDetail,
   parseApplicationEvidence,
 } from "@/lib/services/score-applications";
+import { getEvidenceImageProxyUrl } from "@/lib/storage/evidence-url";
 import { ApplicationReviewActions } from "@/app/admin/score-applications/ApplicationReviewActions";
 
 type PageProps = {
@@ -91,26 +92,30 @@ export default async function AdminScoreApplicationDetailPage({ params }: PagePr
           <p className="text-muted-foreground">图片证明</p>
           {evidence.images.length > 0 ? (
             <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {evidence.images.map((image) => (
-                <a
-                  className="overflow-hidden rounded-lg border bg-background hover:border-primary"
-                  href={image.url}
-                  key={image.url}
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    alt="证明图片"
-                    className="h-40 w-full object-cover"
-                    src={image.url}
-                  />
-                  <div className="border-t p-2 text-xs text-muted-foreground">
-                    <p className="truncate">{image.filename}</p>
-                    <p>{formatFileSize(image.size)}</p>
-                  </div>
-                </a>
-              ))}
+              {evidence.images.map((image) => {
+                const displayUrl = getEvidenceImageProxyUrl(image.url, "score-applications");
+
+                return (
+                  <a
+                    className="overflow-hidden rounded-lg border bg-background hover:border-primary"
+                    href={displayUrl}
+                    key={image.url}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      alt="证明图片"
+                      className="h-40 w-full object-cover"
+                      src={displayUrl}
+                    />
+                    <div className="border-t p-2 text-xs text-muted-foreground">
+                      <p className="truncate">{image.filename}</p>
+                      <p>{formatFileSize(image.size)}</p>
+                    </div>
+                  </a>
+                );
+              })}
             </div>
           ) : (
             <p className="mt-2 font-medium">未上传图片证明</p>

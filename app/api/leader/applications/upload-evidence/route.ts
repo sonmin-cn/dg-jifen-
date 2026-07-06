@@ -5,6 +5,7 @@ import {
   isCosStorageConfigError,
   uploadEvidenceImageToCos,
 } from "@/lib/storage/cos";
+import { getEvidenceImageProxyUrl } from "@/lib/storage/evidence-url";
 
 export const runtime = "nodejs";
 
@@ -126,6 +127,7 @@ export async function POST(request: NextRequest) {
 
       images.push({
         url: uploaded.url,
+        displayUrl: getEvidenceImageProxyUrl(uploaded.url, "score-applications"),
         filename: uploaded.filename,
         mimeType: file.type,
         size: file.size,

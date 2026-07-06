@@ -23,6 +23,7 @@ type RuleOption = {
 };
 type EvidenceImage = {
   url: string;
+  displayUrl?: string;
   filename?: string;
   mimeType?: string;
   size?: number;
@@ -277,28 +278,32 @@ export function ScoreAdjustmentCreateForm({
               ) : null}
               {evidenceImages.length > 0 ? (
                 <div className="grid gap-3 sm:grid-cols-3">
-                  {evidenceImages.map((image) => (
-                    <div className="rounded-md border bg-background p-2" key={image.url}>
-                      <a href={image.url} rel="noreferrer" target="_blank">
-                        <img
-                          alt={image.filename || "证明截图"}
-                          className="h-28 w-full rounded object-cover"
-                          src={image.url}
-                        />
-                      </a>
-                      <button
-                        className="mt-2 text-xs text-muted-foreground hover:text-foreground"
-                        onClick={() =>
-                          setEvidenceImages((current) =>
-                            current.filter((item) => item.url !== image.url),
-                          )
-                        }
-                        type="button"
-                      >
-                        移除
-                      </button>
-                    </div>
-                  ))}
+                  {evidenceImages.map((image) => {
+                    const displayUrl = image.displayUrl || image.url;
+
+                    return (
+                      <div className="rounded-md border bg-background p-2" key={image.url}>
+                        <a href={displayUrl} rel="noreferrer" target="_blank">
+                          <img
+                            alt={image.filename || "证明截图"}
+                            className="h-28 w-full rounded object-cover"
+                            src={displayUrl}
+                          />
+                        </a>
+                        <button
+                          className="mt-2 text-xs text-muted-foreground hover:text-foreground"
+                          onClick={() =>
+                            setEvidenceImages((current) =>
+                              current.filter((item) => item.url !== image.url),
+                            )
+                          }
+                          type="button"
+                        >
+                          移除
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               ) : null}
             </div>

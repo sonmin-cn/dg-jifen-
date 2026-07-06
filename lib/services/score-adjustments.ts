@@ -34,6 +34,7 @@ export type CreateScoreAdjustmentInput = {
 
 export type EvidenceImage = {
   url: string;
+  displayUrl?: string;
   filename?: string;
   mimeType?: string;
   size?: number;
