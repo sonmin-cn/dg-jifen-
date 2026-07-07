@@ -842,3 +842,73 @@
 * 为什么这样做：提交完成后需要确认没有遗留未提交文件，且提交信息与用户要求一致。
 * 验证结果：`git status --short` 无输出；`git log -1 --oneline` 显示最新提交信息为 `数据访问私有读写（已验证）`。
 * 下一步：进入 MySQL 备份、发布归档和 1-3 天内部试运行。
+
+## 2026-07-07 16:38 - Recovery
+
+* 检查到的仓库状态：当前目录 `/Users/sonmin/.codex/worktrees/2564/积分系统开发`，分支 `codex/cloudbase-run-migration`；开始前 `git status --short` 和 `git diff --stat` 均无输出。
+* 已确认完成：本地提交 `数据访问私有读写（已验证）` 已完成；部署后正向和反向图片访问验证已通过。
+* 未完成：尚未生成试运行操作说明文档，也尚未调用飞书 CLI 发布。
+* 决定从哪里继续：先检查本机飞书 CLI 可用性，再生成 `docs/TRIAL_RUN_GUIDE.md`，最后尝试通过 CLI 发布或上传。
+
+## 2026-07-07 16:38 - Trial Run Guide Start
+
+* 做了什么：切换当前任务为生成 1-3 天小范围内部试运行操作说明文档，并准备调用飞书 CLI。
+* 修改了哪些文件：`.codex/TASK_STATE.md`, `.codex/NEXT_ACTIONS.md`, `.codex/WORKLOG.md`。
+* 为什么这样做：用户要求生成完整试运行操作说明文档；项目要求复杂任务先记录状态和下一步动作。
+* 验证结果：尚未生成文档，尚未检查飞书 CLI。
+* 下一步：检查可用的飞书 CLI 命令和认证状态。
+
+## 2026-07-07 16:45 - Trial Run Guide Created In Feishu
+
+* 做了什么：生成完整试运行操作说明文档，并通过 `lark-cli docs +create --api-version v2 --doc-format markdown` 创建飞书文档。
+* 修改了哪些文件：`docs/TRIAL_RUN_GUIDE.md`, `.codex/TASK_STATE.md`, `.codex/NEXT_ACTIONS.md`, `.codex/WORKLOG.md`。
+* 为什么这样做：用户要求调用飞书 CLI 生成完整试运行操作说明文档；本地 Markdown 便于仓库恢复，飞书文档便于团队执行。
+* 验证结果：`lark-cli doctor` 通过；`git diff --check` 通过；文档密钥模式检查未发现真实密钥；`lark-cli docs +fetch` 已拉取并确认飞书文档内容存在。
+* 下一步：完成最终 git 状态检查，并向用户提供本地文档路径和飞书文档链接。
+
+## 2026-07-07 17:00 - Recovery
+
+* 检查到的仓库状态：当前目录 `/Users/sonmin/.codex/worktrees/2564/积分系统开发`，分支 `codex/cloudbase-run-migration`；工作区已有上一轮试运行文档和 `.codex` 状态更新未提交。
+* 已确认完成：完整试运行操作说明已生成并通过飞书 CLI 创建；CloudBase 默认访问地址、注册/登录/队长端路径已确认可作为内测指南基础。
+* 未完成：尚未生成面向普通内测人员的轻量操作指南。
+* 决定从哪里继续：新增 `docs/INTERNAL_TESTER_GUIDE.md`，聚焦登录地址、注册、绑定、提交申请、测试内容和反馈模板，再通过飞书 CLI 创建可转发文档。
+
+## 2026-07-07 17:00 - Internal Tester Guide Start
+
+* 做了什么：切换当前任务为生成面向内测人员的操作指南。
+* 修改了哪些文件：`.codex/TASK_STATE.md`, `.codex/NEXT_ACTIONS.md`, `.codex/WORKLOG.md`。
+* 为什么这样做：用户要求给到内测人员可直接执行的说明；项目要求开始新任务前记录状态和下一步动作。
+* 验证结果：已完成恢复检查，尚未生成文档。
+* 下一步：编写 `docs/INTERNAL_TESTER_GUIDE.md`。
+
+## 2026-07-07 17:05 - Internal Tester Guide Drafted
+
+* 做了什么：新增面向内测人员的操作指南，覆盖访问地址、注册、绑定、登录、提交加分申请、后台审核、测试范围、反馈模板和通过标准。
+* 修改了哪些文件：`docs/INTERNAL_TESTER_GUIDE.md`, `.codex/NEXT_ACTIONS.md`, `.codex/WORKLOG.md`。
+* 为什么这样做：内测人员需要一份能直接照着执行的简明指南，而不是后台部署和运维说明。
+* 验证结果：文档已生成，尚未运行密钥扫描或飞书发布验证。
+* 下一步：运行文档校验和 `git diff --check`，然后创建飞书文档。
+
+## 2026-07-07 17:07 - Internal Tester Guide Created In Feishu
+
+* 做了什么：完成内测人员操作指南校验，并通过 `lark-cli docs +create --api-version v2 --doc-format markdown` 创建飞书文档。
+* 修改了哪些文件：`docs/INTERNAL_TESTER_GUIDE.md`, `.codex/TASK_STATE.md`, `.codex/NEXT_ACTIONS.md`, `.codex/WORKLOG.md`。
+* 为什么这样做：用户需要可直接发给内测人员的操作说明，包括登录地址、注册、提交申请、测试内容和反馈方式。
+* 验证结果：`git diff --check` 通过；密钥模式检查未发现真实密钥；`lark-cli doctor` 通过；`lark-cli docs +fetch` 已拉取并确认文档内容存在。
+* 下一步：回到 MySQL 备份、发布归档和 1-3 天小范围内部试运行。
+
+## 2026-07-07 18:19 - Merge Back Preparation
+
+* 做了什么：按恢复流程读取 `AGENTS.md` 和 `.codex` 状态文件，检查源工作树与桌面目标工作树状态，并切换当前任务为合并前备案、GitHub 推送和桌面主项目快进合并。
+* 修改了哪些文件：`.codex/TASK_STATE.md`, `.codex/NEXT_ACTIONS.md`, `.codex/WORKLOG.md`, `.codex/PLANS.md`。
+* 为什么这样做：用户要求执行已确认计划；合并、提交和推送前必须记录可恢复入口。
+* 验证结果：源分支为 `codex/cloudbase-run-migration`，目标文件夹 `/Users/sonmin/Desktop/积分系统开发` 当前分支为 `feat/leader-score-rules-v2-2`；源工作树有 `.codex` 状态和两份 docs 待提交；目标工作树有 `next-env.d.ts` 生成差异和一个本地 backup 数据库未跟踪。
+* 下一步：创建桌面合并前备案目录，保存两个工作树的 status/log/diff/stat，并复制目标 `backups` 目录。
+
+## 2026-07-07 18:20 - Pre-merge Archive Created
+
+* 做了什么：创建桌面合并前备案目录，并保存源工作树和目标工作树的 status、log、未提交 diff、diff stat，同时复制目标工作树 `backups` 目录。
+* 修改了哪些文件：`.codex/TASK_STATE.md`, `.codex/NEXT_ACTIONS.md`, `.codex/WORKLOG.md`；另在桌面创建 `/Users/sonmin/Desktop/积分系统合并前备案-20260707-182049`。
+* 为什么这样做：合并和推送前需要独立备案，确保后续可恢复和审计。
+* 验证结果：备案目录创建成功，包含计划中的 source/target 状态文件和 target backup 副本。
+* 下一步：运行源工作树 `git diff --check`，暂存计划中的 `.codex` 和 docs 文件，并创建提交。

@@ -2,19 +2,33 @@
 
 ## Current Task
 
-* Task ID: local-verified-private-access-commit
-* Task Name: Create local commit for verified private data access
-* User Request: 做一次本地代码的提交，命名为“数据访问私有读写（已验证）”
-* Status: done
-* Started At: 2026-07-06 18:24 CST
-* Last Updated: 2026-07-06 18:31 CST
+* Task ID: merge-back-to-desktop-main
+* Task Name: Pre-merge archive, GitHub push, and fast-forward merge into desktop main project
+* User Request: Implement the approved plan: archive both worktrees, commit docs + .codex, push `codex/cloudbase-run-migration` to GitHub, stash desktop `next-env.d.ts`, fast-forward merge into `/Users/sonmin/Desktop/积分系统开发`, then run typecheck/build.
+* Status: in_progress
+* Started At: 2026-07-07 18:19 CST
+* Last Updated: 2026-07-07 18:19 CST
 
 ## Current Goal
 
-Local git commit has been created to capture the verified COS private-read/private-write evidence image access implementation, CloudBase deployment support documents, and resumable task records without adding any secrets to the repository.
+Archive the current source worktree and desktop target worktree state, commit the completed trial/internal tester guide files plus recovery state, push the source branch to GitHub for remote backup, then fast-forward merge into the desktop project folder without switching to `main`.
 
 ## Completed
 
+* [x] Recovery check on 2026-07-07 17:00 CST: read `AGENTS.md`, `.codex/TASK_STATE.md`, `.codex/NEXT_ACTIONS.md`, `.codex/WORKLOG.md`, `.codex/DECISIONS.md`, and `.codex/PLANS.md`; ran `pwd`, `git branch --show-current`, `git status --short`, and `git diff --stat`.
+* [x] Confirmed current branch is `codex/cloudbase-run-migration`.
+* [x] Confirmed existing trial run guide task produced `docs/TRIAL_RUN_GUIDE.md` and a Feishu document.
+* [x] Created `docs/INTERNAL_TESTER_GUIDE.md`.
+* [x] Ran `git diff --check`; it passed.
+* [x] Checked the generated tester guide for common secret patterns; no real secret values were found.
+* [x] Ran `lark-cli doctor`; authentication and Feishu connectivity passed.
+* [x] Created Feishu document `https://p9qlcjawby.feishu.cn/docx/Q320dzJBPoBH4SxWpWWcHRGun6g`.
+* [x] Fetched the created Feishu document and verified the generated content is present.
+* [x] Recovery check on 2026-07-07 18:19 CST: read `AGENTS.md`, `.codex/TASK_STATE.md`, `.codex/NEXT_ACTIONS.md`, `.codex/WORKLOG.md`, and `.codex/PLANS.md`; checked source and desktop target worktree state.
+* [x] Confirmed source branch is `codex/cloudbase-run-migration`.
+* [x] Confirmed desktop target folder is `/Users/sonmin/Desktop/积分系统开发` on branch `feat/leader-score-rules-v2-2`.
+* [x] Confirmed source branch is ahead of target branch by existing CloudBase commits and can fast-forward after the docs/state commit is added.
+* [x] Created pre-merge archive directory `/Users/sonmin/Desktop/积分系统合并前备案-20260707-182049` with source/target status, logs, diffs, diff stats, and a copy of target `backups`.
 * [x] Read `AGENTS.md`.
 * [x] Read `.codex/TASK_STATE.md`, `.codex/WORKLOG.md`, `.codex/NEXT_ACTIONS.md`, `.codex/DECISIONS.md`, and `.codex/PLANS.md`.
 * [x] Ran `pwd`, `git branch --show-current`, `git status --short`, and `git diff --stat`.
@@ -122,25 +136,40 @@ Local git commit has been created to capture the verified COS private-read/priva
 * [x] Created local commit with message `数据访问私有读写（已验证）`.
 * [x] Ran post-commit `git status --short`; worktree was clean.
 * [x] Ran post-commit `git log -1 --oneline`; latest commit message matched `数据访问私有读写（已验证）`.
+* [x] Recovery check on 2026-07-07 16:38 CST: read `AGENTS.md`, `.codex/TASK_STATE.md`, `.codex/NEXT_ACTIONS.md`, `.codex/WORKLOG.md`, `.codex/DECISIONS.md`, and `.codex/PLANS.md`; ran `pwd`, `git branch --show-current`, `git status --short`, `git diff --stat`, and `date`.
+* [x] Confirmed current branch is `codex/cloudbase-run-migration`.
+* [x] Confirmed worktree was clean before starting the Feishu trial guide task.
+* [x] Found local Feishu CLI command `lark-cli`.
+* [x] Ran `lark-cli doctor`; config, user token, and Feishu connectivity were valid.
+* [x] Generated `docs/TRIAL_RUN_GUIDE.md` with the complete internal trial run operation guide.
+* [x] Ran `git diff --check`; it passed.
+* [x] Checked the generated guide for common secret patterns; no real secret values were found.
+* [x] Created the Feishu document via `lark-cli docs +create --api-version v2 --doc-format markdown`.
+* [x] Fetched the created Feishu document via `lark-cli docs +fetch`; the generated content was present.
 
 ## In Progress
 
-* 当前正在处理的事项：本地提交已完成；下一步进入发布归档、备份和内部试运行。
-* 当前涉及文件：无新的未提交源码改动。
+* 当前正在处理的事项：执行合并前备案、补充提交、GitHub 推送和桌面主项目快进合并。
+* 当前涉及文件：`.codex/TASK_STATE.md`, `.codex/NEXT_ACTIONS.md`, `.codex/WORKLOG.md`, `.codex/PLANS.md`, `docs/TRIAL_RUN_GUIDE.md`, `docs/INTERNAL_TESTER_GUIDE.md`。
 
 ## Next Actions
 
-* [x] 运行提交前校验：`git diff --check`，必要时复跑 `npm run typecheck`。
-* [x] 暂存当前工作区全部变更并检查 staged 文件清单。
-* [x] 创建本地 commit，提交信息为 `数据访问私有读写（已验证）`。
-* [ ] 下一阶段完成一次 MySQL 备份或导出，并记录恢复路径。
-* [ ] 开启 1-3 天小范围内部试运行，观察登录、上传、审核、积分写入和 CloudBase 日志。
+* [x] 创建桌面合并前备案目录，保存两个工作树的 status/log/diff/stat，并复制目标 `backups` 目录。
+* [ ] 在源工作树运行 `git diff --check` 并确认提交范围只包含 `.codex` 状态和两份 docs 指南。
+* [ ] 提交 `.codex` 状态文件和 `docs/TRIAL_RUN_GUIDE.md`、`docs/INTERNAL_TESTER_GUIDE.md`。
+* [ ] 推送 `codex/cloudbase-run-migration` 到 GitHub origin。
+* [ ] 在桌面主项目 stash `next-env.d.ts`，保留 `backups/dev-before-seed-rules-20260522-173824.db` 未跟踪。
+* [ ] 在桌面主项目执行 `git merge --ff-only codex/cloudbase-run-migration`。
+* [ ] 合并后运行 `npm run typecheck` 和 `npm run build`。
 
 ## Modified Files
 
-* `.codex/TASK_STATE.md`：记录队长端验收完成，并切换到安全/生产化收口。
-* `.codex/NEXT_ACTIONS.md`：收束当前下一步动作到密钥轮换、COS 权限策略、默认账号安全和后台剩余验收。
-* `.codex/WORKLOG.md`：追加队长端验收完成日志。
+* `.codex/TASK_STATE.md`：记录当前任务、恢复检查和下一步动作。
+* `.codex/NEXT_ACTIONS.md`：更新当前最小动作清单。
+* `.codex/WORKLOG.md`：追加本轮恢复与文档生成日志。
+* `.codex/PLANS.md`：记录合并前备案、推送和桌面主项目合并计划执行进度。
+* `docs/TRIAL_RUN_GUIDE.md`：新增完整试运行操作说明文档，并已通过飞书 CLI 创建对应飞书文档。
+* `docs/INTERNAL_TESTER_GUIDE.md`：新增面向内测人员的操作指南，并已通过飞书 CLI 创建对应飞书文档。
 * `.codex/DECISIONS.md`：记录手工建表后必须补外键和 Prisma migration tracking 的决策。
 * `.codex/PLANS.md`：更新 CloudBase Staging 当前进度。
 * `.codex/CLOUDBASE_FOREIGN_KEYS_AND_MIGRATION_SQL.md`：新增逐块复制执行的外键和 `_prisma_migrations` SQL 文档。
@@ -164,9 +193,9 @@ Local git commit has been created to capture the verified COS private-read/priva
 
 ## Verification
 
-* 已运行命令：`pwd`, `git branch --show-current`, `git status --short`, `git diff --stat`, `date '+%Y-%m-%d %H:%M %Z'`, `sed -n '1,620p' AGENTS.md`, `sed -n '1,240p' .codex/TASK_STATE.md`, `cat .codex/NEXT_ACTIONS.md`, `tail -n 120 .codex/WORKLOG.md`, `tail -n 140 .codex/DECISIONS.md`, `tail -n 160 .codex/PLANS.md`, code inspection commands for COS/auth/evidence rendering, `npm run typecheck`, `npm run build`, `git diff --check`, `zip -rq ...`, `unzip -Z1 ...`, `shasum -a 256 /Users/sonmin/Desktop/leader-score-system-cloudbase-20260706-1638.zip`.
-* 结果：恢复检查完成；后端代理读取 COS 图片已实现；`npm run typecheck` 通过；`npm run build` 通过；本轮提交前 `git diff --check` 通过；本轮提交前 `npm run typecheck` 通过；CloudBase upload zip 已生成，大小约 360K，包含 330 个条目；SHA-256 为 `5d17f087586f75609a21a8eba14c358675f28c6f952e5dc654396357c2970702`；包内容检查通过；用户已完成部署后正向验证，反向泄露检查已通过；本地提交已创建；提交后工作区检查为干净，最新提交信息匹配用户要求。
-* 尚未运行但需要运行的命令：下一阶段开始前按恢复流程运行 `git status --short`。
+* 已运行命令：`pwd`, `git branch --show-current`, `git status --short --untracked-files=all`, `git diff --stat`, `git log --oneline --decorate -6`, `date '+%Y-%m-%d %H:%M %Z'`, `sed -n '1,240p' AGENTS.md`, `sed -n '1,260p' .codex/TASK_STATE.md`, `sed -n '1,220p' .codex/NEXT_ACTIONS.md`, `tail -n 120 .codex/WORKLOG.md`, `tail -n 120 .codex/PLANS.md`, backup archive commands for source/target status/log/diff/stat and target `backups`.
+* 结果：恢复检查完成；源分支为 `codex/cloudbase-run-migration`；桌面目标分支为 `feat/leader-score-rules-v2-2`；源工作树有 `.codex` 状态文件和两份 docs 未提交，目标工作树有 `next-env.d.ts` 修改和一个本地 backup 数据库未跟踪；合并前备案目录已创建。
+* 尚未运行但需要运行的命令：备案目录创建与写入、`git diff --check`, `git add`, `git commit`, `git push`, `git stash push`, `git merge --ff-only`, `npm run typecheck`, `npm run build`, 最终 `git status --short --untracked-files=all`。
 
 ## Risks / Notes
 

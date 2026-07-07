@@ -211,6 +211,26 @@
 - 验收标准：提交前 `git diff --check` 通过；如时间允许复跑 `npm run typecheck`；提交信息为 `数据访问私有读写（已验证）`；提交后 `git status --short` 干净或仅保留明确说明的不提交文件。
 - 成本说明：本地 git commit 不新增云服务或付费项。
 
+## 2026-07-07 16:48 试运行操作说明文档
+
+- 当前进度：已新增 `docs/TRIAL_RUN_GUIDE.md`，并通过 `lark-cli docs +create --api-version v2 --doc-format markdown` 创建飞书文档。
+- 验收结果：`lark-cli doctor` 通过；`git diff --check` 通过；文档未包含真实密钥、密码、完整 `DATABASE_URL` 或私密图片链接；飞书文档已通过 `lark-cli docs +fetch` 拉取验证内容。
+- 成本说明：生成本地 Markdown 和飞书文档不新增云服务；后续试运行仍按 1-3 天小范围执行，暂不扩大范围。
+
+## 2026-07-07 17:07 内测人员操作指南
+
+- 当前进度：已新增 `docs/INTERNAL_TESTER_GUIDE.md`，并通过 `lark-cli docs +create --api-version v2 --doc-format markdown` 创建飞书文档。
+- 验收结果：`git diff --check` 通过；文档未包含真实密钥、密码、完整 `DATABASE_URL` 或私密图片链接；飞书文档已通过 `lark-cli docs +fetch` 拉取验证内容。
+- 成本说明：生成本地 Markdown 和飞书文档不新增云服务；内测仍按 1-3 天小范围执行，暂不扩大范围。
+
+## 2026-07-07 18:19 合并前备案与桌面主项目合并
+
+- 当前进度：开始执行合并前备案、源分支补充提交、GitHub 推送和桌面目标工作树快进合并。
+- 执行策略：先在桌面创建带时间戳的备案目录，保存两个工作树 status/log/diff/stat；源分支提交 `.codex` 状态文件和两份 docs 指南；推送 `codex/cloudbase-run-migration` 到 origin；目标工作树 stash `next-env.d.ts` 后执行 `git merge --ff-only codex/cloudbase-run-migration`。
+- 验收标准：源分支 `git diff --check` 通过；GitHub push 成功；桌面目标工作树 fast-forward merge 成功；合并后 `npm run typecheck` 和 `npm run build` 通过。
+- 风险说明：目标工作树的 `backups/dev-before-seed-rules-20260522-173824.db` 是本地备份文件，保持未跟踪不提交；`next-env.d.ts` 是本地生成差异，仅 stash，不作为业务提交。
+- 成本说明：本次仅执行本地 Git 操作和 GitHub push，不新增云服务或付费资源。
+
 ## 恢复说明
 
 如果中断，下一次必须先读取 `AGENTS.md`、`.codex/TASK_STATE.md`、`.codex/NEXT_ACTIONS.md`、`.codex/DECISIONS.md`、`.codex/WORKLOG.md` 和本文件，运行 `git status --short`，再从 `.codex/NEXT_ACTIONS.md` 第一项未完成任务继续。

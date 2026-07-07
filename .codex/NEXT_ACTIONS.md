@@ -1,10 +1,12 @@
 # Next Actions
 
-* [ ] 1. 完成一次 MySQL 备份或导出，并记录恢复路径。
-* [ ] 2. 归档当前发布版本：记录部署包、验证结论、最终 commit 和非敏感环境配置名称。
-* [ ] 3. 开启 1-3 天小范围内部试运行，观察登录、上传、审核、积分写入和 CloudBase 日志。
-* [ ] 4. 试运行期间记录问题清单，按 P0/P1/P2 分级。
-* [ ] 5. 试运行稳定后再决定是否进入正式生产域名、监控告警和更细权限治理。
+* [x] 1. 创建桌面合并前备案目录，保存源工作树和桌面目标工作树的 status/log/diff/stat，并复制目标 `backups` 目录。
+* [ ] 2. 在源工作树运行 `git diff --check`，暂存 `.codex` 状态文件和两份 docs 指南，并创建提交 `docs: add trial run and tester guides`。
+* [ ] 3. 推送 `codex/cloudbase-run-migration` 到 GitHub origin。
+* [ ] 4. 在 `/Users/sonmin/Desktop/积分系统开发` stash `next-env.d.ts`，保留 `backups/dev-before-seed-rules-20260522-173824.db` 未跟踪。
+* [ ] 5. 在桌面目标工作树执行 `git merge --ff-only codex/cloudbase-run-migration`。
+* [ ] 6. 合并后运行 `npm run typecheck` 和 `npm run build`。
+* [ ] 7. 检查最终 `git status --short --untracked-files=all` 和最近提交，向用户汇报。
 
 ## Done This Session
 
@@ -67,3 +69,18 @@
 * [x] 本轮提交前 `npm run typecheck` 通过。
 * [x] 已暂存当前工作区全部变更并检查 staged 文件清单。
 * [x] 已创建本地 commit，提交信息为 `数据访问私有读写（已验证）`。
+* [x] 已按恢复流程读取项目状态和 git 状态，准备生成试运行操作说明文档。
+* [x] 已确认本机 `lark-cli` 可用，`lark-cli doctor` 通过。
+* [x] 已生成 `docs/TRIAL_RUN_GUIDE.md`。
+* [x] 已运行 `git diff --check`，结果通过。
+* [x] 已检查文档中未包含真实密钥、密码、完整 `DATABASE_URL` 或私密图片链接。
+* [x] 已通过 `lark-cli docs +create --api-version v2 --doc-format markdown` 创建飞书文档。
+* [x] 已通过 `lark-cli docs +fetch` 拉取验证飞书文档内容。
+* [x] 已生成 `docs/INTERNAL_TESTER_GUIDE.md`，覆盖内测人员登录、注册、绑定、加分申请、后台审核、测试清单和反馈模板。
+* [x] 已运行 `git diff --check`，结果通过。
+* [x] 已检查内测指南未包含真实密钥、密码、完整 `DATABASE_URL` 或私密图片链接。
+* [x] 已通过 `lark-cli docs +create --api-version v2 --doc-format markdown` 创建内测人员操作指南飞书文档。
+* [x] 已通过 `lark-cli docs +fetch` 拉取验证飞书文档内容。
+* [x] 已按恢复流程读取 `AGENTS.md`、`.codex` 状态文件并检查源工作树与桌面目标工作树当前状态。
+* [x] 已确认本次合并目标是桌面项目当前分支 `feat/leader-score-rules-v2-2`，不切换到 `main`。
+* [x] 已创建桌面备案目录 `/Users/sonmin/Desktop/积分系统合并前备案-20260707-182049`，保存两个工作树的 status/log/diff/stat，并复制目标 `backups` 目录。
