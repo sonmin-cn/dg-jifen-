@@ -912,3 +912,11 @@
 * 为什么这样做：合并和推送前需要独立备案，确保后续可恢复和审计。
 * 验证结果：备案目录创建成功，包含计划中的 source/target 状态文件和 target backup 副本。
 * 下一步：运行源工作树 `git diff --check`，暂存计划中的 `.codex` 和 docs 文件，并创建提交。
+
+## 2026-07-07 18:27 - Merge Back Completed
+
+* 做了什么：在源分支提交并推送 docs + `.codex` 备案内容；在桌面目标工作树 stash `next-env.d.ts` 后执行快进合并；安装缺失本地依赖并完成 typecheck/build。
+* 修改了哪些文件：`.codex/TASK_STATE.md`, `.codex/NEXT_ACTIONS.md`, `.codex/WORKLOG.md`, `.codex/PLANS.md`；源分支新增提交 `6f1c91c docs: add trial run and tester guides`；桌面目标工作树快进到该提交。
+* 为什么这样做：完成用户要求的合并前备案、GitHub 远端备份和桌面主项目合并，同时保持项目恢复状态准确。
+* 验证结果：源分支 `git diff --check` 通过；`git push -u origin codex/cloudbase-run-migration` 成功；桌面 `git merge --ff-only codex/cloudbase-run-migration` 成功；首次 `npm run typecheck` 因缺少本地依赖失败，运行 `npm install` 后 `npm run typecheck` 通过；`npm run build` 通过。
+* 下一步：提交本条状态收口，推送源分支并让桌面目标工作树再快进一次；之后回到 MySQL 备份、发布归档和 1-3 天小范围内部试运行。

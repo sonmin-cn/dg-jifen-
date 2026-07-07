@@ -5,13 +5,13 @@
 * Task ID: merge-back-to-desktop-main
 * Task Name: Pre-merge archive, GitHub push, and fast-forward merge into desktop main project
 * User Request: Implement the approved plan: archive both worktrees, commit docs + .codex, push `codex/cloudbase-run-migration` to GitHub, stash desktop `next-env.d.ts`, fast-forward merge into `/Users/sonmin/Desktop/积分系统开发`, then run typecheck/build.
-* Status: in_progress
+* Status: done
 * Started At: 2026-07-07 18:19 CST
-* Last Updated: 2026-07-07 18:19 CST
+* Last Updated: 2026-07-07 18:27 CST
 
 ## Current Goal
 
-Archive the current source worktree and desktop target worktree state, commit the completed trial/internal tester guide files plus recovery state, push the source branch to GitHub for remote backup, then fast-forward merge into the desktop project folder without switching to `main`.
+Completed the merge-back workflow: archived both worktrees, committed and pushed the source branch, stashed the desktop `next-env.d.ts` generated diff, fast-forward merged into `/Users/sonmin/Desktop/积分系统开发`, installed missing local dependencies, and verified typecheck/build.
 
 ## Completed
 
@@ -29,6 +29,14 @@ Archive the current source worktree and desktop target worktree state, commit th
 * [x] Confirmed desktop target folder is `/Users/sonmin/Desktop/积分系统开发` on branch `feat/leader-score-rules-v2-2`.
 * [x] Confirmed source branch is ahead of target branch by existing CloudBase commits and can fast-forward after the docs/state commit is added.
 * [x] Created pre-merge archive directory `/Users/sonmin/Desktop/积分系统合并前备案-20260707-182049` with source/target status, logs, diffs, diff stats, and a copy of target `backups`.
+* [x] Ran source `git diff --check`; it passed.
+* [x] Created commit `6f1c91c docs: add trial run and tester guides`.
+* [x] Pushed `codex/cloudbase-run-migration` to GitHub origin.
+* [x] Stashed desktop target `next-env.d.ts` as `stash@{0}: pre-merge generated next-env`.
+* [x] Fast-forward merged `codex/cloudbase-run-migration` into desktop target branch `feat/leader-score-rules-v2-2`.
+* [x] Initial desktop `npm run typecheck` failed because `node_modules` lacked newly merged `cos-nodejs-sdk-v5`; ran `npm install` to install merged dependencies.
+* [x] Re-ran `npm run typecheck`; it passed.
+* [x] Ran `npm run build`; it passed.
 * [x] Read `AGENTS.md`.
 * [x] Read `.codex/TASK_STATE.md`, `.codex/WORKLOG.md`, `.codex/NEXT_ACTIONS.md`, `.codex/DECISIONS.md`, and `.codex/PLANS.md`.
 * [x] Ran `pwd`, `git branch --show-current`, `git status --short`, and `git diff --stat`.
@@ -149,18 +157,21 @@ Archive the current source worktree and desktop target worktree state, commit th
 
 ## In Progress
 
-* 当前正在处理的事项：执行合并前备案、补充提交、GitHub 推送和桌面主项目快进合并。
-* 当前涉及文件：`.codex/TASK_STATE.md`, `.codex/NEXT_ACTIONS.md`, `.codex/WORKLOG.md`, `.codex/PLANS.md`, `docs/TRIAL_RUN_GUIDE.md`, `docs/INTERNAL_TESTER_GUIDE.md`。
+* 当前正在处理的事项：合并前备案、GitHub 推送和桌面主项目快进合并已完成；下一步回到 MySQL 备份、发布归档和内部试运行。
+* 当前涉及文件：`.codex/TASK_STATE.md`, `.codex/NEXT_ACTIONS.md`, `.codex/WORKLOG.md`, `.codex/PLANS.md`。
 
 ## Next Actions
 
 * [x] 创建桌面合并前备案目录，保存两个工作树的 status/log/diff/stat，并复制目标 `backups` 目录。
-* [ ] 在源工作树运行 `git diff --check` 并确认提交范围只包含 `.codex` 状态和两份 docs 指南。
-* [ ] 提交 `.codex` 状态文件和 `docs/TRIAL_RUN_GUIDE.md`、`docs/INTERNAL_TESTER_GUIDE.md`。
-* [ ] 推送 `codex/cloudbase-run-migration` 到 GitHub origin。
-* [ ] 在桌面主项目 stash `next-env.d.ts`，保留 `backups/dev-before-seed-rules-20260522-173824.db` 未跟踪。
-* [ ] 在桌面主项目执行 `git merge --ff-only codex/cloudbase-run-migration`。
-* [ ] 合并后运行 `npm run typecheck` 和 `npm run build`。
+* [x] 在源工作树运行 `git diff --check` 并确认提交范围只包含 `.codex` 状态和两份 docs 指南。
+* [x] 提交 `.codex` 状态文件和 `docs/TRIAL_RUN_GUIDE.md`、`docs/INTERNAL_TESTER_GUIDE.md`。
+* [x] 推送 `codex/cloudbase-run-migration` 到 GitHub origin。
+* [x] 在桌面主项目 stash `next-env.d.ts`，保留 `backups/dev-before-seed-rules-20260522-173824.db` 未跟踪。
+* [x] 在桌面主项目执行 `git merge --ff-only codex/cloudbase-run-migration`。
+* [x] 合并后运行 `npm run typecheck` 和 `npm run build`。
+* [ ] 下一阶段完成一次 MySQL 备份或导出，并记录恢复路径。
+* [ ] 归档当前发布版本：记录部署包、验证结论、最终 commit 和非敏感环境配置名称。
+* [ ] 开启 1-3 天小范围内部试运行，观察登录、上传、审核、积分写入和 CloudBase 日志。
 
 ## Modified Files
 
@@ -193,9 +204,9 @@ Archive the current source worktree and desktop target worktree state, commit th
 
 ## Verification
 
-* 已运行命令：`pwd`, `git branch --show-current`, `git status --short --untracked-files=all`, `git diff --stat`, `git log --oneline --decorate -6`, `date '+%Y-%m-%d %H:%M %Z'`, `sed -n '1,240p' AGENTS.md`, `sed -n '1,260p' .codex/TASK_STATE.md`, `sed -n '1,220p' .codex/NEXT_ACTIONS.md`, `tail -n 120 .codex/WORKLOG.md`, `tail -n 120 .codex/PLANS.md`, backup archive commands for source/target status/log/diff/stat and target `backups`.
-* 结果：恢复检查完成；源分支为 `codex/cloudbase-run-migration`；桌面目标分支为 `feat/leader-score-rules-v2-2`；源工作树有 `.codex` 状态文件和两份 docs 未提交，目标工作树有 `next-env.d.ts` 修改和一个本地 backup 数据库未跟踪；合并前备案目录已创建。
-* 尚未运行但需要运行的命令：备案目录创建与写入、`git diff --check`, `git add`, `git commit`, `git push`, `git stash push`, `git merge --ff-only`, `npm run typecheck`, `npm run build`, 最终 `git status --short --untracked-files=all`。
+* 已运行命令：`pwd`, `git branch --show-current`, `git status --short --untracked-files=all`, `git diff --stat`, `git log --oneline --decorate -6`, `date '+%Y-%m-%d %H:%M %Z'`, `sed -n '1,240p' AGENTS.md`, `sed -n '1,260p' .codex/TASK_STATE.md`, `sed -n '1,220p' .codex/NEXT_ACTIONS.md`, `tail -n 120 .codex/WORKLOG.md`, `tail -n 120 .codex/PLANS.md`, backup archive commands for source/target status/log/diff/stat and target `backups`, `git diff --check`, `git add`, `git commit -m "docs: add trial run and tester guides"`, `git push -u origin codex/cloudbase-run-migration`, `git stash push -m "pre-merge generated next-env" -- next-env.d.ts`, `git merge --ff-only codex/cloudbase-run-migration`, `npm install`, `npm run typecheck`, `npm run build`, final status/log/stash checks.
+* 结果：合并前备案完成；源分支提交并推送到 GitHub；桌面目标工作树快进合并成功；`npm install` 补齐本地依赖；`npm run typecheck` 和 `npm run build` 均通过。
+* 尚未运行但需要运行的命令：最终 `.codex` 收口提交、推送和桌面目标工作树二次快进合并。
 
 ## Risks / Notes
 
@@ -223,6 +234,8 @@ Archive the current source worktree and desktop target worktree state, commit th
 * 注意事项：不得把 MySQL 密码、完整 `DATABASE_URL`、COS Secret、Session Secret 或其他密钥写入聊天、`.codex/`、`.env.example` 或提交记录。
 * 注意事项：继续任何部署方案前，必须先列出可能新增收费项和替代方案，并让用户确认成本可接受。
 * 注意事项：官方文档确认 CloudBase Run 访问腾讯云 MySQL 的标准方式是服务与 MySQL 位于同一 VPC；已有服务不支持直接更换所在 VPC，选错时需重新部署到正确 VPC 或打通多个 VPC。
+* 注意事项：桌面目标工作树保留未跟踪本地备份 `backups/dev-before-seed-rules-20260522-173824.db`；这是预期状态，不提交。
+* 注意事项：桌面目标工作树保留 `stash@{0}: pre-merge generated next-env`，里面是合并前 `next-env.d.ts` 本地生成差异。
 
 ## Recovery Instructions
 

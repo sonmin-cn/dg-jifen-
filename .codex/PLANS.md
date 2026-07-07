@@ -225,9 +225,9 @@
 
 ## 2026-07-07 18:19 合并前备案与桌面主项目合并
 
-- 当前进度：开始执行合并前备案、源分支补充提交、GitHub 推送和桌面目标工作树快进合并。
+- 当前进度：合并前备案、源分支补充提交、GitHub 推送和桌面目标工作树快进合并已完成。
 - 执行策略：先在桌面创建带时间戳的备案目录，保存两个工作树 status/log/diff/stat；源分支提交 `.codex` 状态文件和两份 docs 指南；推送 `codex/cloudbase-run-migration` 到 origin；目标工作树 stash `next-env.d.ts` 后执行 `git merge --ff-only codex/cloudbase-run-migration`。
-- 验收标准：源分支 `git diff --check` 通过；GitHub push 成功；桌面目标工作树 fast-forward merge 成功；合并后 `npm run typecheck` 和 `npm run build` 通过。
+- 验收结果：备案目录 `/Users/sonmin/Desktop/积分系统合并前备案-20260707-182049` 已创建；源分支 `git diff --check` 通过；提交 `6f1c91c docs: add trial run and tester guides` 已创建并推送到 GitHub；桌面目标工作树 fast-forward merge 成功；首次 `npm run typecheck` 因本地缺少 `cos-nodejs-sdk-v5` 失败，运行 `npm install` 后 `npm run typecheck` 通过；`npm run build` 通过。
 - 风险说明：目标工作树的 `backups/dev-before-seed-rules-20260522-173824.db` 是本地备份文件，保持未跟踪不提交；`next-env.d.ts` 是本地生成差异，仅 stash，不作为业务提交。
 - 成本说明：本次仅执行本地 Git 操作和 GitHub push，不新增云服务或付费资源。
 

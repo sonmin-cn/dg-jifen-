@@ -1,12 +1,10 @@
 # Next Actions
 
-* [x] 1. 创建桌面合并前备案目录，保存源工作树和桌面目标工作树的 status/log/diff/stat，并复制目标 `backups` 目录。
-* [ ] 2. 在源工作树运行 `git diff --check`，暂存 `.codex` 状态文件和两份 docs 指南，并创建提交 `docs: add trial run and tester guides`。
-* [ ] 3. 推送 `codex/cloudbase-run-migration` 到 GitHub origin。
-* [ ] 4. 在 `/Users/sonmin/Desktop/积分系统开发` stash `next-env.d.ts`，保留 `backups/dev-before-seed-rules-20260522-173824.db` 未跟踪。
-* [ ] 5. 在桌面目标工作树执行 `git merge --ff-only codex/cloudbase-run-migration`。
-* [ ] 6. 合并后运行 `npm run typecheck` 和 `npm run build`。
-* [ ] 7. 检查最终 `git status --short --untracked-files=all` 和最近提交，向用户汇报。
+* [ ] 1. 完成一次 MySQL 备份或导出，并记录恢复路径。
+* [ ] 2. 归档当前发布版本：记录部署包、验证结论、最终 commit 和非敏感环境配置名称。
+* [ ] 3. 开启 1-3 天小范围内部试运行，观察登录、上传、审核、积分写入和 CloudBase 日志。
+* [ ] 4. 试运行期间记录问题清单，按 P0/P1/P2 分级。
+* [ ] 5. 试运行稳定后再决定是否进入正式生产域名、监控告警和更细权限治理。
 
 ## Done This Session
 
@@ -84,3 +82,10 @@
 * [x] 已按恢复流程读取 `AGENTS.md`、`.codex` 状态文件并检查源工作树与桌面目标工作树当前状态。
 * [x] 已确认本次合并目标是桌面项目当前分支 `feat/leader-score-rules-v2-2`，不切换到 `main`。
 * [x] 已创建桌面备案目录 `/Users/sonmin/Desktop/积分系统合并前备案-20260707-182049`，保存两个工作树的 status/log/diff/stat，并复制目标 `backups` 目录。
+* [x] 已在源分支提交 `docs: add trial run and tester guides`。
+* [x] 已推送 `codex/cloudbase-run-migration` 到 GitHub origin。
+* [x] 已在桌面目标工作树 stash `next-env.d.ts` 的合并前生成差异。
+* [x] 已快进合并到 `/Users/sonmin/Desktop/积分系统开发` 当前分支 `feat/leader-score-rules-v2-2`。
+* [x] 首次 `npm run typecheck` 因本地缺少新依赖失败；已运行 `npm install` 补齐依赖。
+* [x] 已重跑 `npm run typecheck`，结果通过。
+* [x] 已运行 `npm run build`，结果通过。
