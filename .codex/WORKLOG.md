@@ -1,5 +1,43 @@
 # Worklog
 
+## 2026-07-08 11:08 - Recovery
+
+* 检查到的仓库状态：当前路径 `/Users/sonmin/Desktop/积分系统开发`，分支 `feat/leader-score-rules-v2-2`；`git status -sb` 显示本地分支已与 `origin/feat/leader-score-rules-v2-2` 对齐，但有 `.codex/NEXT_ACTIONS.md`、`.codex/TASK_STATE.md`、`.codex/WORKLOG.md` 本地修改和未跟踪 `backups/`。
+* 已确认完成：读取 `AGENTS.md` 和 `.codex` 状态文件；执行 `git fetch origin`；检查 `git branch -vv`；确认 `main` 和 `origin/main` 都是 `feat/leader-score-rules-v2-2` 的祖先。
+* 未完成：尚未提交 `.codex` 推送记录更新；尚未 fast-forward 合并到 `main`；尚未推送 `main`。
+* 决定从哪里继续：先提交 `.codex` 三个推送记录文件，排除 `backups/` 和任何密钥类文件，然后切换 `main` 做 fast-forward 合并。
+
+## 2026-07-08 11:08 - Main Merge Started
+
+* 做了什么：将当前任务切换为把 `feat/leader-score-rules-v2-2` 快进合并到 `main` 并推送 GitHub。
+* 修改了哪些文件：`.codex/TASK_STATE.md`, `.codex/NEXT_ACTIONS.md`, `.codex/WORKLOG.md`。
+* 为什么这样做：用户明确要求合并回 `main`，且项目规则要求先记录恢复状态、下一步和风险。
+* 验证结果：`main` 是功能分支祖先；远端 GitHub 仓库为 `https://github.com/sonmin-cn/dg-jifen-.git`；未跟踪 `backups/` 不纳入本次提交。
+* 下一步：暂存 `.codex` 三个状态文件，检查 staged 清单和敏感文件模式后创建提交 `chore: record github push state`。
+
+## 2026-07-08 10:06 - Recovery
+
+* 检查到的仓库状态：当前路径 `/Users/sonmin/Desktop/积分系统开发`，分支 `feat/leader-score-rules-v2-2`；`git status -sb` 显示本地相对 `origin/feat/leader-score-rules-v2-2` ahead 4，且存在未跟踪本地目录 `backups/`。
+* 已确认完成：读取 `AGENTS.md` 和 `.codex` 状态文件；确认远端 `origin` 指向 `https://github.com/sonmin-cn/dg-jifen-.git`；确认 `gh auth status` 已登录 GitHub 账号 `sonmin-cn`。
+* 未完成：尚未执行 `git push -u origin feat/leader-score-rules-v2-2`；尚未做推送后状态检查。
+* 决定从哪里继续：只推送当前分支已提交的 4 个 commit，不把未跟踪 `backups/` 纳入本次推送范围。
+
+## 2026-07-08 10:06 - GitHub Push Started
+
+* 做了什么：将当前任务切换为把桌面项目当前分支推送到 GitHub，并记录推送前检查结果。
+* 修改了哪些文件：`.codex/TASK_STATE.md`, `.codex/NEXT_ACTIONS.md`, `.codex/WORKLOG.md`。
+* 为什么这样做：用户要求把项目推送到 GitHub；项目规则要求开始任务前更新可恢复状态。
+* 验证结果：当前分支 `feat/leader-score-rules-v2-2` ahead 4；远端 GitHub 仓库可识别；GitHub CLI 已认证。
+* 下一步：执行 `git push -u origin feat/leader-score-rules-v2-2` 并检查推送后的分支状态。
+
+## 2026-07-08 10:07 - GitHub Push Complete
+
+* 做了什么：执行 `git push -u origin feat/leader-score-rules-v2-2`，并在推送后检查本地/远端分支状态。
+* 修改了哪些文件：`.codex/TASK_STATE.md`, `.codex/NEXT_ACTIONS.md`, `.codex/WORKLOG.md`。
+* 为什么这样做：用户要求把当前项目推送到 GitHub；推送后需要记录可恢复状态。
+* 验证结果：远端 `origin/feat/leader-score-rules-v2-2` 已从 `8702ba6` 更新到 `ee7f1f7`；`git status -sb` 显示本地分支不再 ahead 远端，仍有本轮 `.codex` 本地记录更新和未跟踪 `backups/`。
+* 下一步：继续发布后计划中的 MySQL 备份、发布归档和内部试运行。
+
 ## 2026-06-08
 
 - Read root `AGENTS.md`; file exists but is empty.
