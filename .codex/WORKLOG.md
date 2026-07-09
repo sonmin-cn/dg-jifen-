@@ -981,3 +981,8 @@
 * 为什么这样做：用户决定跳过本地检验，直接在 CloudBase Staging 测试环境验证。
 * 验证结果：包内含新迁移 20260709090000、全部新增文件；无敏感文件。
 * 下一步：Staging 先执行 prisma migrate deploy（先跑重复数据核对 SQL），再上传部署包，按回归清单验证。
+
+## 2026-07-09 - 生成 CloudBase 控制台迁移 SQL 文档
+
+* 做了什么：确认 Staging MySQL 只能通过 CloudBase SQL 编辑器操作（与初始化方式一致），生成 .codex/CLOUDBASE_MIGRATION_20260709_SQL.md，含前置核对、4 条结构变更、_prisma_migrations 记录（checksum 已按迁移文件 sha256 计算）和执行后验证。
+* 下一步：用户在 CloudBase SQL 编辑器按文档执行，然后上传部署包。
