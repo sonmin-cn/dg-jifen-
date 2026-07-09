@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDateCN, formatDateTimeCN } from "@/lib/utils/datetime";
 import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ImagePlus, Send, X } from "lucide-react";
@@ -20,19 +21,34 @@ type TripOption = {
   status: string;
 };
 
+export type ApplicationInitialValues = {
+  resubmitOfId: string;
+  ruleId: string;
+  tripId: string;
+  description: string;
+  evidenceText: string;
+  evidenceUrl: string;
+  orderNo: string;
+  evidenceImages: EvidenceImage[];
+};
+
 export function ApplicationCreateForm({
   trips,
   rules,
+  initial,
 }: {
   trips: TripOption[];
   rules: LeaderApplicationRuleOption[];
+  initial?: ApplicationInitialValues | null;
 }) {
   const router = useRouter();
-  const [ruleId, setRuleId] = useState("");
+  const [ruleId, setRuleId] = useState(initial?.ruleId || "");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [evidenceImages, setEvidenceImages] = useState<EvidenceImage[]>([]);
+  const [evidenceImages, setEvidenceImages] = useState<EvidenceImage[]>(
+    initial?.evidenceImages || [],
+  );
   const selectedRule = useMemo(
     () => rules.find((rule) => rule.id === ruleId) || null,
     [ruleId, rules],
@@ -51,6 +67,7 @@ export function ApplicationCreateForm({
     const tripId = String(payload.tripId || "").trim();
     const evidenceText = String(payload.evidenceText || "").trim();
     const evidenceUrl = String(payload.evidenceUrl || "").trim();
+    const orderNo = String(payload.orderNo || "").trim();
 
     if (!selectedRuleId || !rule) {
       setError("请选择积分规则");
@@ -60,6 +77,12 @@ export function ApplicationCreateForm({
 
     if (rule.requireTrip && !tripId) {
       setError("该积分申请需要选择关联团期");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (rule.requireOrderNo && !orderNo) {
+      setError("请填写复购订单号");
       setIsSubmitting(false);
       return;
     }
@@ -78,6 +101,8 @@ export function ApplicationCreateForm({
           ...payload,
           ruleId: selectedRuleId,
           tripId: tripId || null,
+          orderNo: orderNo || null,
+          resubmitOfId: initial?.resubmitOfId || null,
           evidenceImages,
         }),
       });
@@ -120,7 +145,7 @@ export function ApplicationCreateForm({
       const lowerName = file.name.toLowerCase();
 
       if (file.type === "image/heic" || file.type === "image/heif" || lowerName.endsWith(".heic") || lowerName.endsWith(".heif")) {
-        setError("暂不支持 HEIC 图片，请在相册中转换为 JPG/PNG 后上传，或截图后上传。");
+        setError("暂不支持 HEIC 图片。最简单的办法：先对照片截图，再上传截图；或在相册中将照片导出为 JPG/PNG。");
         return;
       }
 
@@ -211,6 +236,7 @@ export function ApplicationCreateForm({
           </Label>
           <select
             className="h-11 w-full rounded-md border bg-background px-3 text-base md:text-sm"
+            defaultValue={initial?.tripId || ""}
             id="tripId"
             name="tripId"
           >
@@ -229,15 +255,35 @@ export function ApplicationCreateForm({
             </p>
           ) : null}
         </div>
+        {selectedRule?.requireOrderNo ? (
+          <div className="space-y-2 md:col-span-2">
+            <Label className="flex items-center gap-2" htmlFor="orderNo">
+              复购订单号
+              <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-normal text-muted-foreground">
+                必填
+              </span>
+            </Label>
+            <Input
+              className="h-11 text-base md:text-sm"
+              defaultValue={initial?.orderNo || ""}
+              id="orderNo"
+              name="orderNo"
+              placeholder="填写报名系统中的订单号，同一订单只能归属 1 名队长"
+            />
+            <p className="text-xs text-muted-foreground">
+              订单号用于复购归属查重，请从报名订单中完整复制。
+            </p>
+          </div>
+        ) : null}
         <div className="space-y-2 md:col-span-2">
           <Label htmlFor="description">申请说明</Label>
-          <Textarea className="min-h-28 text-base md:text-sm" id="description" name="description" placeholder="补充发布内容、复购来源或其他背景" />
+          <Textarea className="min-h-28 text-base md:text-sm" defaultValue={initial?.description || ""} id="description" name="description" placeholder="补充发布内容、复购来源或其他背景" />
         </div>
         <div className="space-y-2 md:col-span-2">
           <Label htmlFor="evidenceText">证明材料</Label>
-          <Textarea className="min-h-32 text-base md:text-sm" id="evidenceText" name="evidenceText" placeholder="填写截图说明、订单号、聊天记录说明等" />
+          <Textarea className="min-h-32 text-base md:text-sm" defaultValue={initial?.evidenceText || ""} id="evidenceText" name="evidenceText" placeholder="填写截图说明、聊天记录说明等" />
         </div>
-        <Field label="证明链接" name="evidenceUrl" placeholder="小红书链接、网盘链接或截图链接" />
+        <Field defaultValue={initial?.evidenceUrl || ""} label="证明链接" name="evidenceUrl" placeholder="小红书链接、网盘链接或截图链接" />
         <div className="space-y-3 md:col-span-2">
           <div className="space-y-1">
             <Label htmlFor="evidenceImages">证明图片</Label>
@@ -318,21 +364,23 @@ function Field({
   label,
   name,
   placeholder,
+  defaultValue,
 }: {
   label: string;
   name: string;
   placeholder?: string;
+  defaultValue?: string;
 }) {
   return (
     <div className="space-y-2">
       <Label htmlFor={name}>{label}</Label>
-      <Input className="h-11 text-base md:text-sm" id={name} name={name} placeholder={placeholder} />
+      <Input className="h-11 text-base md:text-sm" defaultValue={defaultValue} id={name} name={name} placeholder={placeholder} />
     </div>
   );
 }
 
 function formatDate(value: Date | string) {
-  return new Date(value).toISOString().slice(0, 10);
+  return formatDateCN(value);
 }
 
 function formatPoints(value: number) {

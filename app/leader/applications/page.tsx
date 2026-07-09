@@ -1,3 +1,4 @@
+import { formatDateCN, formatDateTimeCN } from "@/lib/utils/datetime";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
@@ -48,7 +49,8 @@ export default async function LeaderApplicationsPage() {
               <Th>申请分值</Th>
               <Th>审核状态</Th>
               <Th>审核时间</Th>
-              <Th>拒绝原因</Th>
+              <Th>审核意见</Th>
+              <Th>操作</Th>
             </tr>
           </thead>
           <tbody>
@@ -74,11 +76,23 @@ export default async function LeaderApplicationsPage() {
                   </Td>
                   <Td>{formatDateTime(application.reviewedAt)}</Td>
                   <Td>{application.rejectReason || "-"}</Td>
+                  <Td>
+                    {["NEEDS_MORE_INFO", "REJECTED"].includes(application.status) ? (
+                      <Link
+                        className="text-primary underline-offset-2 hover:underline"
+                        href={`/leader/applications/new?from=${application.id}`}
+                      >
+                        重新提交
+                      </Link>
+                    ) : (
+                      "-"
+                    )}
+                  </Td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td className="px-4 py-10 text-center text-muted-foreground" colSpan={9}>
+                <td className="px-4 py-10 text-center text-muted-foreground" colSpan={10}>
                   暂无申请记录。
                 </td>
               </tr>
@@ -93,10 +107,10 @@ export default async function LeaderApplicationsPage() {
             <article className="rounded-lg border bg-card p-4 shadow-sm" key={application.id}>
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-sm text-muted-foreground">
-                    {getApplicationRuleName(application)}
+                  <h3 className="font-medium">{getApplicationRuleName(application)}</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {application.ruleCode || application.rule?.code || "-"}
                   </p>
-                  <h3 className="mt-1 font-medium">{application.ruleCode || application.rule?.code || "-"}</h3>
                 </div>
                 <Badge variant={application.status === "PENDING" ? "secondary" : "outline"}>
                   {SCORE_APPLICATION_STATUS_LABELS[application.status]}
@@ -108,8 +122,15 @@ export default async function LeaderApplicationsPage() {
                 <InfoLine label="申请分值" value={`+${formatPoints(application.requestedPoints)}`} />
                 <InfoLine label="提交时间" value={formatDateTime(application.submittedAt)} />
                 <InfoLine label="审核时间" value={formatDateTime(application.reviewedAt)} />
-                <InfoLine label="拒绝原因" value={application.rejectReason} />
+                <InfoLine label="审核意见" value={application.rejectReason} />
               </div>
+              {["NEEDS_MORE_INFO", "REJECTED"].includes(application.status) ? (
+                <Button className="mt-4 h-11 w-full" variant="outline" asChild>
+                  <Link href={`/leader/applications/new?from=${application.id}`}>
+                    补充材料并重新提交
+                  </Link>
+                </Button>
+              ) : null}
             </article>
           ))
         ) : (
@@ -162,7 +183,7 @@ function hasEvidenceImages(application: {
 
 function formatDateTime(value: Date | null) {
   if (!value) return "-";
-  return value.toISOString().slice(0, 19).replace("T", " ");
+  return formatDateTimeCN(value);
 }
 
 function formatPoints(value: number) {

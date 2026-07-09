@@ -17,10 +17,15 @@ export function ApplicationReviewActions({
   const [rejectReason, setRejectReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  async function submit(action: "approve" | "reject") {
+  async function submit(action: "approve" | "reject" | "needs-more-info") {
     setError("");
     if (action === "reject" && !rejectReason.trim()) {
       setError("拒绝时必须填写原因");
+      return;
+    }
+
+    if (action === "needs-more-info" && !rejectReason.trim()) {
+      setError("退回补充时必须填写需要补充的内容");
       return;
     }
 
@@ -37,7 +42,9 @@ export function ApplicationReviewActions({
                   reviewRemark,
                   approvedPoints: approvedPoints ? Number(approvedPoints) : undefined,
                 })
-              : JSON.stringify({ rejectReason }),
+              : action === "reject"
+                ? JSON.stringify({ rejectReason })
+                : JSON.stringify({ reason: rejectReason }),
         },
       );
       const data = (await response.json().catch(() => null)) as { message?: string } | null;
@@ -70,7 +77,7 @@ export function ApplicationReviewActions({
         type="number"
         value={approvedPoints}
       />
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Button
           disabled={isSubmitting}
           onClick={() => submit("approve")}
@@ -78,6 +85,15 @@ export function ApplicationReviewActions({
           type="button"
         >
           通过
+        </Button>
+        <Button
+          disabled={isSubmitting}
+          onClick={() => submit("needs-more-info")}
+          size="sm"
+          type="button"
+          variant="secondary"
+        >
+          退回补充
         </Button>
         <Button
           disabled={isSubmitting}
@@ -91,7 +107,7 @@ export function ApplicationReviewActions({
       </div>
       <Input
         onChange={(event) => setRejectReason(event.target.value)}
-        placeholder="拒绝原因"
+        placeholder="拒绝原因 / 需补充说明"
         value={rejectReason}
       />
       {error ? <p className="text-xs text-destructive">{error}</p> : null}

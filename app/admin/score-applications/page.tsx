@@ -1,3 +1,4 @@
+import { formatDateCN, formatDateTimeCN } from "@/lib/utils/datetime";
 import Link from "next/link";
 import type { ScoreApplicationStatus, ScoreApplicationType } from "@prisma/client";
 import { Badge } from "@/components/ui/badge";
@@ -247,7 +248,7 @@ function parseDateParam(value: string, endOfDay: boolean) {
 
 function formatDateTime(value: Date | null) {
   if (!value) return "-";
-  return value.toISOString().slice(0, 19).replace("T", " ");
+  return formatDateTimeCN(value);
 }
 
 function formatPoints(value: number) {

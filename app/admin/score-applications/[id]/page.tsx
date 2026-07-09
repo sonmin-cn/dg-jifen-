@@ -1,3 +1,4 @@
+import { formatDateCN, formatDateTimeCN } from "@/lib/utils/datetime";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
@@ -87,6 +88,7 @@ export default async function AdminScoreApplicationDetailPage({ params }: PagePr
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           <Info label="证明说明" value={evidence.text} wide />
           <Info label="证明链接" value={evidence.url} wide />
+          <Info label="复购订单号" value={application.orderNo} wide />
         </div>
         <div className="mt-5">
           <p className="text-muted-foreground">图片证明</p>
@@ -156,11 +158,11 @@ function getApplicationRuleName(application: {
 
 function formatDateTime(value: Date | null) {
   if (!value) return "-";
-  return value.toISOString().slice(0, 19).replace("T", " ");
+  return formatDateTimeCN(value);
 }
 
 function formatDate(value: Date) {
-  return value.toISOString().slice(0, 10);
+  return formatDateCN(value);
 }
 
 function formatPoints(value: number) {

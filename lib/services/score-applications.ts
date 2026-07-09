@@ -1,5 +1,5 @@
+import { Prisma } from "@prisma/client";
 import type {
-  Prisma,
   ScoreApplicationStatus,
   ScoreApplicationType,
   ScoreRule,
@@ -21,6 +21,8 @@ export type CreateLeaderApplicationInput = {
   evidenceText?: unknown;
   evidenceUrl?: unknown;
   evidenceImages?: unknown;
+  orderNo?: unknown;
+  resubmitOfId?: unknown;
 };
 
 export type EvidenceImage = {
@@ -92,6 +94,7 @@ export type LeaderApplicationRuleOption = {
   points: number;
   description: string | null;
   requireTrip: boolean;
+  requireOrderNo: boolean;
 };
 
 type LeaderApplicationRuleConfig = {
@@ -163,6 +166,7 @@ export async function getLeaderApplicationRules() {
       points: rule.points,
       description: rule.description,
       requireTrip: config.requireTrip,
+      requireOrderNo: config.oneOrderOneLeader === true,
     }));
 }
 
@@ -186,6 +190,8 @@ export async function createLeaderScoreApplication(
   const description = normalizeOptionalString(input.description);
   const evidenceText = normalizeOptionalString(input.evidenceText);
   const evidenceUrl = normalizeOptionalString(input.evidenceUrl);
+  const orderNo = normalizeOrderNo(input.orderNo);
+  const resubmitOfId = normalizeOptionalString(input.resubmitOfId);
   const evidenceImagesResult = normalizeEvidenceImages(input.evidenceImages);
   const now = new Date();
 
@@ -252,6 +258,27 @@ export async function createLeaderScoreApplication(
     return { ok: false as const, status: 400, message: "关联团期不存在或你未参与该团期" };
   }
 
+  if (ruleConfig.oneOrderOneLeader && !orderNo) {
+    return { ok: false as const, status: 400, message: "请填写复购订单号" };
+  }
+
+  let resubmitOf: { id: string; status: ScoreApplicationStatus } | null = null;
+
+  if (resubmitOfId) {
+    resubmitOf = await prisma.scoreApplication.findFirst({
+      where: { id: resubmitOfId, leaderId: leader.id },
+      select: { id: true, status: true },
+    });
+
+    if (!resubmitOf || !["NEEDS_MORE_INFO", "REJECTED"].includes(resubmitOf.status)) {
+      return {
+        ok: false as const,
+        status: 400,
+        message: "原申请不存在或当前状态不支持重新提交",
+      };
+    }
+  }
+
   const rule = await getActiveScoreRule({ code: selectedRule.code, occurredAt: now });
 
   if (!rule || rule.id !== selectedRule.id) {
@@ -295,6 +322,29 @@ export async function createLeaderScoreApplication(
     }
   }
 
+  if (ruleConfig.oneOrderOneLeader && orderNo) {
+    const existingOrderApplication = await prisma.scoreApplication.findFirst({
+      where: {
+        ruleCode,
+        orderNo,
+        status: { in: ["PENDING", "APPROVED"] },
+      },
+      select: { id: true, leaderId: true },
+    });
+
+    if (existingOrderApplication) {
+      return {
+        ok: false as const,
+        status: 400,
+        message:
+          existingOrderApplication.leaderId === leader.id
+            ? "该复购订单已提交过申请，不能重复申请"
+            : "该复购订单已归属其他队长",
+      };
+    }
+  }
+
+  // 兼容历史数据：旧申请没有结构化订单号，仍按证明文本/链接兜底查重
   if (ruleConfig.oneOrderOneLeader && (evidenceText || evidenceUrl)) {
     const existingOrderOwner = await findRepurchaseOrderOwner({
       ruleCode,
@@ -319,12 +369,23 @@ export async function createLeaderScoreApplication(
         evidenceText,
         evidenceUrl,
         evidenceJson: buildEvidenceJson({ evidenceText, evidenceUrl, evidenceImages }),
+        orderNo,
         requestedPoints: rule.points,
         ruleId: rule.id,
         ruleCode,
       },
       include: scoreApplicationInclude,
     });
+
+    if (resubmitOf) {
+      await tx.scoreApplication.updateMany({
+        where: {
+          id: resubmitOf.id,
+          status: { in: ["NEEDS_MORE_INFO", "REJECTED"] },
+        },
+        data: { status: "CANCELLED" },
+      });
+    }
 
     await tx.auditLog.create({
       data: {
@@ -337,6 +398,8 @@ export async function createLeaderScoreApplication(
           leaderId: leader.id,
           type,
           ruleCode,
+          orderNo,
+          resubmitOfId: resubmitOf?.id || null,
           requestedPoints: rule.points,
           evidenceImageCount: evidenceImages.length,
         }),
@@ -421,14 +484,15 @@ export async function approveScoreApplication(
     return { ok: false as const, status: 400, message: "申请缺少规则编码" };
   }
 
-  const occurredAt = new Date();
+  const reviewedAt = new Date();
+  // 按提交时点取生效规则：规则中途调整不影响已提交申请的计分口径（与"新规则不追溯"一致）
   const rule = await getActiveScoreRule({
     code: application.ruleCode,
-    occurredAt,
+    occurredAt: application.submittedAt,
   });
 
   if (!rule) {
-    return { ok: false as const, status: 400, message: "未找到对应积分规则" };
+    return { ok: false as const, status: 400, message: "未找到申请提交时生效的积分规则" };
   }
 
   const requestedApprovedPoints = parseOptionalNumber(input.approvedPoints);
@@ -451,115 +515,151 @@ export async function approveScoreApplication(
     };
   }
 
-  if (application.tripId) {
-    const existingScoreRecord = await prisma.scoreRecord.findFirst({
-      where: {
-        scoreYearId: application.scoreYearId,
-        leaderId: application.leaderId,
-        tripId: application.tripId,
-        ruleCode: rule.code,
-        status: "EFFECTIVE",
-      },
-      select: { id: true },
-    });
-
-    if (existingScoreRecord) {
-      return { ok: false as const, status: 400, message: "该申请对应积分已生成，不能重复生成" };
-    }
-  }
-
   const reviewRemark = normalizeOptionalString(input.reviewRemark);
-  const capResult = await applyScoreApplicationCaps({
-    scoreYearId: application.scoreYearId,
-    leaderId: application.leaderId,
-    rule,
-    approvedPoints,
-    applicationId: application.id,
-    ruleConfig,
-  });
-  const snapshot = {
-    ...buildRuleSnapshot(rule),
-    application: {
-      id: application.id,
-      type: application.type,
-      title: application.title,
-      evidenceText: application.evidenceText,
-      evidenceUrl: application.evidenceUrl,
-      evidenceJson: application.evidenceJson,
-      requestedPoints: application.requestedPoints,
-      approvedPoints,
-      effectivePoints: capResult.effectivePoints,
-      cap: capResult.capSnapshot,
-    },
-  };
+  const approvedOrderKey =
+    ruleConfig.oneOrderOneLeader && application.orderNo
+      ? `${rule.code}:${application.orderNo}`
+      : null;
 
-  const result = await prisma.$transaction(async (tx) => {
-    const updated = await tx.scoreApplication.update({
-      where: { id },
-      data: {
-        status: "APPROVED",
-        approvedPoints,
-        ruleId: rule.id,
-        ruleCode: rule.code,
-        reviewedBy: reviewerUserId,
-        reviewedAt: occurredAt,
-        remark: reviewRemark,
-      },
-    });
-    const scoreRecord = await tx.scoreRecord.create({
-      data: {
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      // 原子占用：仅当仍为 PENDING 时更新，并发重复审核会得到 count 0
+      const claimed = await tx.scoreApplication.updateMany({
+        where: { id, status: "PENDING" },
+        data: {
+          status: "APPROVED",
+          approvedPoints,
+          ruleId: rule.id,
+          ruleCode: rule.code,
+          reviewedBy: reviewerUserId,
+          reviewedAt,
+          remark: reviewRemark,
+          ...(approvedOrderKey ? { approvedOrderKey } : {}),
+        },
+      });
+
+      if (claimed.count === 0) {
+        throw new ScoreApplicationReviewError("该申请已处理，不能重复审核");
+      }
+
+      if (application.tripId) {
+        const existingScoreRecord = await tx.scoreRecord.findFirst({
+          where: {
+            scoreYearId: application.scoreYearId,
+            leaderId: application.leaderId,
+            tripId: application.tripId,
+            ruleCode: rule.code,
+            status: "EFFECTIVE",
+          },
+          select: { id: true },
+        });
+
+        if (existingScoreRecord) {
+          throw new ScoreApplicationReviewError("该申请对应积分已生成，不能重复生成");
+        }
+      }
+
+      const capResult = await applyScoreApplicationCaps({
+        db: tx,
         scoreYearId: application.scoreYearId,
         leaderId: application.leaderId,
-        tripId: application.tripId,
+        rule,
+        approvedPoints,
         applicationId: application.id,
-        violationEventId: null,
-        ruleId: rule.id,
-        ruleCode: rule.code,
-        ruleName: rule.name,
-        ruleVersion: rule.version,
-        rulePoints: capResult.effectivePoints,
-        ruleSnapshotJson: JSON.stringify(snapshot),
-        sourceType: "APPLICATION",
-        sourceId: application.id,
-        category: rule.category,
-        item: rule.name || application.title,
-        direction: "ADD",
-        rawPoints: approvedPoints,
-        effectivePoints: capResult.effectivePoints,
-        status: "EFFECTIVE",
-        occurredAt,
-        approvedBy: reviewerUserId,
-        approvedAt: occurredAt,
-        remark: reviewRemark
-          ? `${application.title}；审核备注：${reviewRemark}`
-          : application.title,
-      },
-    });
-
-    await tx.auditLog.create({
-      data: {
-        userId: reviewerUserId,
-        action: "SCORE_APPLICATION_APPROVED",
-        targetType: "ScoreApplication",
-        targetId: application.id,
-        afterJson: JSON.stringify({
-          applicationId: application.id,
-          leaderId: application.leaderId,
+        ruleConfig,
+      });
+      const snapshot = {
+        ...buildRuleSnapshot(rule),
+        application: {
+          id: application.id,
           type: application.type,
-          ruleCode: rule.code,
+          title: application.title,
+          evidenceText: application.evidenceText,
+          evidenceUrl: application.evidenceUrl,
+          evidenceJson: application.evidenceJson,
+          orderNo: application.orderNo,
           requestedPoints: application.requestedPoints,
           approvedPoints,
-          reviewerUserId,
-          scoreRecordId: scoreRecord.id,
-        }),
-      },
+          effectivePoints: capResult.effectivePoints,
+          cap: capResult.capSnapshot,
+        },
+      };
+      const updated = await tx.scoreApplication.findUniqueOrThrow({ where: { id } });
+      const scoreRecord = await tx.scoreRecord.create({
+        data: {
+          scoreYearId: application.scoreYearId,
+          leaderId: application.leaderId,
+          tripId: application.tripId,
+          applicationId: application.id,
+          violationEventId: null,
+          ruleId: rule.id,
+          ruleCode: rule.code,
+          ruleName: rule.name,
+          ruleVersion: rule.version,
+          rulePoints: capResult.effectivePoints,
+          ruleSnapshotJson: JSON.stringify(snapshot),
+          sourceType: "APPLICATION",
+          sourceId: application.id,
+          category: rule.category,
+          item: rule.name || application.title,
+          direction: "ADD",
+          rawPoints: approvedPoints,
+          effectivePoints: capResult.effectivePoints,
+          status: "EFFECTIVE",
+          occurredAt: application.submittedAt,
+          approvedBy: reviewerUserId,
+          approvedAt: reviewedAt,
+          remark: reviewRemark
+            ? `${application.title}；审核备注：${reviewRemark}`
+            : application.title,
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          userId: reviewerUserId,
+          action: "SCORE_APPLICATION_APPROVED",
+          targetType: "ScoreApplication",
+          targetId: application.id,
+          afterJson: JSON.stringify({
+            applicationId: application.id,
+            leaderId: application.leaderId,
+            type: application.type,
+            ruleCode: rule.code,
+            orderNo: application.orderNo,
+            requestedPoints: application.requestedPoints,
+            approvedPoints,
+            reviewerUserId,
+            scoreRecordId: scoreRecord.id,
+          }),
+        },
+      });
+
+      return { application: updated, scoreRecord };
     });
 
-    return { application: updated, scoreRecord };
-  });
+    return { ok: true as const, ...result };
+  } catch (error) {
+    if (error instanceof ScoreApplicationReviewError) {
+      return { ok: false as const, status: 400, message: error.message };
+    }
 
-  return { ok: true as const, ...result };
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      return {
+        ok: false as const,
+        status: 400,
+        message: "该复购订单或该申请已生成过积分，不能重复审核",
+      };
+    }
+
+    throw error;
+  }
 }
+
+class ScoreApplicationReviewError extends Error {}
 
 export async function rejectScoreApplication(
   id: string,
@@ -617,6 +717,61 @@ export async function rejectScoreApplication(
   return { ok: true as const, application: updated };
 }
 
+export async function requestMoreInfoScoreApplication(
+  id: string,
+  reviewerUserId: string,
+  reason: string,
+) {
+  const application = await getAdminScoreApplicationDetail(id);
+  const normalizedReason = reason.trim();
+
+  if (!application) {
+    return { ok: false as const, status: 404, message: "申请不存在" };
+  }
+
+  if (application.status !== "PENDING") {
+    return { ok: false as const, status: 400, message: "该申请已处理，不能重复审核" };
+  }
+
+  if (!normalizedReason) {
+    return { ok: false as const, status: 400, message: "请填写需要补充的内容说明" };
+  }
+
+  const reviewedAt = new Date();
+  const updated = await prisma.$transaction(async (tx) => {
+    const returned = await tx.scoreApplication.update({
+      where: { id },
+      data: {
+        status: "NEEDS_MORE_INFO",
+        reviewedBy: reviewerUserId,
+        reviewedAt,
+        rejectReason: normalizedReason,
+      },
+    });
+
+    await tx.auditLog.create({
+      data: {
+        userId: reviewerUserId,
+        action: "SCORE_APPLICATION_NEEDS_MORE_INFO",
+        targetType: "ScoreApplication",
+        targetId: id,
+        afterJson: JSON.stringify({
+          applicationId: id,
+          leaderId: application.leaderId,
+          type: application.type,
+          ruleCode: application.ruleCode,
+          reviewerUserId,
+          reason: normalizedReason,
+        }),
+      },
+    });
+
+    return returned;
+  });
+
+  return { ok: true as const, application: updated };
+}
+
 export const scoreApplicationInclude = {
   leader: {
     select: {
@@ -653,7 +808,7 @@ export const scoreApplicationInclude = {
       points: true,
     },
   },
-  scoreRecords: {
+  scoreRecord: {
     select: { id: true, effectivePoints: true, status: true },
   },
 } satisfies Prisma.ScoreApplicationInclude;
@@ -735,6 +890,7 @@ async function findRepurchaseOrderOwner({
 }
 
 async function applyScoreApplicationCaps({
+  db,
   scoreYearId,
   leaderId,
   rule,
@@ -742,6 +898,7 @@ async function applyScoreApplicationCaps({
   applicationId,
   ruleConfig,
 }: {
+  db: Prisma.TransactionClient;
   scoreYearId: string;
   leaderId: string;
   rule: ScoreRule;
@@ -760,7 +917,7 @@ async function applyScoreApplicationCaps({
   }
 
   const cap = Math.min(...caps);
-  const used = await prisma.scoreRecord.aggregate({
+  const used = await db.scoreRecord.aggregate({
     where: {
       scoreYearId,
       leaderId,
@@ -832,6 +989,16 @@ function normalizeRequiredString(value: unknown) {
 
 function normalizeOptionalString(value: unknown) {
   const normalized = normalizeRequiredString(value);
+  return normalized || null;
+}
+
+// 订单号归一化：去除所有空白并统一大写，避免加空格绕过"一单一队长"查重
+function normalizeOrderNo(value: unknown) {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalized = value.replace(/\s+/g, "").toUpperCase();
   return normalized || null;
 }
 

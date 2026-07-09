@@ -1,3 +1,4 @@
+import { formatDateCN, formatDateTimeCN } from "@/lib/utils/datetime";
 import Link from "next/link";
 import type { ScoreCategory, ViolationStatus } from "@prisma/client";
 import { Badge } from "@/components/ui/badge";
@@ -273,11 +274,11 @@ function buildPageHref(params: Record<string, string | string[] | undefined>, pa
 
 function formatDateTime(value: Date | null) {
   if (!value) return "-";
-  return value.toISOString().slice(0, 19).replace("T", " ");
+  return formatDateTimeCN(value);
 }
 
 function formatDate(value: Date) {
-  return value.toISOString().slice(0, 10);
+  return formatDateCN(value);
 }
 
 function formatPoints(value: number) {

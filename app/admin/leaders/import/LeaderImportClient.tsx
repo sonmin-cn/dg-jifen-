@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDateCN, formatDateTimeCN } from "@/lib/utils/datetime";
 import { ChangeEvent, useMemo, useState } from "react";
 import { Upload } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -273,7 +274,7 @@ function formatDate(value: string | null) {
   }
 
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "-" : date.toISOString().slice(0, 10);
+  return formatDateCN(date);
 }
 
 function formatStatus(status: string | null) {

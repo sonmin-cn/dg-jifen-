@@ -1,15 +1,16 @@
 # Next Actions
 
-* [ ] 1. 检查 `.codex` 三个文件 diff 和 staged 文件清单，确认不包含密钥、`.env`、数据库文件或 `backups/`。
-* [ ] 2. 提交 `.codex` 推送记录更新，提交信息 `chore: record github push state`。
-* [ ] 3. 切换到 `main` 并执行 `git merge --ff-only feat/leader-score-rules-v2-2`。
-* [ ] 4. 执行 `git push origin main`。
-* [ ] 5. 推送后检查 `git status -sb`、`git log --oneline --decorate -5`、`git ls-remote --heads origin main`。
-* [ ] 6. 更新 `.codex` 状态文件，记录 `main` 已推送到 GitHub。
+* [ ] 1. staging 执行迁移前核对 ScoreRecord.applicationId 存量重复。
+* [ ] 2. staging 执行 prisma migrate deploy 并按 TASK_STATE.md 验证清单回归。
+* [ ] 3. 用户确认后合并 worktree-fix-review-findings 回 main。
 
 ## Done This Session
 
-* [x] 已按恢复流程读取 `AGENTS.md` 和 `.codex` 状态文件。
-* [x] 已执行 `git status -sb`、`git branch -vv`、`git fetch origin` 并检查 fetch 后远端状态。
-* [x] 已确认 `main` 和 `origin/main` 都是 `feat/leader-score-rules-v2-2` 的祖先，满足 fast-forward 条件。
-* [x] 已确认未跟踪 `backups/` 不属于本次提交或推送范围。
+* [x] 时区统一（Asia/Shanghai）覆盖 24 个文件。
+* [x] 复购订单号结构化 + 唯一键防重。
+* [x] 审核事务化 + 按提交时点取规则。
+* [x] 退回补充（NEEDS_MORE_INFO）+ 重新提交闭环。
+* [x] 人工绑定申请闭环。
+* [x] 登录文案 / SESSION_SECRET 强校验 / 队长会话 7 天。
+* [x] 榜单脱敏、移动端卡片、HEIC 文案。
+* [x] typecheck + build 通过。

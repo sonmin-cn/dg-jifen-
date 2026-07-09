@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDateCN, formatDateTimeCN } from "@/lib/utils/datetime";
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -549,5 +550,5 @@ function formatDateInput(value: Date | string) {
 }
 
 function formatDateTime(value: Date | string) {
-  return new Date(value).toISOString().slice(0, 19).replace("T", " ");
+  return formatDateTimeCN(value);
 }

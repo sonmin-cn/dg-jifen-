@@ -1,3 +1,4 @@
+import { formatDateCN, formatDateTimeCN } from "@/lib/utils/datetime";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
@@ -157,7 +158,7 @@ function formatDate(value: Date | null) {
     return "-";
   }
 
-  return value.toISOString().slice(0, 10);
+  return formatDateCN(value);
 }
 
 function formatDateTime(value: Date | null) {
@@ -165,5 +166,5 @@ function formatDateTime(value: Date | null) {
     return "-";
   }
 
-  return value.toISOString().slice(0, 19).replace("T", " ");
+  return formatDateTimeCN(value);
 }

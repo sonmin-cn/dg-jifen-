@@ -1,3 +1,4 @@
+import { formatDateCN, formatDateTimeCN } from "@/lib/utils/datetime";
 import type { ScoreYearStatus } from "@prisma/client";
 
 export const SCORE_YEAR_STATUS_LABELS: Record<ScoreYearStatus, string> = {
@@ -16,5 +17,5 @@ export const SCORE_YEAR_STATUS_OPTIONS: ScoreYearStatus[] = [
 
 export function formatScoreYearDate(value: Date | null | undefined) {
   if (!value) return "-";
-  return value.toISOString().slice(0, 10);
+  return formatDateCN(value);
 }

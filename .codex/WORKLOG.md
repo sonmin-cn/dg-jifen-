@@ -958,3 +958,26 @@
 * 为什么这样做：完成用户要求的合并前备案、GitHub 远端备份和桌面主项目合并，同时保持项目恢复状态准确。
 * 验证结果：源分支 `git diff --check` 通过；`git push -u origin codex/cloudbase-run-migration` 成功；桌面 `git merge --ff-only codex/cloudbase-run-migration` 成功；首次 `npm run typecheck` 因缺少本地依赖失败，运行 `npm install` 后 `npm run typecheck` 通过；`npm run build` 通过。
 * 下一步：提交本条状态收口，推送源分支并让桌面目标工作树再快进一次；之后回到 MySQL 备份、发布归档和 1-3 天小范围内部试运行。
+
+## 2026-07-09 - 工作树漏洞修复开始
+
+* 做了什么：根据评审报告在工作树 worktree-fix-review-findings 中启动漏洞修复任务，建立任务清单。
+* 修改了哪些文件：.codex/TASK_STATE.md、.codex/NEXT_ACTIONS.md（重写为当前任务）。
+* 为什么这样做：遵循 AGENTS.md 复杂任务必须先建状态文件的要求。
+* 验证结果：尚未开始验证。
+* 下一步：实施时区统一与 schema 变更。
+
+## 2026-07-09 - 评审漏洞修复完成（工作树）
+
+* 做了什么：完成评审报告 P0/P1 全部漏洞修复与 P2 快速体验修复，详见 TASK_STATE.md Modified Files。
+* 修改了哪些文件：35 个文件改动 + 5 个新增文件 + 1 个迁移目录。
+* 为什么这样做：修复复购归属绕过、审核并发窗口、规则时点口径、时区显示、会话密钥回退等评审发现的问题。
+* 验证结果：prisma validate/generate、typecheck、next build 全部通过；无运行时验证（本地无 MySQL），已留 staging 回归清单。
+* 下一步：staging 执行迁移并人工回归，用户决定是否合并回 main。
+
+## 2026-07-09 - 生成 CloudBase Staging 部署包
+
+* 做了什么：将工作树当前修复版本打包为 ~/Desktop/leader-score-system-staging-fix-20260709.zip（440K），排除 node_modules/.next/.git/.env/backups/uploads。
+* 为什么这样做：用户决定跳过本地检验，直接在 CloudBase Staging 测试环境验证。
+* 验证结果：包内含新迁移 20260709090000、全部新增文件；无敏感文件。
+* 下一步：Staging 先执行 prisma migrate deploy（先跑重复数据核对 SQL），再上传部署包，按回归清单验证。

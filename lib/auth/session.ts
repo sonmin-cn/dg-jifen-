@@ -7,6 +7,8 @@ import type { UserRole } from "@prisma/client";
 export const SESSION_COOKIE_NAME = "leader_score_session";
 
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 8;
+// 队长端以手机为主、使用分散，8 小时过期导致频繁重登；管理端保持 8 小时
+const LEADER_SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
 
 export type SessionPayload = {
   userId: string;
@@ -17,7 +19,22 @@ export type SessionPayload = {
 };
 
 function getSessionSecret() {
-  return process.env.SESSION_SECRET || "local-dev-session-secret-change-me";
+  const secret = process.env.SESSION_SECRET;
+
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      // 生产环境缺失密钥时任何人都能伪造会话，必须直接失败而不是回退到默认值
+      throw new Error("SESSION_SECRET 未配置：生产环境必须设置该环境变量");
+    }
+
+    return "local-dev-session-secret-change-me";
+  }
+
+  return secret;
+}
+
+function getSessionMaxAgeSeconds(role: UserRole) {
+  return role === "LEADER" ? LEADER_SESSION_MAX_AGE_SECONDS : SESSION_MAX_AGE_SECONDS;
 }
 
 function base64UrlEncode(value: string) {
@@ -37,7 +54,7 @@ export function createSessionToken(
 ) {
   const payload: SessionPayload = {
     ...user,
-    exp: Math.floor(Date.now() / 1000) + SESSION_MAX_AGE_SECONDS,
+    exp: Math.floor(Date.now() / 1000) + getSessionMaxAgeSeconds(user.role),
   };
   const encodedPayload = base64UrlEncode(JSON.stringify(payload));
   const signature = sign(encodedPayload);
@@ -130,7 +147,7 @@ export function createLoginSession(
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
-    maxAge: SESSION_MAX_AGE_SECONDS,
+    maxAge: getSessionMaxAgeSeconds(user.role),
     path: "/",
   });
 }

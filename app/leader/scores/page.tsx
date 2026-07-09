@@ -1,3 +1,4 @@
+import { formatDateCN, formatDateTimeCN } from "@/lib/utils/datetime";
 import { redirect } from "next/navigation";
 import type { ScoreCategory, ScoreDirection } from "@prisma/client";
 import { Badge } from "@/components/ui/badge";
@@ -212,7 +213,7 @@ function normalizeDirection(value: string): ScoreDirection | undefined {
 }
 
 function formatDate(value: Date) {
-  return value.toISOString().slice(0, 10);
+  return formatDateCN(value);
 }
 
 function formatPoints(value: number) {

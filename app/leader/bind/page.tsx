@@ -4,6 +4,7 @@ import { requireRole } from "@/lib/auth/permissions";
 import { prisma } from "@/lib/db/prisma";
 import { getLeaderBindingState, maskPhone } from "@/lib/services/leader-binding";
 import { BindRequestButton } from "@/app/leader/bind/BindRequestButton";
+import { ManualBindRequestForm } from "@/app/leader/bind/ManualBindRequestForm";
 import { BackButton } from "@/components/back-button";
 import { formatLeaderDisplayLevel } from "@/lib/constants/leaders";
 
@@ -44,9 +45,11 @@ export default async function LeaderBindPage() {
     return (
       <MessageCard
         title="未找到匹配档案"
-        message="未找到匹配的队长档案，请联系队长主管核实手机号。"
+        message="未找到与你注册手机号一致的队长档案。如果你换过手机号，可在下方申请人工绑定；仍有问题请联系队长主管。"
         rejectReason={state.latestRejectReason}
-      />
+      >
+        <ManualBindRequestForm />
+      </MessageCard>
     );
   }
 
@@ -102,10 +105,12 @@ function MessageCard({
   title,
   message,
   rejectReason,
+  children,
 }: {
   title: string;
   message: string;
   rejectReason?: string | null;
+  children?: React.ReactNode;
 }) {
   return (
     <div className="mt-6 md:mt-8">
@@ -118,6 +123,7 @@ function MessageCard({
             上一次申请被拒绝：{rejectReason}
           </p>
         ) : null}
+        {children}
       </section>
     </div>
   );

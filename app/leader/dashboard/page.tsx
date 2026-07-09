@@ -1,3 +1,4 @@
+import { formatDateCN, formatDateTimeCN } from "@/lib/utils/datetime";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Award, FilePlus, FileText, ListChecks, Trophy, TrendingUp, WalletCards } from "lucide-react";
@@ -201,7 +202,7 @@ function Td({
 }
 
 function formatDate(value: Date) {
-  return value.toISOString().slice(0, 10);
+  return formatDateCN(value);
 }
 
 function formatPoints(value: number) {

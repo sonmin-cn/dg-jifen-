@@ -92,7 +92,7 @@ export default async function LeaderRankingPage() {
                   <div className="flex items-center gap-2">
                     <Badge variant={row.rank <= 3 ? "secondary" : "outline"}>#{row.rank}</Badge>
                     <p className="truncate font-medium">
-                      {row.leader.nickname || row.leader.realName}
+                      {row.leader.nickname || maskRealName(row.leader.realName)}
                     </p>
                   </div>
                   <p className="mt-1 text-sm text-muted-foreground">
@@ -113,6 +113,13 @@ export default async function LeaderRankingPage() {
       </section>
     </div>
   );
+}
+
+// 榜单面向全体队长公开，无昵称时对真名脱敏，避免公开真实姓名
+function maskRealName(name: string) {
+  if (name.length <= 1) return name;
+  if (name.length === 2) return `${name[0]}*`;
+  return `${name[0]}${"*".repeat(name.length - 2)}${name[name.length - 1]}`;
 }
 
 function Info({ label, value }: { label: string; value: string }) {

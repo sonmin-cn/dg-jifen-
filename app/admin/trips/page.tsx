@@ -1,3 +1,4 @@
+import { formatDateCN, formatDateTimeCN } from "@/lib/utils/datetime";
 import Link from "next/link";
 import type { Prisma, TripStatus } from "@prisma/client";
 import { FileSpreadsheet, Search } from "lucide-react";
@@ -239,7 +240,7 @@ function parseDate(value: string, endOfDay = false) {
 }
 
 function formatDate(value: Date) {
-  return value.toISOString().slice(0, 10);
+  return formatDateCN(value);
 }
 
 function buildPageHref(

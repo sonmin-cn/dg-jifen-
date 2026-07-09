@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser, getHomePathForRole } from "@/lib/auth/session";
 import { LoginForm } from "@/app/login/LoginForm";
@@ -16,18 +15,13 @@ export default async function LoginPage() {
         <div className="mb-6">
           <h1 className="text-2xl font-semibold md:text-3xl">登录</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            使用 seed 测试账号的用户名和密码登录。
+            使用管理员分配的账号和密码登录。
           </p>
         </div>
         <LoginForm />
-        <div className="mt-6 flex justify-between gap-4 text-sm text-muted-foreground">
-          <Link className="hover:text-foreground" href="/admin/dashboard">
-            管理后台
-          </Link>
-          <Link className="hover:text-foreground" href="/leader/dashboard">
-            队长端
-          </Link>
-        </div>
+        <p className="mt-6 text-sm text-muted-foreground">
+          忘记密码或没有账号？请联系队长主管处理。
+        </p>
       </section>
     </main>
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDateCN, formatDateTimeCN } from "@/lib/utils/datetime";
 import { FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertTriangle } from "lucide-react";
@@ -226,7 +227,7 @@ function Field({
 }
 
 function formatDate(value: Date | string) {
-  return new Date(value).toISOString().slice(0, 10);
+  return formatDateCN(value);
 }
 
 function formatDateTimeInput(value: Date) {

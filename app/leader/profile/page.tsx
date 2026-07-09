@@ -1,3 +1,4 @@
+import { formatDateCN, formatDateTimeCN } from "@/lib/utils/datetime";
 import { Badge } from "@/components/ui/badge";
 import { prisma } from "@/lib/db/prisma";
 import { requireRole } from "@/lib/auth/permissions";
@@ -97,5 +98,5 @@ function formatDate(value: Date | null) {
     return "-";
   }
 
-  return value.toISOString().slice(0, 10);
+  return formatDateCN(value);
 }
