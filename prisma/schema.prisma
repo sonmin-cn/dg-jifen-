@@ -364,45 +364,46 @@ model TripLeader {
 }
 
 model ScoreApplication {
-  id              String                 @id @default(cuid())
-  scoreYearId     String
-  scoreYear       ScoreYear              @relation(fields: [scoreYearId], references: [id], onDelete: Restrict)
-  leaderId        String
-  leader          Leader                 @relation(fields: [leaderId], references: [id], onDelete: Restrict)
-  tripId          String?
-  trip            Trip?                  @relation(fields: [tripId], references: [id], onDelete: SetNull)
-  ruleId          String?
-  rule            ScoreRule?             @relation(fields: [ruleId], references: [id], onDelete: SetNull)
-  ruleCode        String?
-  type            ScoreApplicationType
-  title           String                 @default("")
-  description     String?                @db.Text
-  evidenceText    String?                @db.Text
-  evidenceUrl     String?                @db.Text
-  evidenceJson    String?                @db.Text
-  // oneOrderOneLeader 规则（复购）的归一化订单号；approvedOrderKey 仅审核通过时写入，
-  // 唯一约束保证同一订单全局只能审核通过一次
-  orderNo          String?
-  approvedOrderKey String?               @unique
-  requestedPoints Float
-  approvedPoints  Float?
-  status          ScoreApplicationStatus @default(PENDING)
-  payloadJson     String?                @db.Text
-  submittedAt     DateTime               @default(now())
-  reviewedBy      String?
-  reviewedAt      DateTime?
-  rejectReason    String?                @db.Text
-  remark          String?                @db.Text
-  createdAt       DateTime               @default(now())
-  updatedAt       DateTime               @default(now()) @updatedAt
-  scoreRecord     ScoreRecord?
-  socialPost      SocialPost?
-  repurchaseClaim RepurchaseClaim?
+  id                     String                 @id @default(cuid())
+  scoreYearId            String
+  scoreYear              ScoreYear              @relation(fields: [scoreYearId], references: [id], onDelete: Restrict)
+  leaderId               String
+  leader                 Leader                 @relation(fields: [leaderId], references: [id], onDelete: Restrict)
+  tripId                 String?
+  trip                   Trip?                  @relation(fields: [tripId], references: [id], onDelete: SetNull)
+  ruleId                 String?
+  rule                   ScoreRule?             @relation(fields: [ruleId], references: [id], onDelete: SetNull)
+  ruleCode               String?
+  type                   ScoreApplicationType
+  title                  String                 @default("")
+  description            String?                @db.Text
+  evidenceText           String?                @db.Text
+  evidenceUrl            String?                @db.Text
+  evidenceJson           String?                @db.Text
+  repurchaseCustomerName String?
+  // 旧版复购申请字段，仅保留历史数据兼容；新申请不再写入或据此查重
+  orderNo                String?
+  approvedOrderKey       String?                @unique
+  requestedPoints        Float
+  approvedPoints         Float?
+  status                 ScoreApplicationStatus @default(PENDING)
+  payloadJson            String?                @db.Text
+  submittedAt            DateTime               @default(now())
+  reviewedBy             String?
+  reviewedAt             DateTime?
+  rejectReason           String?                @db.Text
+  remark                 String?                @db.Text
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @default(now()) @updatedAt
+  scoreRecord            ScoreRecord?
+  socialPost             SocialPost?
+  repurchaseClaim        RepurchaseClaim?
 
   @@index([scoreYearId, status, type])
   @@index([leaderId, submittedAt])
   @@index([ruleId])
   @@index([ruleCode])
+  @@index([repurchaseCustomerName])
   @@index([orderNo])
 }
 

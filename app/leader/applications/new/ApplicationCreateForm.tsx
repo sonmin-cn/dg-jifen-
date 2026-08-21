@@ -28,7 +28,7 @@ export type ApplicationInitialValues = {
   description: string;
   evidenceText: string;
   evidenceUrl: string;
-  orderNo: string;
+  repurchaseCustomerName: string;
   evidenceImages: EvidenceImage[];
 };
 
@@ -67,7 +67,9 @@ export function ApplicationCreateForm({
     const tripId = String(payload.tripId || "").trim();
     const evidenceText = String(payload.evidenceText || "").trim();
     const evidenceUrl = String(payload.evidenceUrl || "").trim();
-    const orderNo = String(payload.orderNo || "").trim();
+    const repurchaseCustomerName = String(
+      payload.repurchaseCustomerName || "",
+    ).trim();
 
     if (!selectedRuleId || !rule) {
       setError("请选择积分规则");
@@ -81,8 +83,8 @@ export function ApplicationCreateForm({
       return;
     }
 
-    if (rule.requireOrderNo && !orderNo) {
-      setError("请填写复购订单号");
+    if (repurchaseCustomerName.length > 100) {
+      setError("老用户姓名不能超过 100 个字符");
       setIsSubmitting(false);
       return;
     }
@@ -101,7 +103,7 @@ export function ApplicationCreateForm({
           ...payload,
           ruleId: selectedRuleId,
           tripId: tripId || null,
-          orderNo: orderNo || null,
+          repurchaseCustomerName: repurchaseCustomerName || null,
           resubmitOfId: initial?.resubmitOfId || null,
           evidenceImages,
         }),
@@ -255,23 +257,24 @@ export function ApplicationCreateForm({
             </p>
           ) : null}
         </div>
-        {selectedRule?.requireOrderNo ? (
+        {selectedRule?.isRepurchase ? (
           <div className="space-y-2 md:col-span-2">
-            <Label className="flex items-center gap-2" htmlFor="orderNo">
-              复购订单号
+            <Label className="flex items-center gap-2" htmlFor="repurchaseCustomerName">
+              老用户姓名
               <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-normal text-muted-foreground">
-                必填
+                选填
               </span>
             </Label>
             <Input
               className="h-11 text-base md:text-sm"
-              defaultValue={initial?.orderNo || ""}
-              id="orderNo"
-              name="orderNo"
-              placeholder="填写报名系统中的订单号，同一订单只能归属 1 名队长"
+              defaultValue={initial?.repurchaseCustomerName || ""}
+              id="repurchaseCustomerName"
+              maxLength={100}
+              name="repurchaseCustomerName"
+              placeholder="填写完成复购的老用户姓名（选填）"
             />
             <p className="text-xs text-muted-foreground">
-              订单号用于复购归属查重，请从报名订单中完整复制。
+              如方便可填写，便于后台核实；不填写也可以提交申请。
             </p>
           </div>
         ) : null}

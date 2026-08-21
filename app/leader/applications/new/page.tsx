@@ -57,7 +57,7 @@ export default async function NewLeaderApplicationPage({ searchParams }: PagePro
         description: original.description || "",
         evidenceText: evidence.text || "",
         evidenceUrl: evidence.url || "",
-        orderNo: original.orderNo || "",
+        repurchaseCustomerName: original.repurchaseCustomerName || "",
         evidenceImages: evidence.images,
       };
       resubmitNotice = original.rejectReason;

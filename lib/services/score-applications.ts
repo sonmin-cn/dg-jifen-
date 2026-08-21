@@ -21,7 +21,7 @@ export type CreateLeaderApplicationInput = {
   evidenceText?: unknown;
   evidenceUrl?: unknown;
   evidenceImages?: unknown;
-  orderNo?: unknown;
+  repurchaseCustomerName?: unknown;
   resubmitOfId?: unknown;
 };
 
@@ -94,7 +94,7 @@ export type LeaderApplicationRuleOption = {
   points: number;
   description: string | null;
   requireTrip: boolean;
-  requireOrderNo: boolean;
+  isRepurchase: boolean;
 };
 
 type LeaderApplicationRuleConfig = {
@@ -105,7 +105,6 @@ type LeaderApplicationRuleConfig = {
   annualCap?: number;
   maxPointsPerPost?: number;
   heartCountBased?: boolean;
-  oneOrderOneLeader?: boolean;
   exclusiveWith?: string[];
 };
 
@@ -125,7 +124,6 @@ export function parseLeaderApplicationRuleConfig(configJson: string | null | und
       annualCap: parseOptionalPositiveNumber(parsed.annualCap),
       maxPointsPerPost: parseOptionalPositiveNumber(parsed.maxPointsPerPost),
       heartCountBased: parsed.heartCountBased === true,
-      oneOrderOneLeader: parsed.oneOrderOneLeader === true,
       exclusiveWith: Array.isArray(parsed.exclusiveWith)
         ? parsed.exclusiveWith.filter((item): item is string => typeof item === "string")
         : [],
@@ -166,7 +164,7 @@ export async function getLeaderApplicationRules() {
       points: rule.points,
       description: rule.description,
       requireTrip: config.requireTrip,
-      requireOrderNo: config.oneOrderOneLeader === true,
+      isRepurchase: rule.code === "REPURCHASE_COMPLETED",
     }));
 }
 
@@ -190,13 +188,19 @@ export async function createLeaderScoreApplication(
   const description = normalizeOptionalString(input.description);
   const evidenceText = normalizeOptionalString(input.evidenceText);
   const evidenceUrl = normalizeOptionalString(input.evidenceUrl);
-  const orderNo = normalizeOrderNo(input.orderNo);
+  const repurchaseCustomerName = normalizeOptionalString(
+    input.repurchaseCustomerName,
+  );
   const resubmitOfId = normalizeOptionalString(input.resubmitOfId);
   const evidenceImagesResult = normalizeEvidenceImages(input.evidenceImages);
   const now = new Date();
 
   if (!ruleId) {
     return { ok: false as const, status: 400, message: "请选择积分规则" };
+  }
+
+  if (repurchaseCustomerName && repurchaseCustomerName.length > 100) {
+    return { ok: false as const, status: 400, message: "老用户姓名不能超过 100 个字符" };
   }
 
   if (!evidenceImagesResult.ok) {
@@ -256,10 +260,6 @@ export async function createLeaderScoreApplication(
 
   if (tripId && !trip) {
     return { ok: false as const, status: 400, message: "关联团期不存在或你未参与该团期" };
-  }
-
-  if (ruleConfig.oneOrderOneLeader && !orderNo) {
-    return { ok: false as const, status: 400, message: "请填写复购订单号" };
   }
 
   let resubmitOf: { id: string; status: ScoreApplicationStatus } | null = null;
@@ -322,40 +322,6 @@ export async function createLeaderScoreApplication(
     }
   }
 
-  if (ruleConfig.oneOrderOneLeader && orderNo) {
-    const existingOrderApplication = await prisma.scoreApplication.findFirst({
-      where: {
-        ruleCode,
-        orderNo,
-        status: { in: ["PENDING", "APPROVED"] },
-      },
-      select: { id: true, leaderId: true },
-    });
-
-    if (existingOrderApplication) {
-      return {
-        ok: false as const,
-        status: 400,
-        message:
-          existingOrderApplication.leaderId === leader.id
-            ? "该复购订单已提交过申请，不能重复申请"
-            : "该复购订单已归属其他队长",
-      };
-    }
-  }
-
-  // 兼容历史数据：旧申请没有结构化订单号，仍按证明文本/链接兜底查重
-  if (ruleConfig.oneOrderOneLeader && (evidenceText || evidenceUrl)) {
-    const existingOrderOwner = await findRepurchaseOrderOwner({
-      ruleCode,
-      evidenceText,
-      evidenceUrl,
-    });
-    if (existingOrderOwner && existingOrderOwner.leaderId !== leader.id) {
-      return { ok: false as const, status: 400, message: "该复购订单已归属其他队长" };
-    }
-  }
-
   const application = await prisma.$transaction(async (tx) => {
     const created = await tx.scoreApplication.create({
       data: {
@@ -369,7 +335,7 @@ export async function createLeaderScoreApplication(
         evidenceText,
         evidenceUrl,
         evidenceJson: buildEvidenceJson({ evidenceText, evidenceUrl, evidenceImages }),
-        orderNo,
+        repurchaseCustomerName,
         requestedPoints: rule.points,
         ruleId: rule.id,
         ruleCode,
@@ -398,7 +364,7 @@ export async function createLeaderScoreApplication(
           leaderId: leader.id,
           type,
           ruleCode,
-          orderNo,
+          repurchaseCustomerName,
           resubmitOfId: resubmitOf?.id || null,
           requestedPoints: rule.points,
           evidenceImageCount: evidenceImages.length,
@@ -516,10 +482,6 @@ export async function approveScoreApplication(
   }
 
   const reviewRemark = normalizeOptionalString(input.reviewRemark);
-  const approvedOrderKey =
-    ruleConfig.oneOrderOneLeader && application.orderNo
-      ? `${rule.code}:${application.orderNo}`
-      : null;
 
   try {
     const result = await prisma.$transaction(async (tx) => {
@@ -534,7 +496,6 @@ export async function approveScoreApplication(
           reviewedBy: reviewerUserId,
           reviewedAt,
           remark: reviewRemark,
-          ...(approvedOrderKey ? { approvedOrderKey } : {}),
         },
       });
 
@@ -577,6 +538,7 @@ export async function approveScoreApplication(
           evidenceText: application.evidenceText,
           evidenceUrl: application.evidenceUrl,
           evidenceJson: application.evidenceJson,
+          repurchaseCustomerName: application.repurchaseCustomerName,
           orderNo: application.orderNo,
           requestedPoints: application.requestedPoints,
           approvedPoints,
@@ -626,6 +588,7 @@ export async function approveScoreApplication(
             leaderId: application.leaderId,
             type: application.type,
             ruleCode: rule.code,
+            repurchaseCustomerName: application.repurchaseCustomerName,
             orderNo: application.orderNo,
             requestedPoints: application.requestedPoints,
             approvedPoints,
@@ -651,7 +614,7 @@ export async function approveScoreApplication(
       return {
         ok: false as const,
         status: 400,
-        message: "该复购订单或该申请已生成过积分，不能重复审核",
+        message: "该申请已生成过积分，不能重复审核",
       };
     }
 
@@ -867,28 +830,6 @@ async function countTripApplications({
   });
 }
 
-async function findRepurchaseOrderOwner({
-  ruleCode,
-  evidenceText,
-  evidenceUrl,
-}: {
-  ruleCode: string;
-  evidenceText: string | null;
-  evidenceUrl: string | null;
-}) {
-  return prisma.scoreApplication.findFirst({
-    where: {
-      ruleCode,
-      status: { in: ["PENDING", "APPROVED"] },
-      OR: [
-        ...(evidenceText ? [{ evidenceText }] : []),
-        ...(evidenceUrl ? [{ evidenceUrl }] : []),
-      ],
-    },
-    select: { id: true, leaderId: true },
-  });
-}
-
 async function applyScoreApplicationCaps({
   db,
   scoreYearId,
@@ -973,6 +914,7 @@ function buildApplicationWhere(params: AdminScoreApplicationParams) {
       { evidenceText: { contains: params.keyword } },
       { evidenceUrl: { contains: params.keyword } },
       { evidenceJson: { contains: params.keyword } },
+      { repurchaseCustomerName: { contains: params.keyword } },
       { leader: { realName: { contains: params.keyword } } },
       { leader: { nickname: { contains: params.keyword } } },
       { leader: { phone: { contains: params.keyword } } },
@@ -989,16 +931,6 @@ function normalizeRequiredString(value: unknown) {
 
 function normalizeOptionalString(value: unknown) {
   const normalized = normalizeRequiredString(value);
-  return normalized || null;
-}
-
-// 订单号归一化：去除所有空白并统一大写，避免加空格绕过"一单一队长"查重
-function normalizeOrderNo(value: unknown) {
-  if (typeof value !== "string") {
-    return null;
-  }
-
-  const normalized = value.replace(/\s+/g, "").toUpperCase();
   return normalized || null;
 }
 

@@ -88,7 +88,10 @@ export default async function AdminScoreApplicationDetailPage({ params }: PagePr
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           <Info label="证明说明" value={evidence.text} wide />
           <Info label="证明链接" value={evidence.url} wide />
-          <Info label="复购订单号" value={application.orderNo} wide />
+          <Info label="老用户姓名" value={application.repurchaseCustomerName} wide />
+          {application.orderNo ? (
+            <Info label="历史复购订单号" value={application.orderNo} wide />
+          ) : null}
         </div>
         <div className="mt-5">
           <p className="text-muted-foreground">图片证明</p>
