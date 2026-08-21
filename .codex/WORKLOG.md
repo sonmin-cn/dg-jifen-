@@ -1,5 +1,28 @@
 # Worklog
 
+## 2026-08-21 17:22 - Recovery
+
+* 检查到的仓库状态：当前路径 `/Users/sonmin/Desktop/积分系统开发`，分支 `main`；根目录显示嵌套 worktree `.claude/worktrees/fix-review-findings` 有状态变化，另有本地验收目录 `.claude/local-manual-acceptance.9e6CC2/` 未跟踪。
+* 已确认完成：上一任务的手机号登录、复购姓名代码与本地验收已完成；其状态仍为 `needs_review`，尚未提交、合并、执行目标 MySQL migration 或部署。
+* 未完成：尚未读取题库项目当前 MVP 完成后的真实状态，也未形成长期迁移护栏指令。
+* 决定从哪里继续：保留上一任务全部状态和文件；本轮只读检查两个项目，截图只作为现状证据，不执行其中的 PostgreSQL 接入建议。
+
+## 2026-08-21 17:22 - Quiz Migration Guardrails Analysis Started
+
+* 做了什么：将当前任务切换为审查题库 MVP 与积分系统的未来模块兼容性，拆分数据库、身份、存储、长任务、API/领域边界和部署六个维度。
+* 修改了哪些文件：`.codex/TASK_STATE.md`、`.codex/NEXT_ACTIONS.md`、`.codex/WORKLOG.md`；未修改业务代码。
+* 为什么这样做：用户需要一段可以长期约束题库项目继续开发的指令，避免短期修复把架构锁定在 PostgreSQL 或独立系统形态，增加后续 MySQL/CloudBase 集成成本。
+* 验证结果：恢复检查通过；尚需以题库项目当前代码和状态文件为准完成审查。
+* 下一步：完整读取题库项目规则和恢复文件，再核对核心实现与积分系统边界。
+
+## 2026-08-21 17:32 - Quiz Migration Guardrails Analysis Completed
+
+* 做了什么：完成题库 MVP 与积分系统的代码级对照，识别数据库、身份、存储、AI 长任务、repository、API 路由、UI 技术栈和云成本的迁移冲突，并形成可复制的长期开发护栏与分阶段整合方案。
+* 修改了哪些文件：`.codex/TASK_STATE.md`、`.codex/NEXT_ACTIONS.md`、`.codex/WORKLOG.md`、`.codex/DECISIONS.md`、`.codex/PLANS.md`；未修改业务代码。
+* 为什么这样做：直接按截图接入 PostgreSQL 会解决本地重启丢数据，但与积分系统现有 MySQL/Prisma 6、User/Leader 登录态和 COS 重复建设，后续仍需二次迁移。
+* 验证结果：确认题库项目本地 MVP 已有 128 项测试记录；确认生产 persistence、统一 auth、COS 和生产部署尚未落地；独立架构复核同意暂停独立生产化；状态文件 `git diff --check` 通过。
+* 下一步：用户确认后，把本轮决策同步到题库项目并从逻辑数据模型映射表开始；不直接创建 PostgreSQL、第二套用户体系或新增云资源。
+
 ## 2026-08-20 - Recovery
 
 * 检查到的仓库状态：当前路径 `/Users/sonmin/Desktop/积分系统开发`，分支 `main`；`.codex` 四个文件已有历史未提交修改，另有未跟踪 `.claude/`、`backups/` 和两份 `docs/` 文档。
@@ -1221,6 +1244,37 @@
 * 为什么这样做：完成用户要求的合并前备案、GitHub 远端备份和桌面主项目合并，同时保持项目恢复状态准确。
 * 验证结果：源分支 `git diff --check` 通过；`git push -u origin codex/cloudbase-run-migration` 成功；桌面 `git merge --ff-only codex/cloudbase-run-migration` 成功；首次 `npm run typecheck` 因缺少本地依赖失败，运行 `npm install` 后 `npm run typecheck` 通过；`npm run build` 通过。
 * 下一步：提交本条状态收口，推送源分支并让桌面目标工作树再快进一次；之后回到 MySQL 备份、发布归档和 1-3 天小范围内部试运行。
+
+## 2026-08-21 18:02 - Recovery For Review Fix Integration
+
+* 检查到的仓库状态：根目录为 `main@4403547`；修复工作树为 `worktree-fix-review-findings@9530325`；main 误跟踪工作树 gitlink 和数据库备份；修复分支有附件描述的业务及状态修改。
+* 已确认完成：读取附件、项目规范、GitHub skills 和两处恢复状态；核对 branch/status/log/diff/stat/worktree 与关键索引项。
+* 未完成：尚未检查 3107、fetch 远端、创建备案、提交、合并、验证或推送。
+* 决定从哪里继续：先检查端口并 fetch origin；远端无未知提交后创建独立备案，再按附件阶段顺序执行。
+
+## 2026-08-21 18:05 - Remote And Acceptance Service Confirmed
+
+* 做了什么：fetch origin 并对比前后 `origin/main`；检查 3107 监听 PID、命令和工作目录。
+* 修改了哪些文件：两处 `.codex/TASK_STATE.md`、`.codex/NEXT_ACTIONS.md`、根 `.codex/WORKLOG.md`。
+* 为什么这样做：提交和合并前必须排除未知远程提交，并确认可安全停止的服务确属本项目临时验收环境。
+* 验证结果：`origin/main` fetch 前后均为 `4403547`，与 main 为 `0 0`；PID 70586 是临时验收目录中的 Next 服务。
+* 下一步：创建并核验合并前备案，再停止服务和清理临时目录。
+
+## 2026-08-21 18:08 - Pre-merge Archive And Acceptance Cleanup Complete
+
+* 做了什么：创建独立备案，保存两处 status/log/binary diff/stat 和 main backups；正常停止 3107；恢复 MySQL Prisma Client；将精确临时验收目录移入废纸篓。
+* 修改了哪些文件：两处 `.codex` 状态文件；仓库外新增备案目录 `/Users/sonmin/Desktop/积分系统合并前备案-20260821-180821`。
+* 为什么这样做：确保任何提交或合并前可恢复，并避免 SQLite Client/临时服务影响后续验证。
+* 验证结果：9 类备案内容均存在且文本/diff 已生成 SHA-256；3107 不再监听；临时目录原路径不存在；修复工作树和数据库备份仍存在。
+* 下一步：修复分支运行 diff-check/typecheck，按明确文件列表创建三个提交。
+
+## 2026-08-21 18:20 - Main Local Tracking Cleanup Complete
+
+* 做了什么：确认修复分支首次 GitHub 备案完成；在 main 创建保护分支；补充 `.gitignore`；用 `git rm --cached` 停止跟踪修复工作树 gitlink 和数据库备份；创建清理提交。
+* 修改了哪些文件：`.gitignore`、Git 索引中的两个本地路径、根 `.codex` 状态文件。
+* 为什么这样做：本地工作树和数据库备份不应作为项目版本内容继续传播，但实际资料必须保留。
+* 验证结果：保护分支指向 `4403547`；清理提交为 `e1faebd`；两个实际路径通过 `test -d`/`test -f`；cached diff 仅含 `.gitignore` 和两个停止跟踪项。
+* 下一步：提交 main 清理状态检查点，确保 main 工作区干净，再将 main 合入修复分支。
 
 ## 2026-08-20 17:16 - Local Acceptance Completed
 

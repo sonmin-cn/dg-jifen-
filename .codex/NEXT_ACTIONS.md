@@ -1,16 +1,18 @@
 # Next Actions
 
-* [ ] 1. 用户确认后在 `.claude/worktrees/fix-review-findings` 提交本轮修改。
-* [ ] 2. 决定是否将 `worktree-fix-review-findings` 合并回 `main`。
-* [ ] 3. 部署前在目标 MySQL 执行 `20260820090000_add_repurchase_customer_name` migration。
-* [ ] 4. 发布新版本后用队长手机号和后台用户名分别登录。
-* [ ] 5. 提交老用户姓名为空及填写姓名的两条复购申请，检查后台展示和审核。
+* [x] 1. 检查 3107 监听进程并确认属于项目验收服务。
+* [x] 2. fetch origin，确认 origin/main 没有未知提交。
+* [x] 3. 创建并核验合并前备案目录的 9 项内容。
+* [x] 4. 恢复 MySQL Prisma Client并将精确临时验收目录移入废纸篓。
+* [x] 5. 修复分支运行 diff-check/typecheck并拆分三个提交。
+* [x] 6. 首次推送修复分支并记录远端备案。
+* [x] 7. main 创建保护分支，停止跟踪 gitlink/数据库备份并提交状态检查点。
+* [ ] 8. 将 main 合入修复分支并按冲突规则处理。
+* [ ] 9. 修复分支完成 Prisma/typecheck/build/业务不变量验证并再次推送。
+* [ ] 10. main 执行 ff-only、最终验证、状态收口并推送。
 
 ## Done This Session
 
-* [x] 已定位截图对应的较新工作树代码。
-* [x] 已完成手机号/用户名兼容登录。
-* [x] 已完成老用户姓名独立可空字段、申请、重提、后台、搜索、审计和快照改造。
-* [x] 已保留历史订单字段和人工归属审核口径。
-* [x] Prisma、TypeScript、Next build 和 diff 验证通过。
-* [x] 隔离本地环境的浏览器、接口、持久化、后台详情及审计验收通过并已清理。
+* [x] 已读取附件、GitHub skills、AGENTS.md 与两处恢复状态。
+* [x] 已核对两个工作树的真实 branch/status/log/diff/stat 和误跟踪路径。
+* [x] 已创建 main 清理提交 `e1faebd`，真实工作树和备份保留。
