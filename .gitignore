@@ -16,3 +16,7 @@ public/uploads/*
 !public/uploads/score-applications/
 public/uploads/score-applications/*
 !public/uploads/score-applications/.gitkeep
+.claude/worktrees/
+.claude/local-*/
+backups/*.db
+backups/*.db-*
