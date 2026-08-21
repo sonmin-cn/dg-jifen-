@@ -1469,3 +1469,11 @@
 * 为什么这样做：第二次推送和 main 快进前必须确认合并没有覆盖评审修复、最新需求、迁移或正式文档。
 * 验证结果：全部通过；两个 migration、`NEEDS_MORE_INFO`、ScoreRecord.applicationId 唯一约束、退回补充、人工绑定、上海时区、审核事务、隐私脱敏、手机号分流、姓名选填和重新提交预填均存在；旧必填订单号生产文案为零，新申请不写 approvedOrderKey。
 * 下一步：提交本条整合验证记录，fetch 确认远端修复分支无未知提交，正常推送并核对 `0 0`。
+
+## 2026-08-21 18:34 - Review Branch Second GitHub Backup Complete
+
+* 做了什么：提交整合验证记录；fetch 对比 origin/main 和远端修复分支均未变化；正常推送修复分支。
+* 修改了哪些文件：`.codex/TASK_STATE.md`、`.codex/NEXT_ACTIONS.md`、`.codex/WORKLOG.md`（本条推送结果待小提交收口）。
+* 为什么这样做：main 快进前确保修复分支完整状态已在 GitHub 备案且没有覆盖远程未知提交。
+* 验证结果：推送更新至 `e272df9`；`origin/worktree-fix-review-findings...worktree-fix-review-findings` 为 `0 0`；origin/main 仍为 `4403547`。
+* 下一步：提交并推送本条检查点，然后在 main 执行祖先检查和 ff-only。

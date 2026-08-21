@@ -26,17 +26,18 @@
 * [x] 创建 `dc9e233 merge: sync cleaned main into review fixes`，无未合并路径或残留冲突标记。
 * [x] Prisma validate/generate、typecheck、Next build、diff-check 和业务不变量检查全部通过。
 * [x] 确认两个 migration、退回补充、人工绑定、上海时区、审核事务、排行榜脱敏、手机号登录、姓名选填及正式 docs 均完整保留。
+* [x] 创建 `e272df9 docs: record integrated branch verification` 并推送；远端修复分支与本地为 `0 0`。
 
 ## In Progress
 
-* 当前正在处理的事项：merge commit 和修复分支全量验证完成，正在提交验证记录并第二次推送。
+* 当前正在处理的事项：修复分支整合验证和第二次推送完成，等待 main 祖先检查与 ff-only。
 * 当前涉及文件：`.codex/DECISIONS.md`、`.codex/NEXT_ACTIONS.md`、`.codex/PLANS.md`、`.codex/TASK_STATE.md`、`.codex/WORKLOG.md`。
 
 ## Next Actions
 
 * [x] 确认无冲突标记/未合并路径并完成 merge commit。
 * [x] 在修复分支运行 Prisma validate/generate、typecheck、build、diff-check 和业务不变量检查。
-* [ ] 提交整合验证记录并第二次推送修复分支，确认远端 `0 0`。
+* [x] 提交整合验证记录并第二次推送修复分支，确认远端 `0 0`。
 * [ ] 回到 main 做祖先检查和 `--ff-only`。
 * [ ] main 最终验证、状态收口并推送 origin/main。
 
