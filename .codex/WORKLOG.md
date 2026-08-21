@@ -1477,3 +1477,11 @@
 * 为什么这样做：main 快进前确保修复分支完整状态已在 GitHub 备案且没有覆盖远程未知提交。
 * 验证结果：推送更新至 `e272df9`；`origin/worktree-fix-review-findings...worktree-fix-review-findings` 为 `0 0`；origin/main 仍为 `4403547`。
 * 下一步：提交并推送本条检查点，然后在 main 执行祖先检查和 ff-only。
+
+## 2026-08-21 18:42 - Main Fast-forward Verification And Push Complete
+
+* 做了什么：提交并推送修复分支第二次备案检查点；在 main fetch 并确认 origin/main 无未知提交、main 是修复分支祖先；执行 ff-only；在 main 重跑 Prisma validate/generate、typecheck、build 和最终 Git/路径检查；正常推送 main。
+* 修改了哪些文件：本条只更新 `.codex/TASK_STATE.md`、`.codex/NEXT_ACTIONS.md`、`.codex/PLANS.md`、`.codex/WORKLOG.md` 作为最终状态记录。
+* 为什么这样做：确保 main 只通过可证明的快进获得全部修复，并在 GitHub 推送前后都有可恢复、可审计证据。
+* 验证结果：main ff-only 到 `6cff490`；两轮 Prisma/typecheck/build 均通过；工作树和备份仍在本地但不再跟踪；临时目录不存在、3107 已停止；首次 main push 后 origin/main...main 为 `0 0`。
+* 下一步：创建 `docs: record review fixes integration completion`，fetch 确认远端未变化后最后推送并核对 `0 0`；CloudBase 后续必须先迁移再部署。

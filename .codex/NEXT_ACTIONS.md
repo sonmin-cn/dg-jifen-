@@ -1,17 +1,17 @@
 # Next Actions
 
-* [x] 1. 检查无冲突标记和未合并路径，完成 `dc9e233` merge commit。
-* [x] 2. 使用占位 MySQL URL运行 Prisma validate/generate。
-* [x] 3. 运行 typecheck、build、diff-check 与业务不变量搜索。
-* [x] 4. 提交整合验证记录并第二次推送修复分支。
-* [ ] 5. main 祖先检查后执行 `git merge --ff-only worktree-fix-review-findings`。
-* [ ] 6. main 最终验证、状态收口、最终提交并推送 origin/main。
+* [ ] 1. 创建 docs: record review fixes integration completion。
+* [ ] 2. fetch 确认 origin/main 无未知提交并正常 push main。
+* [ ] 3. 确认 origin/main...main 为 0 0 且 main 工作区干净。
+* [ ] 4. 后续部署前先执行 20260709 与 20260820 MySQL migrations。
+* [ ] 5. migration 成功后部署并运行正式环境回归。
 
 ## Done This Session
 
-* [x] 合并前备案、验收环境清理和远端安全核对完成。
-* [x] 三个需求提交和远端备案记录提交已创建并推送。
-* [x] main 保护分支、误跟踪清理和清理状态提交已完成。
-* [x] merge 仅出现五个 `.codex` 冲突，已按双方历史保留规则整合。
-* [x] 修复分支全量静态、构建和业务不变量验证通过。
-* [x] 第二次推送完成，修复分支远端/本地为 `0 0`。
+* [x] 合并前备案和人工验收环境清理完成。
+* [x] 修复分支拆分提交、两阶段验证和 GitHub 备案完成。
+* [x] main 保护分支、误跟踪清理和状态检查点完成。
+* [x] .codex 冲突按双方历史保留规则解决，无业务冲突。
+* [x] 修复分支与 main 的 Prisma/typecheck/build/diff/业务不变量验证全部通过。
+* [x] main 已 ff-only 到修复分支并首次推送至 GitHub，origin/main...main 为 0 0。
+
