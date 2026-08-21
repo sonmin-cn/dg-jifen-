@@ -1,5 +1,107 @@
 # Worklog
 
+## 2026-08-20 - Local Acceptance Recovery
+
+* 检查到的仓库状态：位于 `worktree-fix-review-findings`，本轮业务修改仍完整未提交；根 `.env` 使用 SQLite URL，而当前 Prisma schema provider 为 MySQL。
+* 已确认完成：代码、Prisma、TypeScript、生产构建和 diff 静态验证已经通过。
+* 未完成：尚未在本地真实数据库和浏览器中验收手机号登录、用户名兼容及复购姓名选填。
+* 决定从哪里继续：按 Browser skill 进行本地 UI 测试；先创建隔离临时 MySQL，绝不连接或改动 staging/生产数据。
+
+## 2026-08-20 - Local Acceptance Started
+
+* 做了什么：读取 Browser skill，检查本地环境配置并拆分数据库、应用启动、登录、复购提交和后台核对步骤。
+* 修改了哪些文件：仅 `.codex/TASK_STATE.md`、`.codex/NEXT_ACTIONS.md`、`.codex/WORKLOG.md`。
+* 为什么这样做：用户明确要求本地验收，必须从真实页面和运行时数据链路验证，不能只重复静态检查结论。
+* 验证结果：当前 `.env` 无法直接运行 MySQL 应用；需要本地临时 MySQL 或等价隔离环境。
+* 下一步：检查 Docker/MySQL 工具可用性，创建可销毁的本地验收数据库。
+
+## 2026-08-20 - Temporary SQLite Initialization Failed
+
+* 做了什么：确认本机无 Docker/MySQL，创建隔离临时副本，尝试把 MySQL schema 机械转换为 SQLite 并初始化测试数据。
+* 修改了哪些文件：仅临时目录 `.claude/local-acceptance.8xDM8S`；原工作树业务文件未修改。
+* 为什么这样做：避免安装系统服务或连接线上数据库，同时仍能运行真实 Next 页面和认证/申请逻辑。
+* 验证结果：首次转换未清除 `@db.Text`，Prisma 返回 P1012；generate/db push 未完成，seed 未触及任何有效数据库。
+* 下一步：修正临时 schema 的文本类型标记，重新 generate、db push 和 seed。
+
+## 2026-08-20 - Temporary Acceptance Database Ready
+
+* 做了什么：在临时副本中清除 MySQL `@db.Text` 标记，生成 SQLite Prisma Client，同步 schema 并运行受保护的测试 seed。
+* 修改了哪些文件：仅临时副本及临时 `acceptance.db`；原工作树未修改。
+* 为什么这样做：在无 Docker/MySQL 的本机完成真实页面与数据读写验收，同时隔离线上和现有本地数据。
+* 验证结果：Prisma generate、db push 和 seed 全部成功；准备了本地 admin/manager/leader/finance 测试账号和 42 条规则。
+* 下一步：启动本地 Next 服务，通过 Browser skill 验收登录和复购申请。
+
+## 2026-08-20 - First Local Server Start Failed
+
+* 做了什么：在临时副本用默认 `next dev` 启动 3107 端口。
+* 修改了哪些文件：无。
+* 为什么这样做：开始浏览器运行时验收。
+* 验证结果：Turbopack 无法从临时子目录解析父级 `next/package.json`，服务退出；未影响数据库或业务文件。
+* 下一步：使用项目已验证的 webpack 模式重启本地服务。
+
+## 2026-08-20 - Browser Acceptance Core Flows Passed
+
+* 做了什么：用 Browser skill 检查登录页；以队长注册手机号登录；选择老队员复购；分别提交姓名为空和填写姓名的申请；用独立 HTTP 会话测试后台用户名登录。
+* 修改了哪些文件：仅临时数据库写入两条验收申请；原工作树业务文件未修改。
+* 为什么这样做：验证用户要求的真实页面交互、服务端认证和申请提交，而不是只检查源码。
+* 验证结果：手机号登录成功进入队长端；字段明确显示“老用户姓名 选填”；两条申请均提交成功并显示待审核；admin 用户名登录返回管理后台跳转。
+* 下一步：读取临时库确认姓名 null/字符串持久化，并通过后台详情页核对展示。
+
+## 2026-08-20 - First Database Read Command Failed
+
+* 做了什么：使用 `tsx -e` 查询两条复购申请。
+* 修改了哪些文件：无。
+* 为什么这样做：确认字段不是只在前端显示，而是正确写入数据库。
+* 验证结果：命令因 CJS 输出不支持顶层 await 失败；应用和数据库未受影响。
+* 下一步：改用 async IIFE 兼容写法重试。
+
+## 2026-08-20 - Recovery
+
+* 检查到的仓库状态：工作树 `/Users/sonmin/Desktop/积分系统开发/.claude/worktrees/fix-review-findings`，分支 `worktree-fix-review-findings`，业务代码无未提交修改；该分支比 `main` 多两次提交且与用户截图一致。
+* 已确认完成：2026-07-09 已完成复购订单号结构化、审核并发保护、退回补充、人工绑定和时区等修复，并通过当时的 typecheck/build。
+* 未完成：该分支尚未合并 `main`；本轮手机号登录和复购字段调整尚未实施。
+* 决定从哪里继续：直接在截图对应分支完成本轮改动，保留已存在的新功能，不在较旧的 `main` 重复实现。
+
+## 2026-08-20 - Phone Login And Repurchase Name Change Started
+
+* 做了什么：完整核对登录、复购提交、重新提交、后台详情、审核事务、审计快照和 Prisma 字段链路，确定兼容策略。
+* 修改了哪些文件：`.codex/TASK_STATE.md`、`.codex/NEXT_ACTIONS.md`、`.codex/WORKLOG.md`、`.codex/DECISIONS.md`；业务代码尚未修改。
+* 为什么这样做：用户要求用手机号降低登录记忆成本，并明确取消复购订单号必填，改为可选老用户姓名；姓名不能继续沿用订单唯一键语义。
+* 验证结果：现有订单号必填由前端 `requireOrderNo` 和服务端 `oneOrderOneLeader` 双重控制，审核时还写 `approvedOrderKey`；必须同步修改而不能只换标签。
+* 下一步：先实现兼容手机号登录，再新增姓名字段并调整完整申请审核链路。
+
+## 2026-08-20 - Phone Login And Repurchase Name Code Complete
+
+* 做了什么：实现手机号/用户名兼容登录；新增复购老用户姓名可空字段；修改申请、重新提交、后台详情、搜索、审计和积分快照；移除新申请的订单号必填、自动订单查重及批准订单键写入，保留人工归属审核口径。
+* 修改了哪些文件：登录 3 个文件、申请和审核页面 3 个文件、`lib/services/score-applications.ts`、`prisma/schema.prisma` 和新 migration，以及 `.codex/` 状态文件。
+* 为什么这样做：满足用户降低登录记忆成本和复购字段改为选填姓名的明确要求，同时避免把非唯一姓名误作订单号做自动查重。
+* 验证结果：静态差异检查确认历史 `orderNo` / `approvedOrderKey` 保留，只有旧申请会显示历史订单号；新申请写入 `repurchaseCustomerName`。
+* 下一步：运行 Prisma validate/generate、TypeScript、Next build 和 diff 检查。
+
+## 2026-08-20 - First Prisma Validation Blocked By Local URL
+
+* 做了什么：运行 `npx prisma validate` 和 `npx prisma generate`。
+* 修改了哪些文件：Prisma Client 生成到依赖目录；未改业务文件。
+* 为什么这样做：在类型检查和构建前确认新增字段与 Prisma Client 一致。
+* 验证结果：generate 通过；validate 读取工作树遗留 SQLite URL，因当前 schema provider 为 MySQL 返回 P1012。没有连接或修改数据库。
+* 下一步：使用非敏感临时 MySQL 格式 URL 重跑仅 schema 校验，再运行 typecheck/build。
+
+## 2026-08-20 - Prisma And TypeScript Verification Passed
+
+* 做了什么：使用临时 MySQL 格式 URL 重跑 Prisma validate，并运行 TypeScript 检查。
+* 修改了哪些文件：未修改业务文件。
+* 为什么这样做：排除本地 SQLite `.env` 干扰，验证本次 schema 和代码类型一致性。
+* 验证结果：Prisma schema valid；`npm run typecheck` 通过。
+* 下一步：运行 Next 生产构建，再检查最终 diff 和状态。
+
+## 2026-08-20 16:36 - Phone Login And Repurchase Name Change Complete
+
+* 做了什么：完成生产构建、Prisma 格式化和二次 schema 校验，检查所有旧复购订单号必填文案与校验引用，并完成最终差异检查。
+* 修改了哪些文件：登录接口/页面、队长申请及重新提交、后台申请详情、积分申请服务、Prisma schema、新 MySQL migration 和 `.codex/` 状态文件。
+* 为什么这样做：确保手机号登录兼容后台用户名，老用户姓名真正可空，并且前端、服务端、数据库、审核展示和历史数据兼容一致。
+* 验证结果：临时 MySQL URL 下 Prisma validate 通过；Prisma Client generate 通过；`npm run typecheck` 通过；`npm run build` 通过；`git diff --check` 通过；旧“复购订单号必填”代码引用为 0。
+* 下一步：用户确认后提交/合并；部署前执行新增 migration，部署后做手机号/用户名登录和空姓名复购申请运行时验收。
+
 ## 2026-07-08 11:08 - Recovery
 
 * 检查到的仓库状态：当前路径 `/Users/sonmin/Desktop/积分系统开发`，分支 `feat/leader-score-rules-v2-2`；`git status -sb` 显示本地分支已与 `origin/feat/leader-score-rules-v2-2` 对齐，但有 `.codex/NEXT_ACTIONS.md`、`.codex/TASK_STATE.md`、`.codex/WORKLOG.md` 本地修改和未跟踪 `backups/`。
@@ -986,3 +1088,57 @@
 
 * 做了什么：确认 Staging MySQL 只能通过 CloudBase SQL 编辑器操作（与初始化方式一致），生成 .codex/CLOUDBASE_MIGRATION_20260709_SQL.md，含前置核对、4 条结构变更、_prisma_migrations 记录（checksum 已按迁移文件 sha256 计算）和执行后验证。
 * 下一步：用户在 CloudBase SQL 编辑器按文档执行，然后上传部署包。
+
+## 2026-08-20 17:12 - Local Acceptance Core Flows Passed
+
+* 做了什么：完成手机号登录、后台用户名兼容、老用户姓名为空/填写两种复购提交、底层持久化、登录审计和后台审核详情验收。
+* 修改了哪些文件：仅更新 `.codex/TASK_STATE.md`、`.codex/NEXT_ACTIONS.md`、`.codex/WORKLOG.md`；验收数据位于隔离临时目录。
+* 为什么这样做：用户要求本地验收，需要同时确认界面行为、接口兼容、数据库实际值和后台展示。
+* 验证结果：队长手机号登录与后台用户名登录均成功；两条复购申请均为待审核，姓名分别保存为 `NULL` 和测试姓名，旧订单号均为 `NULL`；后台详情显示姓名字段；浏览器无 warning/error。
+* 下一步：停止临时服务，删除隔离验收目录，恢复 MySQL Prisma Client 后运行最终类型和差异检查。
+
+## 2026-08-20 17:14 - First Temporary Cleanup Command Rejected
+
+* 做了什么：停止本地验收服务并恢复 MySQL Prisma Client；随后尝试删除已确认的临时验收目录和 cookie 文件。
+* 修改了哪些文件：`.codex/TASK_STATE.md`、`.codex/WORKLOG.md`。
+* 为什么这样做：验收结束后必须移除隔离数据并恢复项目依赖状态。
+* 验证结果：服务已停止，MySQL Prisma Client 已成功重新生成；删除命令因环境禁止 `rm -f` 风格命令而在执行前被拒绝，临时目录仍在且项目文件未受影响。
+* 下一步：改用系统废纸篓或受支持的安全清理方式处理精确目标。
+
+## 2026-08-20 17:16 - Local Acceptance Completed And Cleaned
+
+* 做了什么：使用系统废纸篓清理精确的临时验收目录和 cookie 文件，恢复 MySQL Prisma Client，并完成最终类型和差异检查。
+* 修改了哪些文件：`.codex/TASK_STATE.md`、`.codex/NEXT_ACTIONS.md`、`.codex/WORKLOG.md`、`.codex/PLANS.md`；业务修改文件不变。
+* 为什么这样做：确保本地验收不留下运行服务、SQLite Client 或测试数据，并提供可恢复的完成状态。
+* 验证结果：临时目录和 cookie 原路径均不存在；`npm run typecheck`、`git diff --check` 通过；工作树只保留预期业务及状态文件改动。
+* 下一步：用户确认后提交工作树，决定是否合并回 `main`；部署前执行新增 MySQL migration，部署后复验。
+
+## 2026-08-20 17:18 - Recovery For Manual Acceptance Guidance
+
+* 检查到的仓库状态：当前仍在 `worktree-fix-review-findings`，业务和状态文件改动均未提交；schema 为 MySQL，但本地 `.env` 的 `DATABASE_URL` 是 SQLite 格式。
+* 已确认完成：代码、本地隔离验收和临时环境清理均已完成，工作树可继续交付。
+* 未完成：提交、合并、目标 MySQL migration 和部署后复验。
+* 决定从哪里继续：向用户提供隔离 SQLite 兼容副本的人工启动方法，明确测试账号、验收路径和清理/恢复 MySQL Client 步骤，不直接修改原 schema 或连接线上库。
+
+## 2026-08-21 18:02 - Recovery For Review Fix Integration
+
+* 检查到的仓库状态：当前分支为 `worktree-fix-review-findings@9530325`，既有评审修复提交完整；未提交内容为手机号登录、复购姓名 migration/业务改动和状态文件。根 main 为 `4403547` 并误跟踪本工作树与数据库备份。
+* 已确认完成：附件、AGENTS.md、GitHub skills 和两处恢复状态已读取；真实 branch/status/log/diff/stat 与附件一致。
+* 未完成：尚未检查/停止 3107、fetch 远端、创建备案、拆分提交、合并、验证或推送。
+* 决定从哪里继续：在任何提交前先完成端口清理、远端安全核对和合并前备案。
+
+## 2026-08-21 18:08 - Pre-merge Archive And Acceptance Cleanup Complete
+
+* 做了什么：创建独立合并前备案；正常停止临时 Next 服务；使用占位 MySQL URL 恢复 Prisma Client；将精确临时目录移入废纸篓。
+* 修改了哪些文件：`.codex/TASK_STATE.md`、`.codex/NEXT_ACTIONS.md`、`.codex/WORKLOG.md`。
+* 为什么这样做：提交前先保证可恢复，并清除本地验收运行态对依赖和端口的影响。
+* 验证结果：备案 9 类内容齐全；3107 已停止；临时目录已移走；真正工作树和数据库备份未删除。
+* 下一步：运行 `git diff --check` 和 `npm run typecheck`，然后按授权清单拆分三个提交。
+
+## 2026-08-21 18:13 - Business Commits Split
+
+* 做了什么：运行提交前 diff-check/typecheck；按明确文件列表分别暂存、检查并提交手机号登录和复购姓名选填。
+* 修改了哪些文件：两个业务提交覆盖附件指定的 3 个登录文件和 6 个复购/Prisma 文件；`.codex` 单独保留到第三次提交。
+* 为什么这样做：保证认证与复购数据模型变更历史清晰，避免状态文件或临时文件混入业务提交。
+* 验证结果：`git diff --check`、`npm run typecheck`、两次 staged diff-check 均通过；提交为 `46c41a1` 和 `39eca61`；grep 敏感模式扫描通过。
+* 下一步：提交 `.codex` 状态与验收记录，然后检查工作区和最近 8 个提交。
