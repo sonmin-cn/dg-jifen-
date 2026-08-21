@@ -23,16 +23,19 @@
 * [x] main 创建保护分支并以 `e1faebd` 停止跟踪工作树 gitlink/数据库备份；`1786d09` 记录 main 清理检查点。
 * [x] 执行 `git merge --no-ff main`；仅 5 个 `.codex` 文件冲突，无业务代码冲突。
 * [x] 冲突按规则逐项整合：当前状态重写；DECISIONS/PLANS/WORKLOG 按标题保留双方唯一历史；main 正式 docs 和 `.gitignore` 保留。
+* [x] 创建 `dc9e233 merge: sync cleaned main into review fixes`，无未合并路径或残留冲突标记。
+* [x] Prisma validate/generate、typecheck、Next build、diff-check 和业务不变量检查全部通过。
+* [x] 确认两个 migration、退回补充、人工绑定、上海时区、审核事务、排行榜脱敏、手机号登录、姓名选填及正式 docs 均完整保留。
 
 ## In Progress
 
-* 当前正在处理的事项：检查冲突标记和未合并路径，完成 merge commit。
+* 当前正在处理的事项：merge commit 和修复分支全量验证完成，正在提交验证记录并第二次推送。
 * 当前涉及文件：`.codex/DECISIONS.md`、`.codex/NEXT_ACTIONS.md`、`.codex/PLANS.md`、`.codex/TASK_STATE.md`、`.codex/WORKLOG.md`。
 
 ## Next Actions
 
-* [ ] 确认无冲突标记/未合并路径并完成 merge commit。
-* [ ] 在修复分支运行 Prisma validate/generate、typecheck、build、diff-check 和业务不变量检查。
+* [x] 确认无冲突标记/未合并路径并完成 merge commit。
+* [x] 在修复分支运行 Prisma validate/generate、typecheck、build、diff-check 和业务不变量检查。
 * [ ] 提交整合验证记录并第二次推送修复分支，确认远端 `0 0`。
 * [ ] 回到 main 做祖先检查和 `--ff-only`。
 * [ ] main 最终验证、状态收口并推送 origin/main。
@@ -47,7 +50,7 @@
 ## Verification
 
 * 已运行命令：恢复/远端/备案/端口检查；提交前 diff-check/typecheck；staged diff；分支推送；main 清理路径存在性和 cached diff；merge 冲突列表。
-* 结果：所有已完成阶段通过；merge 仅状态文件冲突，业务代码和正式 docs 无冲突。
+* 结果：merge 仅状态文件冲突且已按规则解决；Prisma、类型、构建、差异与业务不变量验证全部通过。
 * 尚未运行但需要运行的命令：冲突标记/未合并检查、Prisma validate/generate、typecheck、build、diff-check、业务不变量与最终 ahead/behind。
 
 ## Risks / Notes

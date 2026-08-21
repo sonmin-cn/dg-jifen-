@@ -1461,3 +1461,11 @@
 * 为什么这样做：业务修复与 main 正式文档都必须保留，追加式日志不能整文件选择一方导致历史丢失。
 * 验证结果：无业务代码冲突；冲突标记搜索无输出；两份正式 docs 和 `.gitignore` 均存在。尚需 `git add` 后确认无 unmerged paths。
 * 下一步：暂存冲突解决结果，检查 staged diff/未合并路径并完成 merge commit。
+
+## 2026-08-21 18:30 - Integrated Review Branch Verification Passed
+
+* 做了什么：完成 `dc9e233` merge commit；依次运行 Prisma validate/generate、typecheck、Next build、diff-check 和业务不变量检查。
+* 修改了哪些文件：仅 `.codex` 验证状态记录；业务代码未再修改。
+* 为什么这样做：第二次推送和 main 快进前必须确认合并没有覆盖评审修复、最新需求、迁移或正式文档。
+* 验证结果：全部通过；两个 migration、`NEEDS_MORE_INFO`、ScoreRecord.applicationId 唯一约束、退回补充、人工绑定、上海时区、审核事务、隐私脱敏、手机号分流、姓名选填和重新提交预填均存在；旧必填订单号生产文案为零，新申请不写 approvedOrderKey。
+* 下一步：提交本条整合验证记录，fetch 确认远端修复分支无未知提交，正常推送并核对 `0 0`。
