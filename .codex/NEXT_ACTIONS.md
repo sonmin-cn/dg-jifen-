@@ -14,4 +14,3 @@
 * [x] .codex 冲突按双方历史保留规则解决，无业务冲突。
 * [x] 修复分支与 main 的 Prisma/typecheck/build/diff/业务不变量验证全部通过。
 * [x] main 已 ff-only 到修复分支并首次推送至 GitHub，origin/main...main 为 0 0。
-

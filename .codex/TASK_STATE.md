@@ -72,4 +72,3 @@ Git 分支整理、验证、合并和 GitHub 推送已完成；仅剩提交并�
 3. fetch 确认 origin/main 未变化后正常 push；
 4. 最终确认 origin/main...main 为 0 0；
 5. 后续部署从“先执行两个 migration”开始。
-
