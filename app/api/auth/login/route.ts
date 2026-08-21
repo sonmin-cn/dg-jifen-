@@ -6,28 +6,30 @@ import { writeAuditLog } from "@/lib/services/audit";
 
 export async function POST(request: NextRequest) {
   const body = (await request.json().catch(() => null)) as {
+    identifier?: string;
     username?: string;
     password?: string;
   } | null;
-  const username = body?.username?.trim();
+  const identifier = body?.identifier?.trim() || body?.username?.trim();
   const password = body?.password;
+  const isPhoneLogin = Boolean(identifier && /^1\d{10}$/.test(identifier));
 
-  if (!username || !password) {
+  if (!identifier || !password) {
     await writeAuditLog({
       action: "LOGIN_FAILED",
       targetType: "USER",
-      targetId: username || "unknown",
+      targetId: identifier || "unknown",
       after: { reason: "missing_credentials" },
     });
 
     return NextResponse.json(
-      { message: "请输入用户名和密码" },
+      { message: "请输入手机号或用户名和密码" },
       { status: 400 },
     );
   }
 
   const user = await prisma.user.findUnique({
-    where: { username },
+    where: isPhoneLogin ? { phone: identifier } : { username: identifier },
     select: {
       id: true,
       username: true,
@@ -43,12 +45,15 @@ export async function POST(request: NextRequest) {
       userId: user?.id,
       action: "LOGIN_FAILED",
       targetType: "USER",
-      targetId: username,
-      after: { reason: "invalid_credentials" },
+      targetId: identifier,
+      after: {
+        reason: "invalid_credentials",
+        loginMethod: isPhoneLogin ? "phone" : "username",
+      },
     });
 
     return NextResponse.json(
-      { message: "用户名或密码错误" },
+      { message: "账号或密码错误" },
       { status: 401 },
     );
   }
@@ -59,7 +64,11 @@ export async function POST(request: NextRequest) {
       action: "LOGIN_FAILED",
       targetType: "USER",
       targetId: user.id,
-      after: { reason: "user_disabled", username },
+      after: {
+        reason: "user_disabled",
+        username: user.username,
+        loginMethod: isPhoneLogin ? "phone" : "username",
+      },
     });
 
     return NextResponse.json(
@@ -90,7 +99,11 @@ export async function POST(request: NextRequest) {
     action: "LOGIN_SUCCESS",
     targetType: "USER",
     targetId: user.id,
-    after: { username: user.username, role: user.role },
+    after: {
+      username: user.username,
+      role: user.role,
+      loginMethod: isPhoneLogin ? "phone" : "username",
+    },
   });
 
   return response;

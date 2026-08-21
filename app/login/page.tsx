@@ -15,7 +15,7 @@ export default async function LoginPage() {
         <div className="mb-6">
           <h1 className="text-2xl font-semibold md:text-3xl">登录</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            使用管理员分配的账号和密码登录。
+            队长使用注册手机号和密码登录；后台人员仍可使用用户名登录。
           </p>
         </div>
         <LoginForm />

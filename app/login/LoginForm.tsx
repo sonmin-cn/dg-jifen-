@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 
 export function LoginForm() {
   const router = useRouter();
-  const [username, setUsername] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -25,7 +25,7 @@ export function LoginForm() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ identifier, password }),
       });
       const data = (await response.json()) as {
         message?: string;
@@ -49,15 +49,16 @@ export function LoginForm() {
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
       <div className="space-y-2">
-        <Label htmlFor="username">用户名</Label>
+        <Label htmlFor="identifier">手机号或用户名</Label>
         <Input
           autoComplete="username"
           className="h-11 text-base md:text-sm"
-          id="username"
-          name="username"
-          onChange={(event) => setUsername(event.target.value)}
-          placeholder="请输入用户名"
-          value={username}
+          id="identifier"
+          inputMode="text"
+          name="identifier"
+          onChange={(event) => setIdentifier(event.target.value)}
+          placeholder="队长请输入手机号"
+          value={identifier}
         />
       </div>
       <div className="space-y-2">
