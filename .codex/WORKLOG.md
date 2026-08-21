@@ -1142,3 +1142,11 @@
 * 为什么这样做：保证认证与复购数据模型变更历史清晰，避免状态文件或临时文件混入业务提交。
 * 验证结果：`git diff --check`、`npm run typecheck`、两次 staged diff-check 均通过；提交为 `46c41a1` 和 `39eca61`；grep 敏感模式扫描通过。
 * 下一步：提交 `.codex` 状态与验收记录，然后检查工作区和最近 8 个提交。
+
+## 2026-08-21 18:16 - Review Branch First GitHub Backup Complete
+
+* 做了什么：创建 `.codex` 状态/验收提交，确认分支含 `6e85948`、`9530325` 和三个新提交；fetch 再次确认 origin/main 未变化；首次推送修复分支。
+* 修改了哪些文件：`.codex/TASK_STATE.md`、`.codex/NEXT_ACTIONS.md`、`.codex/WORKLOG.md`（本条远端备案记录待独立提交）。
+* 为什么这样做：在清理 main 和分支整合前，先把完整修复分支保存到 GitHub。
+* 验证结果：`worktree-fix-review-findings` 已创建远端跟踪分支；推送后 `origin/worktree-fix-review-findings...worktree-fix-review-findings` 为 `0 0`。
+* 下一步：提交并推送本条远端备案记录，然后进入 main 误跟踪清理。

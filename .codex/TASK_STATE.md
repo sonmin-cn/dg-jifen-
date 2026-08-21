@@ -27,18 +27,20 @@
 * [x] 提交前 `git diff --check` 与 `npm run typecheck` 通过。
 * [x] 创建 `46c41a1 feat(auth): support leader phone login`。
 * [x] 创建 `39eca61 feat(repurchase): replace required order number with optional customer name`。
+* [x] 创建 `e527968 docs: record phone login and repurchase acceptance`，提交后工作区干净且所需历史完整。
+* [x] 首次推送 `worktree-fix-review-findings` 成功，远端与本地 ahead/behind 为 `0 0`。
 
 ## In Progress
 
-* 当前正在处理的事项：提交前验证通过；手机号和复购业务提交已创建，正在收口状态与验收记录提交。
+* 当前正在处理的事项：三个拆分提交和首次 GitHub 备案完成，正在记录远端备案检查点。
 * 当前涉及文件：`.codex/` 状态文件；业务文件尚未暂存。
 
 ## Next Actions
 
 * [x] 停止 3107 服务、恢复 MySQL Prisma Client并清理精确临时目录。
 * [x] 完成备案校验后运行 `git diff --check` 和 `npm run typecheck`。
-* [ ] 提交任务状态与验收记录（两个业务提交已完成）。
-* [ ] 推送修复分支到 GitHub 备案。
+* [x] 提交任务状态与验收记录。
+* [x] 推送修复分支到 GitHub 备案。
 * [ ] 合入清理后的 main，完成全量验证和第二次推送。
 * [ ] 等待 main 快进、最终验证和推送完成。
 
@@ -52,7 +54,7 @@
 ## Verification
 
 * 已运行命令：恢复检查、fetch、备案校验、Prisma Client 恢复、`git diff --check`、`npm run typecheck`、两组 staged diff/check 和敏感模式扫描。
-* 结果：远端安全、备案与清理完成，提交前检查通过；两个业务提交边界正确，敏感模式扫描通过。
+* 结果：远端安全、备案与清理完成，三个拆分提交边界正确；首次推送成功并与远端 `0 0`。
 * 尚未运行但需要运行的命令：端口检查、fetch/备案、Prisma validate/generate、typecheck、build、diff-check、业务不变量检查、ahead/behind。
 
 ## Risks / Notes
