@@ -1,15 +1,16 @@
 # Next Actions
 
-* [ ] 1. 检查 `.codex` 三个文件 diff 和 staged 文件清单，确认不包含密钥、`.env`、数据库文件或 `backups/`。
-* [ ] 2. 提交 `.codex` 推送记录更新，提交信息 `chore: record github push state`。
-* [ ] 3. 切换到 `main` 并执行 `git merge --ff-only feat/leader-score-rules-v2-2`。
-* [ ] 4. 执行 `git push origin main`。
-* [ ] 5. 推送后检查 `git status -sb`、`git log --oneline --decorate -5`、`git ls-remote --heads origin main`。
-* [ ] 6. 更新 `.codex` 状态文件，记录 `main` 已推送到 GitHub。
+* [ ] 1. 用户确认后在 `.claude/worktrees/fix-review-findings` 提交本轮修改。
+* [ ] 2. 决定是否将 `worktree-fix-review-findings` 合并回 `main`。
+* [ ] 3. 部署前在目标 MySQL 执行 `20260820090000_add_repurchase_customer_name` migration。
+* [ ] 4. 发布新版本后用队长手机号和后台用户名分别登录。
+* [ ] 5. 提交老用户姓名为空及填写姓名的两条复购申请，检查后台展示和审核。
 
 ## Done This Session
 
-* [x] 已按恢复流程读取 `AGENTS.md` 和 `.codex` 状态文件。
-* [x] 已执行 `git status -sb`、`git branch -vv`、`git fetch origin` 并检查 fetch 后远端状态。
-* [x] 已确认 `main` 和 `origin/main` 都是 `feat/leader-score-rules-v2-2` 的祖先，满足 fast-forward 条件。
-* [x] 已确认未跟踪 `backups/` 不属于本次提交或推送范围。
+* [x] 已定位截图对应的较新工作树代码。
+* [x] 已完成手机号/用户名兼容登录。
+* [x] 已完成老用户姓名独立可空字段、申请、重提、后台、搜索、审计和快照改造。
+* [x] 已保留历史订单字段和人工归属审核口径。
+* [x] Prisma、TypeScript、Next build 和 diff 验证通过。
+* [x] 隔离本地环境的浏览器、接口、持久化、后台详情及审计验收通过并已清理。

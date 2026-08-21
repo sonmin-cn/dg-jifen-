@@ -231,6 +231,14 @@
 - 风险说明：目标工作树的 `backups/dev-before-seed-rules-20260522-173824.db` 是本地备份文件，保持未跟踪不提交；`next-env.d.ts` 是本地生成差异，仅 stash，不作为业务提交。
 - 成本说明：本次仅执行本地 Git 操作和 GitHub push，不新增云服务或付费资源。
 
+## 2026-08-20 手机号登录与复购姓名调整
+
+- 当前进度：`worktree-fix-review-findings` 中实现和隔离本地验收均已完成，临时环境已清理，状态为 `needs_review`。
+- 已完成：手机号/用户名兼容登录、老用户姓名独立可空字段与 migration、申请/重提/后台/审计/快照改造、Prisma/typecheck/build/diff 和运行时核心验收。
+- 未完成：提交、合并到 `main`、目标 MySQL migration、部署后复验。
+- 验收标准：本地已经满足；正式环境仍需在 migration 后复验两种登录与姓名空/非空提交。
+- 风险与恢复：不要跳过新增 migration；不要删除历史订单字段；恢复时进入该工作树并从提交授权开始。
+
 ## 恢复说明
 
 如果中断，下一次必须先读取 `AGENTS.md`、`.codex/TASK_STATE.md`、`.codex/NEXT_ACTIONS.md`、`.codex/DECISIONS.md`、`.codex/WORKLOG.md` 和本文件，运行 `git status --short`，再从 `.codex/NEXT_ACTIONS.md` 第一项未完成任务继续。
