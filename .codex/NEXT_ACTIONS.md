@@ -1,19 +1,15 @@
 # Next Actions
 
-* [x] 1. 检查 3107 并确认属于项目人工验收服务；待备案后停止。
-* [x] 2. fetch origin 并确认 origin/main 无未知提交。
-* [x] 3. 创建和核验独立合并前备案。
-* [x] 4. 恢复 MySQL Prisma Client并清理精确临时目录。
-* [x] 5. 运行提交前 diff-check/typecheck。
-* [x] 6. 创建手机号登录、复购姓名、状态记录三个独立提交。
-* [x] 7. 首次推送修复分支；提交并再次推送远端备案记录。
-* [ ] 8. 合入清理后的 main，完成全量验证和第二次推送。
-* [ ] 9. main 快进、最终验证、状态收口并推送。
+* [ ] 1. 检查无冲突标记和未合并路径，完成 `merge: sync cleaned main into review fixes`。
+* [ ] 2. 使用占位 MySQL URL运行 Prisma validate/generate。
+* [ ] 3. 运行 typecheck、build、diff-check 与业务不变量搜索。
+* [ ] 4. 提交整合验证记录并第二次推送修复分支。
+* [ ] 5. main 祖先检查后执行 `git merge --ff-only worktree-fix-review-findings`。
+* [ ] 6. main 最终验证、状态收口、最终提交并推送 origin/main。
 
 ## Done This Session
 
-* [x] 已完成附件、项目规范、GitHub skills 和两处仓库状态恢复检查。
-* [x] 已创建 `46c41a1` 手机号登录提交。
-* [x] 已创建 `39eca61` 复购姓名选填提交。
-* [x] 已创建 `e527968` 状态与验收记录提交。
-* [x] 首次推送后本地/远端修复分支为 `0 0`。
+* [x] 合并前备案、验收环境清理和远端安全核对完成。
+* [x] 三个需求提交和远端备案记录提交已创建并推送。
+* [x] main 保护分支、误跟踪清理和清理状态提交已完成。
+* [x] merge 仅出现五个 `.codex` 冲突，已按双方历史保留规则整合。

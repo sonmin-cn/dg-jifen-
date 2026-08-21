@@ -4,72 +4,64 @@
 
 * Task ID: integrate-review-fixes-20260821
 * Task Name: 修复分支整理、GitHub 备案并合并回 main
-* User Request: 拆分当前修复、推送 GitHub 备案、合入清理后的 main、完整验证，再让 main 快进并推送；遇到未知远程提交、无法判断的业务冲突、测试失败或数据风险时停止。
+* User Request: 拆分修复、GitHub 备案、清理 main 误跟踪、合入修复分支并完整验证，最后让 main 快进并推送；遇到未知远程提交、无法判断的业务冲突、测试失败或数据风险时停止。
 * Status: in_progress
 * Started At: 2026-08-21 18:02 CST
-* Last Updated: 2026-08-21 18:02 CST
+* Last Updated: 2026-08-21 18:24 CST
 
 ## Current Goal
 
-在任何提交前完成远端核对、服务清理和合并前备案，然后按明确文件清单拆分提交。
+完成当前 merge commit，然后运行修复分支全量验证并第二次推送。
 
 ## Completed
 
-* [x] 完整读取用户附件、`AGENTS.md` 和 GitHub 操作技能。
-* [x] 读取两处恢复文件并核对真实 Git 状态。
-* [x] 确认当前分支 `worktree-fix-review-findings@9530325`，包含既有提交 `6e85948`、`9530325`。
-* [x] 确认当前未提交业务文件只涉及手机号登录、复购姓名选填和新增 migration。
-* [x] 确认此前隔离验收通过，但用户又启动了精确临时目录，需在提交前停止和清理。
-* [x] fetch 后确认 `origin/main` 未变化且与本地 main 为 `0 0`。
-* [x] 确认 3107 监听服务来自指定临时人工验收目录。
-* [x] 创建并校验独立合并前备案 `/Users/sonmin/Desktop/积分系统合并前备案-20260821-180821`。
-* [x] 正常停止 3107 服务，恢复 MySQL Prisma Client，精确临时目录已移入废纸篓。
-* [x] 提交前 `git diff --check` 与 `npm run typecheck` 通过。
-* [x] 创建 `46c41a1 feat(auth): support leader phone login`。
-* [x] 创建 `39eca61 feat(repurchase): replace required order number with optional customer name`。
-* [x] 创建 `e527968 docs: record phone login and repurchase acceptance`，提交后工作区干净且所需历史完整。
-* [x] 首次推送 `worktree-fix-review-findings` 成功，远端与本地 ahead/behind 为 `0 0`。
+* [x] 完整读取附件、项目规范、GitHub skills 和两处恢复状态。
+* [x] fetch 确认 origin/main 无未知提交。
+* [x] 创建并核验合并前备案 `/Users/sonmin/Desktop/积分系统合并前备案-20260821-180821`。
+* [x] 正常停止 3107、恢复 MySQL Prisma Client、移走精确临时验收目录。
+* [x] 创建并首次推送手机号登录、复购姓名、状态验收和远端备案提交。
+* [x] main 创建保护分支并以 `e1faebd` 停止跟踪工作树 gitlink/数据库备份；`1786d09` 记录 main 清理检查点。
+* [x] 执行 `git merge --no-ff main`；仅 5 个 `.codex` 文件冲突，无业务代码冲突。
+* [x] 冲突按规则逐项整合：当前状态重写；DECISIONS/PLANS/WORKLOG 按标题保留双方唯一历史；main 正式 docs 和 `.gitignore` 保留。
 
 ## In Progress
 
-* 当前正在处理的事项：三个拆分提交和首次 GitHub 备案完成，正在记录远端备案检查点。
-* 当前涉及文件：`.codex/` 状态文件；业务文件尚未暂存。
+* 当前正在处理的事项：检查冲突标记和未合并路径，完成 merge commit。
+* 当前涉及文件：`.codex/DECISIONS.md`、`.codex/NEXT_ACTIONS.md`、`.codex/PLANS.md`、`.codex/TASK_STATE.md`、`.codex/WORKLOG.md`。
 
 ## Next Actions
 
-* [x] 停止 3107 服务、恢复 MySQL Prisma Client并清理精确临时目录。
-* [x] 完成备案校验后运行 `git diff --check` 和 `npm run typecheck`。
-* [x] 提交任务状态与验收记录。
-* [x] 推送修复分支到 GitHub 备案。
-* [ ] 合入清理后的 main，完成全量验证和第二次推送。
-* [ ] 等待 main 快进、最终验证和推送完成。
+* [ ] 确认无冲突标记/未合并路径并完成 merge commit。
+* [ ] 在修复分支运行 Prisma validate/generate、typecheck、build、diff-check 和业务不变量检查。
+* [ ] 提交整合验证记录并第二次推送修复分支，确认远端 `0 0`。
+* [ ] 回到 main 做祖先检查和 `--ff-only`。
+* [ ] main 最终验证、状态收口并推送 origin/main。
 
 ## Modified Files
 
-* `.codex/*`：本次整合恢复状态和历史记录。
-* `app/api/auth/login/route.ts`、`app/login/LoginForm.tsx`、`app/login/page.tsx`：手机号/用户名兼容登录。
-* `app/admin/score-applications/[id]/page.tsx`、`app/leader/applications/new/*`、`lib/services/score-applications.ts`：复购姓名选填及历史兼容。
-* `prisma/schema.prisma`、`prisma/migrations/20260820090000_add_repurchase_customer_name/migration.sql`：可空姓名字段及 migration。
+* `.codex/*`：合并双方历史并记录当前整合进度。
+* `.gitignore`：忽略本地工作树、验收目录和数据库备份。
+* `docs/INTERNAL_TEST_NOTICE_20_LEADERS.md`、`docs/LEADER_SCORE_AND_BONUS_RULES.md`：来自 main 的正式文档。
+* 登录、复购、评审修复代码及两个 migration：来自修复分支，合并未发生业务冲突。
 
 ## Verification
 
-* 已运行命令：恢复检查、fetch、备案校验、Prisma Client 恢复、`git diff --check`、`npm run typecheck`、两组 staged diff/check 和敏感模式扫描。
-* 结果：远端安全、备案与清理完成，三个拆分提交边界正确；首次推送成功并与远端 `0 0`。
-* 尚未运行但需要运行的命令：端口检查、fetch/备案、Prisma validate/generate、typecheck、build、diff-check、业务不变量检查、ahead/behind。
+* 已运行命令：恢复/远端/备案/端口检查；提交前 diff-check/typecheck；staged diff；分支推送；main 清理路径存在性和 cached diff；merge 冲突列表。
+* 结果：所有已完成阶段通过；merge 仅状态文件冲突，业务代码和正式 docs 无冲突。
+* 尚未运行但需要运行的命令：冲突标记/未合并检查、Prisma validate/generate、typecheck、build、diff-check、业务不变量与最终 ahead/behind。
 
 ## Risks / Notes
 
-* 风险点：远端未知提交、业务冲突无法判断、验证失败或数据丢失风险将触发停止。
-* 风险点：main 当前误跟踪本工作树 gitlink，必须先在 main 安全停止跟踪，再合回本分支。
-* 注意事项：不删除本工作树或数据库备份；不使用 force/rebase/reset-hard/clean；不连接 CloudBase。
-* 成本说明：本次只执行本地 Git 与 GitHub 推送，不新增付费项。
+* 风险点：数据库备份虽已停止继续跟踪，但仍存在旧 Git 历史；本轮不改写历史。
+* 风险点：目标 MySQL 尚未执行 20260709 与 20260820 migrations，部署前必须先迁移。
+* 注意事项：工作树和备份仍在本地；不删除保护分支或远程修复分支，不执行 CloudBase 操作。
+* 成本说明：本次仅本地 Git 与 GitHub 推送，无新增付费资源。
 
 ## Recovery Instructions
 
-如果任务中断，下一次必须：
+如果中断，下一次必须：
 
-1. 读取本文件和根目录恢复文件；
-2. 检查两个工作树 branch/status/log；
-3. 根据 WORKLOG 确认最后完成阶段和已创建提交；
-4. 从 NEXT_ACTIONS 第一项未完成动作继续；
-5. 不重复提交、不覆盖用户修改。
+1. 检查 `git status --short` 和 `git diff --name-only --diff-filter=U`；
+2. 若 merge 尚未提交，确认五个状态文件无冲突标记并暂存后完成 merge commit；
+3. 若 merge 已完成，从全量验证开始；
+4. 不重复 push 或改写历史。

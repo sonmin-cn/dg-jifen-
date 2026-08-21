@@ -1150,3 +1150,314 @@
 * 为什么这样做：在清理 main 和分支整合前，先把完整修复分支保存到 GitHub。
 * 验证结果：`worktree-fix-review-findings` 已创建远端跟踪分支；推送后 `origin/worktree-fix-review-findings...worktree-fix-review-findings` 为 `0 0`。
 * 下一步：提交并推送本条远端备案记录，然后进入 main 误跟踪清理。
+
+## 2026-08-21 17:22 - Recovery
+
+* 检查到的仓库状态：当前路径 `/Users/sonmin/Desktop/积分系统开发`，分支 `main`；根目录显示嵌套 worktree `.claude/worktrees/fix-review-findings` 有状态变化，另有本地验收目录 `.claude/local-manual-acceptance.9e6CC2/` 未跟踪。
+* 已确认完成：上一任务的手机号登录、复购姓名代码与本地验收已完成；其状态仍为 `needs_review`，尚未提交、合并、执行目标 MySQL migration 或部署。
+* 未完成：尚未读取题库项目当前 MVP 完成后的真实状态，也未形成长期迁移护栏指令。
+* 决定从哪里继续：保留上一任务全部状态和文件；本轮只读检查两个项目，截图只作为现状证据，不执行其中的 PostgreSQL 接入建议。
+
+## 2026-08-21 17:22 - Quiz Migration Guardrails Analysis Started
+
+* 做了什么：将当前任务切换为审查题库 MVP 与积分系统的未来模块兼容性，拆分数据库、身份、存储、长任务、API/领域边界和部署六个维度。
+* 修改了哪些文件：`.codex/TASK_STATE.md`、`.codex/NEXT_ACTIONS.md`、`.codex/WORKLOG.md`；未修改业务代码。
+* 为什么这样做：用户需要一段可以长期约束题库项目继续开发的指令，避免短期修复把架构锁定在 PostgreSQL 或独立系统形态，增加后续 MySQL/CloudBase 集成成本。
+* 验证结果：恢复检查通过；尚需以题库项目当前代码和状态文件为准完成审查。
+* 下一步：完整读取题库项目规则和恢复文件，再核对核心实现与积分系统边界。
+
+## 2026-08-21 17:32 - Quiz Migration Guardrails Analysis Completed
+
+* 做了什么：完成题库 MVP 与积分系统的代码级对照，识别数据库、身份、存储、AI 长任务、repository、API 路由、UI 技术栈和云成本的迁移冲突，并形成可复制的长期开发护栏与分阶段整合方案。
+* 修改了哪些文件：`.codex/TASK_STATE.md`、`.codex/NEXT_ACTIONS.md`、`.codex/WORKLOG.md`、`.codex/DECISIONS.md`、`.codex/PLANS.md`；未修改业务代码。
+* 为什么这样做：直接按截图接入 PostgreSQL 会解决本地重启丢数据，但与积分系统现有 MySQL/Prisma 6、User/Leader 登录态和 COS 重复建设，后续仍需二次迁移。
+* 验证结果：确认题库项目本地 MVP 已有 128 项测试记录；确认生产 persistence、统一 auth、COS 和生产部署尚未落地；独立架构复核同意暂停独立生产化；状态文件 `git diff --check` 通过。
+* 下一步：用户确认后，把本轮决策同步到题库项目并从逻辑数据模型映射表开始；不直接创建 PostgreSQL、第二套用户体系或新增云资源。
+
+## 2026-08-20 - Phone Login And Repurchase Field Change Started
+
+* 做了什么：检查登录表单、登录接口、加分申请表单、规则常量、复购数据模型和项目验证命令，拆分本轮实施步骤。
+* 修改了哪些文件：`.codex/TASK_STATE.md`、`.codex/NEXT_ACTIONS.md`、`.codex/WORKLOG.md`；尚未修改业务代码。
+* 为什么这样做：用户要求改变登录标识和老队员复购申请字段，涉及认证兼容及申请数据口径，需先确认完整读写链路。
+* 验证结果：当前登录仅按用户名查询；主工作树申请表单没有截图中的复购订单号专用输入，但 Prisma 存在历史 `RepurchaseClaim.orderNo`，需继续定位截图对应版本。
+* 下一步：检查 git 历史及其他受控工作树，找到专用字段实现后再开始业务代码修改。
+
+## 2026-08-20 16:36 - Implemented In Screenshot Worktree
+
+* 做了什么：确认截图来自 `worktree-fix-review-findings`，在该工作树实现手机号/用户名兼容登录、复购老用户姓名选填、独立数据库字段、重新提交预填、后台展示、搜索、审计和积分快照；移除订单号必填和自动查重。
+* 修改了哪些文件：该工作树登录、申请、审核、服务、Prisma schema/migration 和 `.codex/` 状态文件；根目录仅更新 `.codex/` 恢复记录。
+* 为什么这样做：较旧 `main` 不含截图功能，直接在 main 修改会漏掉已部署/待合并的新申请闭环；姓名不是唯一标识，不能继续复用订单唯一键。
+* 验证结果：Prisma validate/generate、`npm run typecheck`、`npm run build` 和 `git diff --check` 通过；旧订单号必填代码引用为 0。未连接或修改线上数据库。
+* 下一步：用户确认后提交/合并；部署前执行新增 migration，发布后做手机号、用户名和复购空姓名运行时验收。
+
+## 2026-08-17 10:13 - Recovery
+
+* 检查到的仓库状态：当前路径 `/Users/sonmin/Desktop/积分系统开发`，分支 `main`；`.codex` 四个文件已有上一轮未提交修改，另有未跟踪 `.claude/`、`backups/` 和两份 `docs/` 文档。
+* 已确认完成：上一轮已确认答题能力可与积分系统共用现有 CloudBase 服务、MySQL、COS、VPC 和账号体系。
+* 未完成：用户尚未确认是直接适配积分系统，还是先继续完善答题原型。
+* 决定从哪里继续：保留既有修改，只读复核答题原型的分层和生产阻塞状态，回答原型先行是否会造成返工。
+
+## 2026-08-17 10:13 - Prototype First Integration Strategy Confirmed
+
+* 做了什么：复核答题原型的 `ExamRepository` 接口、内存实现、领域逻辑和生产 503 阻断，形成“先完成功能原型、后适配积分系统”的范围边界。
+* 修改了哪些文件：`.codex/TASK_STATE.md`、`.codex/NEXT_ACTIONS.md`、`.codex/DECISIONS.md`、`.codex/WORKLOG.md`；未修改业务代码或云资源。
+* 为什么这样做：需要判断原型先行能否降低需求不确定性，同时避免为独立 PostgreSQL、登录、COS 和云部署投入未来会被替换的工作。
+* 验证结果：该顺序可行且推荐；原型已有可迁移基础。原型阶段应完成业务闭环和测试，暂缓独立生产基础设施，之后再实现积分系统的 MySQL/COS/认证适配层。
+* 下一步：用户确认后进入答题原型仓库执行恢复流程，按真实代码和测试状态继续完善原型。
+
+## 2026-08-15 17:09 - Recovery
+
+* 检查到的仓库状态：当前路径 `/Users/sonmin/Desktop/积分系统开发`，分支 `main`；`.codex` 四个文件已有未提交修改，另有未跟踪 `.claude/`、`backups/` 和两份 `docs/` 文档。
+* 已确认完成：上一轮手机号不一致绑定审核说明已完成；历史记录确认积分系统已部署在 CloudBase，使用云托管、MySQL、COS，并已开通私有网络。
+* 未完成：尚未检查答题系统原型与积分系统的兼容性，也未核对腾讯云当前计费边界和现有套餐余量。
+* 决定从哪里继续：保留所有既有修改，本轮只读检查两个项目和腾讯云官方资料，不开通云资源、不部署、不修改业务代码。
+
+## 2026-08-15 17:09 - Shared Quiz System Cost Assessment Started
+
+* 做了什么：将当前任务切换为评估队长答题系统与积分系统共用 CloudBase 环境，拆分为现有架构、答题原型、官方计费和推荐拓扑四部分。
+* 修改了哪些文件：`.codex/TASK_STATE.md`、`.codex/NEXT_ACTIONS.md`、`.codex/WORKLOG.md`。
+* 为什么这样做：用户明确希望不产生额外费用，项目规则要求在任何部署方案前先识别固定资源和按量资源的成本风险。
+* 验证结果：初步确认“共用环境”技术上可行，但是否零新增费用取决于是否复用同一云托管服务、现有数据库/COS 容量、AI 生成方式以及实际流量。
+* 下一步：核对两个系统的真实技术栈，并查阅腾讯云当前官方计费说明。
+
+## 2026-08-15 17:32 - Shared Quiz System Cost Assessment Complete
+
+* 做了什么：核对积分系统的 Next.js/Prisma MySQL/COS/CloudBase 架构，核对答题原型的 PostgreSQL schema、内存 repository、PDF 提取、AI 生题、人工审核和考试流程，并查询腾讯云与 DeepSeek 当前官方计费和运行限制。
+* 修改了哪些文件：`.codex/TASK_STATE.md`、`.codex/NEXT_ACTIONS.md`、`.codex/DECISIONS.md`、`.codex/WORKLOG.md`；未修改业务代码或云资源。
+* 为什么这样做：用户希望答题系统与积分系统共用服务器和 CloudBase 环境且不新增费用，需要区分“共用环境”“共用服务”和“资源用量不增加”三个不同概念。
+* 验证结果：技术上可行，最低成本方案是把答题能力合并到现有 `leader-score-system` 服务，复用 MySQL、COS、VPC 和账号；新建同环境第二服务仍会产生独立实例用量。答题原型当前生产持久化未实现且是 PostgreSQL，不能直接部署。AI Token、PDF/数据库/存储/流量仍是潜在按量成本；CloudBase 20MB 请求和 60 秒超时要求重做上传与分批生题流程。
+* 下一步：向用户交付带条件结论；若用户确认方向，先查看控制台套餐余量和实例配置，再制定 MySQL 迁移与分阶段开发计划。
+
+## 2026-07-24 14:11 - Recovery
+
+* 检查到的仓库状态：当前路径 `/Users/sonmin/Desktop/积分系统开发`，分支 `main`；已有 `.codex` 四个修改文件，另有未跟踪 `.claude/`、`backups/`、`docs/INTERNAL_TEST_NOTICE_20_LEADERS.md` 和 `docs/LEADER_SCORE_AND_BONUS_RULES.md`。
+* 已确认完成：上一轮内测通知文案优化已完成；本轮用户提供绑定审核截图，询问手机号不一致时如何审核通过。
+* 未完成：尚未核对手机号差异是风险提示还是通过接口的硬拦截。
+* 决定从哪里继续：保留全部既有修改，只读检查绑定审核接口、档案编辑入口和数据库字段约束。
+
+## 2026-07-24 14:11 - Phone Mismatch Bind Review Verified
+
+* 做了什么：检查队长绑定审核列表、通过/拒绝接口、自助绑定申请接口、队长档案编辑接口和 User/Leader 数据结构。
+* 修改了哪些文件：`.codex/TASK_STATE.md`, `.codex/NEXT_ACTIONS.md`, `.codex/WORKLOG.md`；未修改业务代码或线上数据。
+* 为什么这样做：需要确认截图中的红色提示是否允许管理员人工放行，并给出不会误改真实档案的处理步骤。
+* 验证结果：通过接口会实时比较 `request.user.phone` 与 `request.leader.phone`，不一致时返回 409，无法直接通过；后台可编辑 Leader 手机号，但当前没有 User 手机号编辑页面。截图中的匹配分 60/人工申请与当前自助绑定的 100 分逻辑不同，可能来自历史或其他入口。
+* 下一步：向用户说明先核实正确号码，再只修正错误一侧；无法确认时拒绝，若需要人工强制通过能力则另行设计带审计的功能。
+
+## 2026-07-24 - Recovery
+
+* 检查到的仓库状态：当前路径 `/Users/sonmin/Desktop/积分系统开发`，分支 `main`；已有 `.codex` 四个修改文件，另有未跟踪 `.claude/`、`backups/`、`docs/INTERNAL_TEST_NOTICE_20_LEADERS.md` 和 `docs/LEADER_SCORE_AND_BONUS_RULES.md`。
+* 已确认完成：此前已完成 20 名队长内测通知和飞书积分与奖金规则文档；用户本轮提供了新的通知原稿，要求优化表达。
+* 未完成：尚未交付本轮优化后的通知文本。
+* 决定从哪里继续：保留所有既有文件和外部文档，本轮只重写用户提供的文本并在回复中交付。
+
+## 2026-07-24 - Internal Test Notice Wording Started
+
+* 做了什么：将当前任务切换为优化队长积分系统内测通知，梳理原稿中的表达问题和必须保留的信息。
+* 修改了哪些文件：`.codex/TASK_STATE.md`, `.codex/NEXT_ACTIONS.md`, `.codex/WORKLOG.md`。
+* 为什么这样做：用户需要一份更自然、清楚、适合直接发给队长的通知；项目要求开始前建立可恢复检查点。
+* 验证结果：确认需要保留积分目的、奖金池、20 名队长内测、登录注册入口、注册绑定步骤和飞书规则链接；不修改现有本地或飞书文档。
+* 下一步：完成自然化改写，核对信息完整性后交付。
+
+## 2026-07-24 - Internal Test Notice Wording Complete
+
+* 做了什么：完成通知自然化改写，调整积分目的、奖金池、行为约束、20 名队长内测目标、反馈方向和操作步骤表达。
+* 修改了哪些文件：`.codex/TASK_STATE.md`, `.codex/NEXT_ACTIONS.md`, `.codex/WORKLOG.md`；未修改现有通知文件或飞书文档。
+* 为什么这样做：让通知更像负责人直接发给队长的说明，减少“惩罚”“瓜分”等容易引起误解的表达，同时保留业务含义。
+* 验证结果：原稿必要信息均已保留；登录、注册和飞书规则链接未改；错别字和格式问题已修正；自然化审阅完成；最终 `git diff --check` 通过。
+* 下一步：在回复中交付可直接发送的版本；如用户确认需要，再同步到本地或飞书文档。
+
+## 2026-07-23 15:04 - Feishu Rules Document Created and Verified
+
+* 做了什么：以用户身份新建飞书文档“队长积分与奖金规则说明（内测版）”，随后通过 v2 接口回读完整内容，并自动检查标题、章节、奖金门槛、档位权重、封顶金额、取消资格次数和 20 人分档示例。
+* 修改了哪些文件：`docs/LEADER_SCORE_AND_BONUS_RULES.md`, `.codex/DECISIONS.md`, `.codex/TASK_STATE.md`, `.codex/NEXT_ACTIONS.md`, `.codex/WORKLOG.md`；未修改业务代码或数据库。
+* 为什么这样做：用户需要一份可以直接用于 20 名队长内测的清晰飞书规则说明，且外部创建后需要确认实际落地内容没有丢失。
+* 验证结果：飞书文档 ID `PGg4dhmm8ok8oZxXRdQcocUHnHg`，可回读；15 个关键文本和数值全部命中；最终 `git diff --check` 通过。
+* 下一步：将飞书链接交付用户；后续如修改正式制度，应同步更新本地源稿和飞书文档。
+
+## 2026-07-23 15:03 - Feishu Create Parameter Mismatch
+
+* 做了什么：按 `lark-cli docs +create --help` 使用 v2、用户身份、标题和 `--markdown @file` 发起创建。
+* 修改了哪些文件：`.codex/TASK_STATE.md`, `.codex/WORKLOG.md`；未修改业务代码。
+* 为什么这样做：CLI 帮助明确说明 `--markdown` 支持 `@file`，可以避免在命令行展开正文。
+* 验证结果：本机 CLI 1.0.33 在参数校验阶段返回 `--content is required`，没有创建外部文档；帮助提示 1.0.74 可用，但当前不先升级工具。
+* 下一步：使用 `--dry-run` 检查本版本 v2 实际接受的 `--content` 参数形式，确认请求正确后只执行一次真实创建。
+
+## 2026-07-23 15:02 - Local Rules Source Verified
+
+* 做了什么：完成并通读队长版积分与奖金规则源稿，核对基础积分、正式加扣分项目、申诉规则、奖金参与资格、A/B/C 档权重、计算公式、2000 元封顶和 20 人示例。
+* 修改了哪些文件：`docs/LEADER_SCORE_AND_BONUS_RULES.md`, `.codex/TASK_STATE.md`, `.codex/NEXT_ACTIONS.md`, `.codex/WORKLOG.md`。
+* 为什么这样做：飞书创建属于外部写入，先在本地形成可审查、可恢复的完整源稿，避免把旧规则、系统缺陷或敏感信息误写成正式制度。
+* 验证结果：源稿共 292 行，只采用 V2.2 正式口径；`git diff --check` 通过；未包含账号密码、密钥、客户隐私或内部连接信息。
+* 下一步：查看飞书文档创建命令参数，使用本地源稿创建文档，并立即回读核对。
+
+## 2026-07-23 14:59 - Recovery
+
+* 检查到的仓库状态：当前路径 `/Users/sonmin/Desktop/积分系统开发`，分支 `main`；已有 `.codex/DECISIONS.md`、`.codex/NEXT_ACTIONS.md`、`.codex/TASK_STATE.md`、`.codex/WORKLOG.md` 本地修改，另有未跟踪 `.claude/`、`backups/` 和 `docs/INTERNAL_TEST_NOTICE_20_LEADERS.md`。
+* 已确认完成：前两轮已完成 V2.2 加分、扣分和奖金规则的文档/代码核对，并发现默认旧规则和奖金违规次数重复累计风险。
+* 未完成：尚未生成本次综合规则源稿，也尚未新建飞书文档。
+* 决定从哪里继续：保留既有未提交内容，新增独立 Markdown 源稿，以正式 V2.2 规则和奖金制度为正文口径，再通过飞书 CLI 创建并回读验证。
+
+## 2026-07-23 14:59 - Feishu Rules Document Started
+
+* 做了什么：将当前任务切换为新建飞书积分与奖金规则说明，运行飞书 CLI 健康检查，并拆分源稿、核对、创建、回读和交付步骤。
+* 修改了哪些文件：`.codex/TASK_STATE.md`, `.codex/NEXT_ACTIONS.md`, `.codex/WORKLOG.md`。
+* 为什么这样做：用户要求新建一份清晰易懂的飞书文档；项目要求外部写入前建立可恢复检查点。
+* 验证结果：飞书配置、用户授权、token、开放平台和 MCP 端点均通过；CLI 有可用更新但当前版本可继续使用。
+* 下一步：新增 `docs/LEADER_SCORE_AND_BONUS_RULES.md` 并完成规则数值和文案核对。
+
+## 2026-07-23 12:34 - Recovery
+
+* 检查到的仓库状态：当前路径 `/Users/sonmin/Desktop/积分系统开发`，分支 `main`；已有 `.codex/DECISIONS.md`、`.codex/NEXT_ACTIONS.md`、`.codex/TASK_STATE.md`、`.codex/WORKLOG.md` 本地修改，另有未跟踪 `.claude/`、`backups/` 和 `docs/INTERNAL_TEST_NOTICE_20_LEADERS.md`。
+* 已确认完成：上一轮已完成 V2.2 加分、扣分规则盘点，并记录默认规则与正式总表的差异。
+* 未完成：尚未按本次用户要求单独整理奖金参与资格、档位权重、计算公式、封顶和余额处理。
+* 决定从哪里继续：保留上一轮未提交内容，以当前主分支奖金文档、默认常量、测算服务和页面展示为准做只读核对。
+
+## 2026-07-23 12:34 - Bonus Rule Summary Started
+
+* 做了什么：将当前任务切换为盘点奖金分配规则，并拆分为文档/常量提取、测算代码核验、页面口径核验和最终整理。
+* 修改了哪些文件：`.codex/TASK_STATE.md`, `.codex/NEXT_ACTIONS.md`, `.codex/WORKLOG.md`。
+* 为什么这样做：用户需要奖金分配规则明细，项目要求新任务开始前先建立可恢复检查点。
+* 验证结果：当前分支和既有差异已确认；本轮只读盘点，不修改奖金配置或线上数据。
+* 下一步：读取奖金常量、V2.2文档和测算服务，确认当前实际口径。
+
+## 2026-07-23 12:35 - Bonus Calculation Rules Verified
+
+* 做了什么：读取 V2.2 奖金规则、试运行指南、奖金默认常量、积分排名、奖金测算服务、奖金池页面和队长端奖金说明。
+* 修改了哪些文件：`.codex/TASK_STATE.md`, `.codex/NEXT_ACTIONS.md`, `.codex/WORKLOG.md`。
+* 为什么这样做：需要区分正式业务口径、系统实际计算方式和队长端展示范围。
+* 验证结果：确认年度完成带队至少 8 次、奖金测算积分大于 0、实习可参与、暂停/离职不参与、全职兼职共池；所有符合资格者参与，按 A/B/C 档 1.8/1.3/1.0 权重分配，单人封顶 2000 元且余额不二次分配。确认规则当前来自代码静态常量，后台只管理奖金池和保存测算快照。发现违规事件创建时同时生成积分台账，而奖金代码分别遍历两张表累计有效投诉和安全违规，可能把一次事件计成两次。
+* 下一步：整理完整规则、20人档位示例和内测前必须确认的问题，完成最终差异检查。
+
+## 2026-07-23 12:36 - Bonus Rule Summary Complete
+
+* 做了什么：完成奖金参与资格、奖金池、档位划分、权重公式、封顶余额、排序同分规则、队长端展示和历史测算快照的完整盘点。
+* 修改了哪些文件：`.codex/TASK_STATE.md`, `.codex/NEXT_ACTIONS.md`, `.codex/WORKLOG.md`；未修改业务代码、数据库或线上奖金配置。
+* 为什么这样做：让用户在 20 名队长内测前明确奖金制度口径，并提前识别可能影响资格判断的系统问题。
+* 验证结果：确认档位按符合资格人数计算并向上取整；20 人全部符合时为 A档4人、B档6人、C档10人。理论奖金按加权积分占比计算，单人最终金额取理论金额与 2000 元较小值，封顶余额留作未分配。队长端只展示基础资格初判。`git diff --check` 和新通知文档 whitespace 检查通过。
+* 下一步：用户决定是否在内测前修复有效投诉、安全违规重复累计；正式测算前核对线上奖金池和历史测算快照。
+
+## 2026-07-23 12:24 - Recovery
+
+* 检查到的仓库状态：当前路径 `/Users/sonmin/Desktop/积分系统开发`，分支 `main`；已有 `.codex/DECISIONS.md`、`.codex/NEXT_ACTIONS.md`、`.codex/TASK_STATE.md`、`.codex/WORKLOG.md` 本地修改，另有未跟踪 `.claude/`、`backups/` 和 `docs/INTERNAL_TEST_NOTICE_20_LEADERS.md`。
+* 已确认完成：上一轮已生成面向 20 名队长的内测通知并完成静态校验；当前主分支包含 V2.2 规则文档、后台执行标准、规则 seed 和积分执行代码。
+* 未完成：尚未按本次用户要求整理当前加分、扣分规则明细，也尚未核对文档、默认数据与代码执行边界。
+* 决定从哪里继续：保留上一轮未提交内容，以当前 `main` 的规则文档、seed 和服务代码为准做只读核对，不使用 `.claude/` 或 `backups/` 中的副本。
+
+## 2026-07-23 12:24 - Score Rule Summary Started
+
+* 做了什么：将当前任务切换为盘点积分系统加分、扣分规则，并拆分文档提取、默认数据核验、代码边界核验和内测清单整理步骤。
+* 修改了哪些文件：`.codex/TASK_STATE.md`, `.codex/NEXT_ACTIONS.md`, `.codex/WORKLOG.md`。
+* 为什么这样做：用户准备邀请 20 名队长内测，需要先确认系统当前真实规则，项目要求新任务开始前建立可恢复检查点。
+* 验证结果：当前分支和既有差异已确认；本轮只做规则盘点，不修改业务逻辑、数据库或线上数据。
+* 下一步：读取 V2.2 规则文档和执行标准，提取全部加分、扣分项目。
+
+## 2026-07-23 12:27 - V2.2 Rule List Extracted
+
+* 做了什么：读取 V2.2 完整版和后台执行标准，并用只读脚本对照 `DEFAULT_SCORE_RULES` 统计当前默认规则。
+* 修改了哪些文件：`.codex/TASK_STATE.md`, `.codex/NEXT_ACTIONS.md`, `.codex/WORKLOG.md`。
+* 为什么这样做：需要区分准备向 20 名队长说明的正式 V2.2 口径，与后台当前仍可见的旧版或扩展规则。
+* 验证结果：V2.2 正式总表共 25 条（16 条加分、9 条扣分/资格处理）；默认 seed 共 42 条（27 条加分、15 条扣分），额外 17 条包括旧版传播/复购/推荐/带教、摄影补贴、旧节假日规则、3 条一般违规和 3 条安全细分规则。
+* 下一步：核对队长端申请、后台专项加分、扣分录入、上限和奖金资格代码，确认哪些限制由系统自动执行、哪些仍依赖人工审核。
+
+## 2026-07-23 12:29 - Score Rule Summary Complete
+
+* 做了什么：完成队长端申请、后台专项加分、违规扣分、基础积分、年度传播上限、复购归属、年度清零和奖金资格代码核对，并整理适合 20 名队长内测前确认的规则明细。
+* 修改了哪些文件：`.codex/TASK_STATE.md`, `.codex/NEXT_ACTIONS.md`, `.codex/WORKLOG.md`；未修改业务代码、数据库或线上配置。
+* 为什么这样做：需要让用户同时看到正式 V2.2 宣讲口径和系统当前默认配置差异，避免内测中因旧规则或人工边界产生争议。
+* 验证结果：确认队长端只展示 8 项 `allowLeaderApplication=true` 的新版规则；后台专项加分会查询全部启用加分规则，违规入口会展示 15 项扣分规则。发现小红书无团期时无法自动执行同团互斥、扣分证据未强制、传播上限按 `SOCIAL` 分类累计等边界。尝试只读查询实际数据库时，本地 `.env` 的 `DATABASE_URL` 不符合当前 MySQL 协议，未连接数据库、未修改任何数据。`git diff --check` 和新通知文档 whitespace 检查通过。
+* 下一步：用户决定是否以 V2.2 的 25 条正式规则作为唯一内测口径，并在内测前停用或明确保留 17 条总表外规则；如需改代码，另开最小修复任务。
+
+## 2026-07-20 15:28 - Recovery
+
+* 检查到的仓库状态：当前路径 `/Users/sonmin/Desktop/积分系统开发`，分支 `main`；已有 `.codex/NEXT_ACTIONS.md`、`.codex/TASK_STATE.md`、`.codex/WORKLOG.md` 本地修改，另有未跟踪 `.claude/` 和 `backups/`。
+* 已确认完成：上一轮功能分支合并和 GitHub 推送已完成；现有试运行操作说明、内测人员指南、V2.2 积分规则与执行标准可作为本轮通知的本地知识依据。
+* 未完成：尚未生成面向 20 名队长的内测通知；尚未核验通知内容和敏感信息。
+* 决定从哪里继续：保留既有未提交改动与未跟踪目录，基于 `docs/` 现有知识文档新增独立通知稿。
+
+## 2026-07-20 15:28 - Internal Test Notice Started
+
+* 做了什么：将当前任务切换为生成 20 名队长积分系统内测通知，并读取试运行、内测指南和 V2.2 规则文档。
+* 修改了哪些文件：`.codex/TASK_STATE.md`, `.codex/NEXT_ACTIONS.md`, `.codex/WORKLOG.md`。
+* 为什么这样做：用户需要一份说明背景、初衷、测试内容和操作流程的群发通知；项目规则要求先建立可恢复检查点。
+* 验证结果：已确认内测访问地址、注册绑定流程、加分申请步骤、图片格式与大小限制、反馈模板和 P0/P1/P2 分级；未发现需要新增依赖或付费服务的内容。
+* 下一步：新增 `docs/INTERNAL_TEST_NOTICE_20_LEADERS.md`，然后核对链接、敏感信息和文案可执行性。
+
+## 2026-07-20 15:36 - Internal Test Notice Drafted
+
+* 做了什么：新增面向 20 名指定队长的内测通知，覆盖方案背景、建设初衷、每人测试任务、操作流程、图片限制、注意事项、问题反馈模板和完成标准；使用中文自然化写作规范完成一轮语气调整。
+* 修改了哪些文件：`docs/INTERNAL_TEST_NOTICE_20_LEADERS.md`, `.codex/DECISIONS.md`, `.codex/TASK_STATE.md`, `.codex/NEXT_ACTIONS.md`, `.codex/WORKLOG.md`。
+* 为什么这样做：将现有多份技术和试运行资料整理成队长能直接执行的群发通知，并避免制度说明书式表达。
+* 验证结果：内测日期、反馈渠道、负责人和发布日期未由用户提供，均保留明确占位项；通知没有写入账号密码或密钥。
+* 下一步：核对通知链接、流程和敏感信息，运行 `git diff --check` 并检查最终差异。
+
+## 2026-07-20 15:39 - Online URL Check Blocked by Local Tooling
+
+* 做了什么：尝试通过 `curl` 探测通知中的线上入口，同时准备核对本地路由和最终差异。
+* 修改了哪些文件：`.codex/TASK_STATE.md`, `.codex/NEXT_ACTIONS.md`, `.codex/WORKLOG.md`。
+* 为什么这样做：通知会直接发给 20 名队长，需要尽量确认链接仍可用。
+* 验证结果：本机没有安装 `curl`，且首次命令使用了 zsh 只读变量 `status`，命令提前退出；未修改业务文件或外部状态。
+* 下一步：检查本机可用的 HTTP 工具，并核对仓库中的页面路由；在线探测完成前不声称地址已实时访问通过。
+
+## 2026-07-20 15:44 - Notice Content and URLs Verified
+
+* 做了什么：核对本地页面路由和通知中的全部入口，使用 Node.js `fetch` 实时探测线上地址，并检查通知中的敏感信息模式。
+* 修改了哪些文件：`.codex/TASK_STATE.md`, `.codex/NEXT_ACTIONS.md`, `.codex/WORKLOG.md`。
+* 为什么这样做：确保 20 名队长收到通知后能进入正确页面，且通知不会泄露密码、密钥或数据库连接信息。
+* 验证结果：主页、登录页和队长注册页返回 200；队长首页、提交申请和申请列表在未登录状态下返回 307 并跳转 `/login`，符合权限预期；本地对应路由文件均存在；敏感信息模式未命中。
+* 下一步：运行 tracked 和新文档 whitespace/diff 检查，随后完成状态收尾并交付。
+
+## 2026-07-20 15:47 - Markdown Whitespace Fixed
+
+* 做了什么：运行 tracked 和新文档差异检查；发现新通知有 3 处用于强制换行的行尾双空格，改为使用空行分段。
+* 修改了哪些文件：`docs/INTERNAL_TEST_NOTICE_20_LEADERS.md`, `.codex/TASK_STATE.md`, `.codex/NEXT_ACTIONS.md`, `.codex/WORKLOG.md`。
+* 为什么这样做：保持 Markdown 文件通过 whitespace 检查，同时不影响通知显示效果。
+* 验证结果：3 处行尾双空格已移除；需要重新运行最终检查确认。
+* 下一步：重新运行 `git diff --check` 和新文件 whitespace 检查，确认通过后完成任务。
+
+## 2026-07-20 15:49 - Internal Test Notice Complete
+
+* 做了什么：重新运行 tracked 和新文档 whitespace 检查，检查最终状态和通知占位项，完成可恢复状态收尾。
+* 修改了哪些文件：`docs/INTERNAL_TEST_NOTICE_20_LEADERS.md`, `.codex/DECISIONS.md`, `.codex/TASK_STATE.md`, `.codex/NEXT_ACTIONS.md`, `.codex/WORKLOG.md`。
+* 为什么这样做：确保通知可直接交付，并让后续会话能从仓库恢复真实进度。
+* 验证结果：whitespace 检查通过；敏感信息模式未命中；线上入口已验证；通知保留 4 类待填信息：内测日期、反馈渠道、负责人和发布日期。
+* 下一步：用户填写占位项后即可群发；如需同步到飞书知识库，先确认目标知识库或文档位置。
+
+## 2026-07-08 11:10 - Main Merge Complete
+
+* 做了什么：提交 `.codex` 推送记录更新，切换到 `main`，执行 `git merge --ff-only feat/leader-score-rules-v2-2`，并推送 `main` 到 GitHub。
+* 修改了哪些文件：`.codex/TASK_STATE.md`, `.codex/NEXT_ACTIONS.md`, `.codex/WORKLOG.md`；创建提交 `c74686f chore: record github push state`。
+* 为什么这样做：用户要求当前功能分支快进合并回 `main` 并推送到 GitHub，同时记录可恢复状态。
+* 验证结果：`origin/main` 已更新到 `c74686f`；`git status -sb` 显示本地 `main` 与 `origin/main` 对齐，仍有未跟踪 `backups/`；最终状态记录更新仍未提交。
+* 下一步：继续发布后计划中的 MySQL 备份、发布归档和内部试运行。
+
+## 2026-08-21 18:05 - Remote And Acceptance Service Confirmed
+
+* 做了什么：fetch origin 并对比前后 `origin/main`；检查 3107 监听 PID、命令和工作目录。
+* 修改了哪些文件：两处 `.codex/TASK_STATE.md`、`.codex/NEXT_ACTIONS.md`、根 `.codex/WORKLOG.md`。
+* 为什么这样做：提交和合并前必须排除未知远程提交，并确认可安全停止的服务确属本项目临时验收环境。
+* 验证结果：`origin/main` fetch 前后均为 `4403547`，与 main 为 `0 0`；PID 70586 是临时验收目录中的 Next 服务。
+* 下一步：创建并核验合并前备案，再停止服务和清理临时目录。
+
+## 2026-08-21 18:20 - Main Local Tracking Cleanup Complete
+
+* 做了什么：确认修复分支首次 GitHub 备案完成；在 main 创建保护分支；补充 `.gitignore`；用 `git rm --cached` 停止跟踪修复工作树 gitlink 和数据库备份；创建清理提交。
+* 修改了哪些文件：`.gitignore`、Git 索引中的两个本地路径、根 `.codex` 状态文件。
+* 为什么这样做：本地工作树和数据库备份不应作为项目版本内容继续传播，但实际资料必须保留。
+* 验证结果：保护分支指向 `4403547`；清理提交为 `e1faebd`；两个实际路径通过 `test -d`/`test -f`；cached diff 仅含 `.gitignore` 和两个停止跟踪项。
+* 下一步：提交 main 清理状态检查点，确保 main 工作区干净，再将 main 合入修复分支。
+
+## 2026-08-20 17:16 - Local Acceptance Completed
+
+* 做了什么：在 `worktree-fix-review-findings` 的隔离 SQLite 兼容环境完成手机号/用户名登录、姓名空/非空复购提交、数据库持久化、登录审计和后台详情验收；随后停止服务并清理临时环境。
+* 修改了哪些文件：根目录 `.codex/TASK_STATE.md`、`.codex/NEXT_ACTIONS.md`、`.codex/WORKLOG.md`、`.codex/PLANS.md`；业务文件仍位于目标工作树。
+* 为什么这样做：用户要求本地验收，并要求项目可从文件恢复真实进度。
+* 验证结果：全部核心场景通过；MySQL Prisma Client 已恢复；清理后 `npm run typecheck` 和 `git diff --check` 通过。
+* 下一步：用户确认后提交并决定是否合并；目标环境先执行 migration，再发布复验。
+
+## 2026-08-21 18:24 - Main Merged And State Conflicts Integrated
+
+* 做了什么：在干净修复分支执行 `git merge --no-ff main`；检查冲突仅限五个 `.codex` 文件；按标题整合双方 DECISIONS/PLANS/WORKLOG 唯一历史，并重写当前 TASK_STATE/NEXT_ACTIONS。
+* 修改了哪些文件：五个 `.codex` 文件；同时保留 main 的 `.gitignore` 和两份正式 docs。
+* 为什么这样做：业务修复与 main 正式文档都必须保留，追加式日志不能整文件选择一方导致历史丢失。
+* 验证结果：无业务代码冲突；冲突标记搜索无输出；两份正式 docs 和 `.gitignore` 均存在。尚需 `git add` 后确认无 unmerged paths。
+* 下一步：暂存冲突解决结果，检查 staged diff/未合并路径并完成 merge commit。
